@@ -2,28 +2,19 @@ package com.example.travel_companion.presentation.ui.activity
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.lifecycle.lifecycleScope
 import com.example.travel_companion.R
-import com.example.travel_companion.presentation.startNewActivity
-import kotlinx.coroutines.launch
 
 /**
- * Entry point of Application
+ * Holds logged-in user experience.
  */
-class MainActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         // I using Views UI
-        //setContentView(R.layout.activity_main)
+        //setContentView(R.layout.activity_home)
 
         // else, if using jetpack compose
         ///TODO: define the composable related to it
-        
-        lifecycleScope.launch {
-            val activity = HomeActivity::class.java
-            startNewActivity(activity)
-        }
 
     }
 }

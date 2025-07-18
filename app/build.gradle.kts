@@ -40,20 +40,41 @@ android {
 }
 
 dependencies {
+    //Activities
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.appcompat.resources)
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    //Jetpack Datastore
+    implementation(libs.androidx.datastore.preferences)
+
+    // Retrofit
+    implementation (libs.gson)
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+
+    //Hilt
+    implementation(libs.hilt.android)
+
+    // JetPack compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    implementation(libs.androidx.datastore.core.android)
+    implementation(libs.androidx.datastore.preferences.core.jvm)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.adapters)
+    implementation(libs.androidx.room.compiler.processing.testing)
+    implementation(libs.androidx.viewbinding)
+    implementation(libs.androidx.espresso.core)
 }
