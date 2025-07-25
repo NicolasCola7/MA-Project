@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.androidx.navigation.safeargs)
+    id("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -36,7 +38,6 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
-
         dataBinding = true
         viewBinding = true
         buildConfig = true
@@ -44,52 +45,69 @@ android {
 }
 
 dependencies {
-
-    //Activities
+    // Core Android
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.appcompat.resources)
-
-    //Hilt
-    implementation(libs.hilt.android)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.fragment.ktx)
 
-    implementation (libs.glide)
+    // UI Components
+    implementation(libs.material)
+    implementation(libs.androidx.recyclerview)
+
+    // Navigation
+    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.navigation.fragment)
+
+    // DataBinding/ViewBinding
+    implementation(libs.androidx.databinding.adapters)
+    implementation(libs.androidx.viewbinding)
+
+    // Dependency Injection (Hilt)
+    implementation(libs.hilt.android)
+
+    // Image Loading
+    implementation(libs.glide)
 
     // GPS e Location Services
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
 
-    // timber logging
+    // Logging
     implementation(libs.timber)
 
-    //EasyPermission
+    // Permissions
     implementation(libs.easypermissions)
 
+    // Data Storage
+    implementation(libs.androidx.datastore.preferences)
+
+    // Room Database
+    implementation(libs.androidx.room.runtime.android)
+    implementation(libs.androidx.room.common.jvm)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.hilt.compiler)
+
+    // Network
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.gson)
+
+    // Compose (se necessario)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.room.runtime.android)
-    implementation(libs.androidx.recyclerview)
-    implementation(libs.material)
-    implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.play.services.location)
-    implementation(libs.androidx.navigation.fragment)
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-
-    implementation(libs.androidx.datastore.core.android)
-    implementation(libs.androidx.datastore.preferences.core.jvm)
-    implementation(libs.androidx.room.common.jvm)
-    implementation(libs.androidx.adapters)
-    implementation(libs.androidx.room.compiler.processing.testing)
-    implementation(libs.androidx.viewbinding)
-    implementation(libs.androidx.espresso.core)
 }
