@@ -7,12 +7,14 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
+import dagger.hilt.android.scopes.FragmentScoped
 
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
-class TripListAdapter(
+class TripListAdapter (
     private var trips: List<TripEntity>,
     private val onTripClick: (TripEntity) -> Unit
 ) : RecyclerView.Adapter<TripListAdapter.VH>() {

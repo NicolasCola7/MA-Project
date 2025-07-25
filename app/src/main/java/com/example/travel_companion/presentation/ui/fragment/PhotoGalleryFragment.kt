@@ -20,7 +20,7 @@ import javax.inject.Inject
 class PhotoGalleryFragment: Fragment() {
     private  var _binding: FragmentPhotoGalleryBinding? = null
     private val binding get() = _binding!!
-    @Inject lateinit var adapter: PhotoAdapter
+    lateinit var adapter: PhotoAdapter
     private val args: NotesListFragmentArgs by navArgs()
     private val viewModel: PhotoGalleryViewModel by viewModels()
 

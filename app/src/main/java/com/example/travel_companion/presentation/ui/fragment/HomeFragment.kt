@@ -21,7 +21,7 @@ class HomeFragment: Fragment() {
     private val binding get() = _binding!!
 
     val viewModel: TripsViewModel by viewModels()
-    @Inject lateinit var adapter: TripListAdapter
+    lateinit var adapter: TripListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,6 +33,12 @@ class HomeFragment: Fragment() {
             inflater, R.layout.fragment_home, container, false
         )
 
+        adapter = TripListAdapter(emptyList()) { selectedTrip ->
+            //creazione dell'azione "navigazione" con passaggio di parametro
+            val action = HomeFragmentDirections.actionNavHomeToTripDetailFragment(selectedTrip.id)
+            //navigazione effettiva
+            findNavController().navigate(action)
+        }
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
         binding.recyclerView.adapter = adapter
@@ -43,12 +49,7 @@ class HomeFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = TripListAdapter(emptyList()) { selectedTrip ->
-            //creazione dell'azione "navigazione" con passaggio di parametro
-            val action = HomeFragmentDirections.actionNavHomeToTripDetailFragment(selectedTrip.id)
-            //navigazione effettiva
-            findNavController().navigate(action)
-        }
+
 
         //osserva i dati dal viewmodel
         viewModel.trips.observe(viewLifecycleOwner) { list ->

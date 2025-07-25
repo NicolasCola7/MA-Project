@@ -59,7 +59,6 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.navigation.fragment)
-
     // DataBinding/ViewBinding
     implementation(libs.androidx.databinding.adapters)
     implementation(libs.androidx.viewbinding)

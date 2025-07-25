@@ -5,9 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.databinding.ItemNoteBinding
+import dagger.hilt.android.scopes.FragmentScoped
+import javax.inject.Inject
 
-
-class NotesListAdapter(private var notes: List<NoteEntity>) :
+class NotesListAdapter (private var notes: List<NoteEntity>) :
     RecyclerView.Adapter<NotesListAdapter.NoteViewHolder>() {
 
     //Ogni elemento mostra il titolo e il contenuto della nota.

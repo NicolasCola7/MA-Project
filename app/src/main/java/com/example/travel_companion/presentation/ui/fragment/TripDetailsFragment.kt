@@ -108,7 +108,7 @@ class TripDetailsFragment: Fragment() {
 
             val lat = it.last().last().latitude
             val long = it.last().last().longitude
-            viewModel.insertCoordinate(lat, long)
+            viewModel.insertCoordinate(lat, long, args.tripId)
 
             addLatestPolyline()
             moveCameraToUser()

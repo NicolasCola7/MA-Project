@@ -9,9 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.ItemPhotoBinding
+import dagger.hilt.android.scopes.FragmentScoped
+import javax.inject.Inject
 
 //Estende ListAdapter, che semplifica la gestione di liste dinamiche e ottimizza l'aggiornamento della UI tramite DiffUtil
-class PhotoAdapter: ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(DiffCallback) {
+class PhotoAdapter (): ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(DiffCallback) {
 
     //Usa la libreria Glide per caricare l’immagine da un URI e mostrarla nell’ImageView, con centerCrop per un ritaglio uniforme.
     //Ogni Photo ha un URI salvato nel database, che viene convertito in oggetto Uri e caricato.

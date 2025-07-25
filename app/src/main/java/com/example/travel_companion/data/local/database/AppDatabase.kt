@@ -17,7 +17,7 @@ import com.example.travel_companion.data.local.entity.*
     ],
     version = 1
 )
-@TypeConverters(Converters::class)
+
 abstract class AppDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun coordinateDao(): CoordinateDao
