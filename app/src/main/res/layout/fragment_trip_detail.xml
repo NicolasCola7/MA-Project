@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <variable
+            name="viewModel"
+            type="com.example.travel_companion.presentation.viewmodel.TripDetailViewModel" />
+    </data>
+    <ScrollView
+        android:id="@+id/tripDetailLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Titolo -->
+            <TextView
+                android:id="@+id/tvDestination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Destinazione"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Date -->
+            <TextView
+                android:id="@+id/tvDates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date viaggio"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Tipo di viaggio -->
+            <TextView
+                android:id="@+id/tvType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tipo"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvCoordinatesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coordinate registrate: 0"
+                android:textSize="14sp" />
+
+            <!-- Stato del viaggio -->
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stato"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Statistiche del viaggio -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:background="@android:color/darker_gray"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Distanza: 0 km"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/white" />
+
+                <TextView
+                    android:id="@+id/tvDuration"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Durata: 0 min"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/white" />
+
+            </LinearLayout>
+
+            <!-- Mappa -->
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/mapView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                app:layout_constraintBottom_toTopOf="@+id/tripDetailLayout"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Pulsanti di azione -->
+            <Button
+                android:id="@+id/btnStartTrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Avvia viaggio"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btnPauseTrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pausa viaggio"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btnEndTrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Termina viaggio" />
+
+            <Button
+                android:id="@+id/btnTakePhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scatta foto"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btnGallery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Galleria foto"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnCreateNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Crea nota"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnViewNotes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visualizza note"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+    </ScrollView>
+</layout>

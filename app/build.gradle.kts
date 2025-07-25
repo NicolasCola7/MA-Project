@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.androidx.navigation.safeargs)
 }
 
 android {
@@ -35,33 +36,47 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
-        compose = true
+
+        dataBinding = true
+        viewBinding = true
+        buildConfig = true
     }
 }
 
 dependencies {
+
     //Activities
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.appcompat.resources)
 
-    //Jetpack Datastore
-    implementation(libs.androidx.datastore.preferences)
-
-    // Retrofit
-    implementation (libs.gson)
-    implementation (libs.retrofit)
-    implementation (libs.converter.gson)
-
     //Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.fragment.ktx)
 
-    // JetPack compose
+    implementation (libs.glide)
+
+    // GPS e Location Services
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+
+    // timber logging
+    implementation(libs.timber)
+
+    //EasyPermission
+    implementation(libs.easypermissions)
+
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.room.runtime.android)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.material)
+    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.navigation.fragment)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)

@@ -1,34 +1,56 @@
 package com.example.travel_companion.presentation
 
-import android.app.Activity
-import android.content.Intent
-import android.view.View
+import android.Manifest
+import android.content.Context
+import android.location.Location
+import android.os.Build
+import com.example.travel_companion.service.Polyline
+import com.google.android.gms.maps.model.LatLng
+import pub.devrel.easypermissions.EasyPermissions
+import java.text.SimpleDateFormat
+import java.util.Locale
 
-/**
- * Start new [Activity] using the provided [Class]
- *
- * @param A Activity class
- * @param activity Provide [Activity] to be started
- */
-fun <A : Activity> Activity.startNewActivity(activity: Class<A>) {
-    val intent = Intent(this, activity).also {
-        it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(it)
+object Utils {
+
+    val DEFAULT_POSITION =  LatLng(44.4949, 11.3426)
+
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
+
+    fun hasLocationPermissions(context: Context) =
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            EasyPermissions.hasPermissions(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        } else {
+            EasyPermissions.hasPermissions(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
+        }
+
+    fun calculatePolylineLength(polyline: Polyline): Float {
+        var distance = 0f
+        for(i in 0..polyline.size - 2) {
+            val pos1 = polyline[i]
+            val pos2 = polyline[i + 1]
+
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                pos1.latitude,
+                pos1.longitude,
+                pos2.latitude,
+                pos2.longitude,
+                result
+            )
+            distance += result[0]
+        }
+        return distance
     }
 }
 
-/**
- * Enable/disable visibility of View objects
- *
- * @param isVisible
- */
-fun View.visible(isVisible: Boolean) {
-    visibility = if(isVisible) View.VISIBLE else View.GONE
-}
-
-fun View.enable(enabled: Boolean) {
-    isEnabled = enabled
-    alpha = if(enabled) 1f else 0.5f
-}
 
 

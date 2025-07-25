@@ -1,0 +1,27 @@
+package com.example.travel_companion.data.local.dao
+
+import androidx.lifecycle.LiveData
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import com.example.travel_companion.data.local.entity.TripEntity
+
+@Dao
+interface TripDao {
+    @Insert
+    suspend fun insert(trip: TripEntity): Long
+
+    @Query("SELECT * FROM trip ORDER BY startDate DESC")
+    fun getAll(): LiveData<List<TripEntity>>
+
+    @Query("SELECT * FROM trip WHERE id = :tripId LIMIT 1")
+    suspend fun getTripById(tripId: Long): TripEntity?
+
+    @Update
+    suspend fun updateTrip(trip: TripEntity)
+
+    @Delete
+    suspend fun deleteTrip(trip: TripEntity)
+}
