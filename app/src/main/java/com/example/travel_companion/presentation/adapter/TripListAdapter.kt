@@ -27,7 +27,7 @@ class TripListAdapter (
 
         init {
             itemView.setOnClickListener {
-                onTripClick(trips[adapterPosition])
+                onTripClick(trips[getAbsoluteAdapterPosition()])
             }
         }
     }

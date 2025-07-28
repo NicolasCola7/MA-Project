@@ -16,6 +16,7 @@ import com.example.travel_companion.databinding.FragmentNewTripBinding
 import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import java.util.Calendar
 
 @AndroidEntryPoint

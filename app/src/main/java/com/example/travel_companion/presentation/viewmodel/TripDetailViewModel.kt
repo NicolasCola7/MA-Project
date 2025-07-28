@@ -18,7 +18,6 @@ import javax.inject.Inject
 class TripDetailViewModel  @Inject constructor (
     private val tripRepository: TripRepository,
     private val coordinateRepository: CoordinateRepository,
-
 ) : ViewModel() {
 
     private val _trip = MutableLiveData<TripEntity?>()
@@ -27,7 +26,7 @@ class TripDetailViewModel  @Inject constructor (
     private val _coordinates = MutableLiveData<List<CoordinateEntity?>>()
     val coordinates: LiveData<List<CoordinateEntity?>> get() = _coordinates
 
-    private fun loadTrip(tripId: Long) {
+    fun loadTrip(tripId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val loadedTrip = tripRepository.getTripById(tripId)
             _trip.postValue(loadedTrip)

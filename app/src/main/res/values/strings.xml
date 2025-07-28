@@ -17,5 +17,6 @@
     </string-array>
 
     <string name="photo">Foto del viaggio</string>
+    <string name="newTripBtn">+</string>
 
 </resources>

@@ -3,26 +3,30 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@+id/tripsFragment">
 
     <action android:id="@+id/action_global_tripDetailFragment"
         app:destination="@id/tripDetailFragment"
         app:launchSingleTop="true" />
 
     <fragment
-        android:id="@+id/nav_home"
-        android:name="com.example.travel_companion.presentation.ui.fragment.HomeFragment"
+        android:id="@+id/tripsFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.TripsFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home">
+        tools:layout="@layout/fragment_trips">
 
         <action
-            android:id="@+id/action_nav_home_to_tripDetailFragment"
+            android:id="@+id/action_tripsFragment_to_tripDetailFragment"
             app:destination="@id/tripDetailFragment" />
+
+        <action
+            android:id="@+id/action_tripsFragment_to_newTripFragment"
+            app:destination="@id/newTripFragment"/>
 
     </fragment>
 
     <fragment
-        android:id="@+id/nav_new_trip"
+        android:id="@+id/newTripFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NewTripFragment"
         android:label="Nuovo Viaggio"
         tools:layout="@layout/fragment_new_trip" />
@@ -53,8 +57,8 @@
             app:destination="@id/noteListFragment" />
 
         <action
-            android:id="@+id/action_tripDetailFragment_to_homeFragment"
-            app:destination="@id/nav_home" />
+            android:id="@+id/action_tripDetailFragment_to_tripsFragment"
+            app:destination="@id/tripsFragment" />
 
     </fragment>
 

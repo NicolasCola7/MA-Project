@@ -17,8 +17,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.TrackingService
@@ -28,6 +30,7 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Date
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -35,7 +38,7 @@ class TripDetailsFragment: Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: TripDetailViewModel by viewModels()
-    private val args: NotesListFragmentArgs by navArgs()
+    private val args: TripDetailsFragmentArgs by navArgs()
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
@@ -62,6 +65,8 @@ class TripDetailsFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        initTripData()
+
         binding.btnStartTrip.setOnClickListener {
             startTracking()
         }
@@ -75,7 +80,6 @@ class TripDetailsFragment: Fragment() {
                 menuInflater.inflate(R.menu.menu_trip_detail, menu)
             }
 
-            //funzione richiamata quando si elimina un viaggio dall'icona nel menu
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when (menuItem.itemId) {
                     R.id.action_delete -> {
@@ -88,14 +92,32 @@ class TripDetailsFragment: Fragment() {
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        val tripId = args.tripId
 
+        // initialize map
         binding.mapView.getMapAsync {
             map = it
             addAllPolylines()
         }
 
         subscribeToObservers()
+    }
+
+    private fun initTripData() {
+        viewModel.loadTrip(args.tripId)
+
+        viewModel.trip.observe(viewLifecycleOwner) {
+            trip -> trip?.let {
+                showTripInfo(it)
+            }
+        }
+
+        viewModel.coordinates.observe(viewLifecycleOwner) { coordinates ->
+            binding.tvCoordinatesCount.text = "Coordinate registrate: ${coordinates.size}"
+            if(coordinates.isNotEmpty()) {
+                // TODO: initialize map with stored coordinates
+                //showTripStats(coordinates)
+            }
+        }
     }
 
     private fun subscribeToObservers() {
@@ -113,6 +135,15 @@ class TripDetailsFragment: Fragment() {
             addLatestPolyline()
             moveCameraToUser()
         }
+    }
+
+    private fun showTripInfo(trip: TripEntity) {
+        binding.tvDestination.text = trip.destination
+        binding.tvType.text = trip.type
+        binding.tvDates.text = "${Utils.dateFormat.format(Date(trip.startDate))} - ${
+            trip.endDate?.let { Utils.dateFormat.format(Date(it)) } ?: "—"
+        }"
+        binding.tvStatus.text = "Stato: ${trip.status.name}"
     }
 
     private fun startTracking() {
@@ -139,7 +170,7 @@ class TripDetailsFragment: Fragment() {
 
     private fun deleteTrip() {
         viewModel.deleteTrip()
-        findNavController().navigate(R.id.action_tripDetailFragment_to_homeFragment)
+        findNavController().navigate(R.id.action_tripDetailFragment_to_tripsFragment)
     }
 
     private fun updateTracking(isTracking: Boolean) {
@@ -235,7 +266,7 @@ class TripDetailsFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        pauseTracking()
+        //pauseTracking()
         super.onDestroyView()
         _binding = null
     }
