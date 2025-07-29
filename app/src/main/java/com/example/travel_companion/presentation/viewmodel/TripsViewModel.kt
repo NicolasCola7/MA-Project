@@ -19,7 +19,7 @@ class TripsViewModel  @Inject constructor(
     var selectedDestinationName: String = ""
 
 
-    fun insertTrip(destination: String, start: Long, end: Long?, type: String) {
+    fun insertTrip(destination: String, start: Long, end: Long, type: String, onResult: (Boolean) -> Unit) {
         val newTrip = TripEntity(
             destination = destination,
             startDate = start,
@@ -28,7 +28,14 @@ class TripsViewModel  @Inject constructor(
         )
 
         viewModelScope.launch(Dispatchers.IO) {
-            tripRepository.addTrip(newTrip)
+            val hasConflict = tripRepository.isTripOverlapping(start, end)
+            if (!hasConflict) {
+                tripRepository.addTrip(newTrip)
+                onResult(true)
+            } else {
+                onResult(false)
+            }
         }
     }
+
 }

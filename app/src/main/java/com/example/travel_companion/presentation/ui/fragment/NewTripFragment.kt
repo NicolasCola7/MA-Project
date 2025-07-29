@@ -201,8 +201,15 @@ class NewTripFragment: Fragment() {
             }
 
 
-            viewModel.insertTrip(destination, startDate.time, finalEndDate, type)
-            findNavController().navigateUp()
+            viewModel.insertTrip(destination, startDate.time, finalEndDate, type) { success ->
+                requireActivity().runOnUiThread {
+                    if (success) {
+                        findNavController().navigateUp()
+                    } else {
+                        Toast.makeText(requireContext(), "Esiste già un viaggio in questo intervallo di tempo", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
 
     }

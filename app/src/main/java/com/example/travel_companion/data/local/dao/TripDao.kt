@@ -24,4 +24,8 @@ interface TripDao {
 
     @Delete
     suspend fun deleteTrip(trip: TripEntity)
+
+    @Query(" SELECT * FROM trip WHERE (:newStart BETWEEN startDate AND endDate) OR (:newEnd BETWEEN startDate AND endDate) OR (startDate BETWEEN :newStart AND :newEnd)")
+    suspend fun getOverlappingTrips(newStart: Long, newEnd: Long): List<TripEntity>
+
 }

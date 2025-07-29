@@ -10,7 +10,7 @@ data class TripEntity(
     val id: Long = 0,
     val destination: String,
     val startDate: Long,
-    val endDate: Long?,
+    val endDate: Long,
     val type: String,
     val status: TripStatus = TripStatus.PLANNED
 )
