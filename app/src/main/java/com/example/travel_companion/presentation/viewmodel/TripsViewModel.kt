@@ -16,6 +16,8 @@ class TripsViewModel  @Inject constructor(
 ): ViewModel() {
 
     val trips: LiveData<List<TripEntity>> = tripRepository.getAllTrips()
+    var selectedDestinationName: String = ""
+
 
     fun insertTrip(destination: String, start: Long, end: Long?, type: String) {
         val newTrip = TripEntity(

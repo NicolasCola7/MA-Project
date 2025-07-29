@@ -17,6 +17,11 @@ import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
 import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
+import com.google.android.gms.common.api.Status
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.Calendar
@@ -45,6 +50,33 @@ class NewTripFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext().applicationContext, "AIzaSyDEVW0HX64ZlwkoVMAZVr7OqgKO4IAuWno")
+        }
+
+        val autocompleteFragment = childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+
+        autocompleteFragment.setPlaceFields(
+            listOf(
+                Place.Field.ID,
+                Place.Field.NAME,
+                Place.Field.ADDRESS,
+                Place.Field.LAT_LNG
+            )
+        )
+
+// Quando l'utente seleziona un luogo dai suggerimenti
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                Timber.i("Luogo selezionato: ${place.name}, ${place.address}")
+                viewModel.selectedDestinationName = place.name ?: ""
+            }
+
+            override fun onError(status: Status) {
+                Timber.e("Errore Autocomplete: $status")
+                Toast.makeText(requireContext(), "Errore: ${status.statusMessage}", Toast.LENGTH_SHORT).show()
+            }
+        })
 
         binding.editStartDate.setOnClickListener { showDateTimePicker(binding.editStartDate) }
         binding.editEndDate.setOnClickListener { showDateTimePicker(binding.editEndDate) }
@@ -64,7 +96,7 @@ class NewTripFragment: Fragment() {
         }
 
         binding.btnCreateTrip.setOnClickListener {
-            val destination = binding.editDestination.text.toString()
+            val destination = viewModel.selectedDestinationName
             val startStr = binding.editStartDate.text.toString()
             val endStr = binding.editEndDate.text.toString()
             val type = binding.spinnerTripType.selectedItem.toString()
