@@ -65,7 +65,7 @@ class NewTripFragment: Fragment() {
             )
         )
 
-// Quando l'utente seleziona un luogo dai suggerimenti
+        // Quando l'utente seleziona un luogo dai suggerimenti
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
                 Timber.i("Luogo selezionato: ${place.name}, ${place.address}")
