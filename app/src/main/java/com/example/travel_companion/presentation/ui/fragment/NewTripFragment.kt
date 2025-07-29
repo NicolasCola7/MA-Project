@@ -29,6 +29,7 @@ import java.util.Calendar
 @AndroidEntryPoint
 class NewTripFragment: Fragment() {
     private var _binding: FragmentNewTripBinding? = null
+    private var previousTripType: String? = null
     private val binding get() = _binding!!
     private val viewModel: TripsViewModel by viewModels()
 
@@ -92,21 +93,34 @@ class NewTripFragment: Fragment() {
         binding.spinnerTripType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selected = parent.getItemAtPosition(position).toString()
+
+                // Mostra sempre il campo fine
+                binding.editEndDate.visibility = View.VISIBLE
+
                 when (selected) {
                     "Viaggio di più giorni" -> {
-                        binding.editEndDate.visibility = View.VISIBLE
-                        binding.editEndDate.hint = "Data e ora fine viaggio"
+                        binding.editEndLayout.hint = "Data e ora fine viaggio"
+                        if (previousTripType != "Viaggio di più giorni") {
+                            binding.editEndDate.setText("")
+                        }
                     }
+
                     "Gita Giornaliera", "Viaggio Locale" -> {
-                        binding.editEndDate.visibility = View.VISIBLE
-                        binding.editEndDate.hint = "Ora fine viaggio"
+                        binding.editEndLayout.hint = "Ora fine viaggio"
+                        if (previousTripType == "Viaggio di più giorni") {
+                            binding.editEndDate.setText("")
+                        }
                     }
+
                     else -> {
                         binding.editEndDate.visibility = View.GONE
                         binding.editEndDate.setText("")
                     }
                 }
+
+                previousTripType = selected
             }
+
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
