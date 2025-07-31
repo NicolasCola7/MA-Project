@@ -60,17 +60,17 @@ class NewTripFragment: Fragment() {
         autocompleteFragment.setPlaceFields(
             listOf(
                 Place.Field.ID,
-                Place.Field.NAME,
-                Place.Field.ADDRESS,
-                Place.Field.LAT_LNG
+                Place.Field.DISPLAY_NAME,
+                Place.Field.FORMATTED_ADDRESS,
+                Place.Field.LOCATION
             )
         )
 
         // Quando l'utente seleziona un luogo dai suggerimenti
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
-                Timber.i("Luogo selezionato: ${place.name}, ${place.address}")
-                viewModel.selectedDestinationName = place.name ?: ""
+                Timber.i("Luogo selezionato: ${place.displayName}, ${place.formattedAddress}")
+                viewModel.selectedDestinationName = place.displayName ?: ""
             }
 
             override fun onError(status: Status) {
@@ -97,6 +97,8 @@ class NewTripFragment: Fragment() {
                 // Mostra sempre il campo fine
                 binding.editEndDate.visibility = View.VISIBLE
 
+                //costrutto che serve per fare in modo che quando si cambia tipo di viaggio
+                //il campo di fine viaggio venga pulito solo quando si passa dal/al tipo di viaggio su più giorni
                 when (selected) {
                     "Viaggio di più giorni" -> {
                         binding.editEndLayout.hint = "Data e ora fine viaggio"
@@ -131,6 +133,7 @@ class NewTripFragment: Fragment() {
             val endStr = binding.editEndDate.text.toString()
             val type = binding.spinnerTripType.selectedItem.toString()
 
+            //controllo che tutti i campi siano compilati
             if (destination.isBlank() || startStr.isBlank() || (type == "Viaggio di più giorni" && endStr.isBlank())) {
                 Toast.makeText(requireContext(), "Compila i campi obbligatori", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -139,6 +142,7 @@ class NewTripFragment: Fragment() {
             val startDate = Utils.dateTimeFormat.parse(startStr)
             val endDate = if (type == "Viaggio di più giorni") Utils.dateFormat.parse(endStr) else null
 
+            //controllo date di inizio
             if (startDate == null || (type == "Viaggio di più giorni" && endDate == null)) {
                 Toast.makeText(requireContext(), "Formato data non valido", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -159,6 +163,7 @@ class NewTripFragment: Fragment() {
             val calendar = Calendar.getInstance()
             calendar.time = startDate
 
+            //controllo date di fine viaggio
             val finalEndDate: Long = when (type) {
                 "Viaggio di più giorni" -> {
                     if (endInput.isBlank()) {
@@ -174,8 +179,8 @@ class NewTripFragment: Fragment() {
                 }
 
                 "Gita Giornaliera", "Viaggio Locale" -> {
+                    //se il campo è nullo imposto la fine della giornata selezionata
                     if (endInput.isBlank()) {
-                        // fine default: 23:59 dello stesso giorno
                         calendar.set(Calendar.HOUR_OF_DAY, 23)
                         calendar.set(Calendar.MINUTE, 59)
                         calendar.set(Calendar.SECOND, 59)
