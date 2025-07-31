@@ -1,5 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
@@ -24,38 +25,48 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import java.util.Calendar
+import java.util.*
 
 @AndroidEntryPoint
-class NewTripFragment: Fragment() {
+class NewTripFragment : Fragment() {
+
     private var _binding: FragmentNewTripBinding? = null
-    private var previousTripType: String? = null
     private val binding get() = _binding!!
     private val viewModel: TripsViewModel by viewModels()
+    private var previousTripType: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         _binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_new_trip, container, false
         )
-
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
-
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        initPlacesAutocomplete()
+        initListeners()
+        observeViewModel()
+    }
+
+    //inizializzazione fragment google
+    private fun initPlacesAutocomplete() {
         if (!Places.isInitialized()) {
-            Places.initialize(requireContext().applicationContext, "AIzaSyDEVW0HX64ZlwkoVMAZVr7OqgKO4IAuWno")
+            Places.initialize(
+                requireContext().applicationContext,
+                "AIzaSyDEVW0HX64ZlwkoVMAZVr7OqgKO4IAuWno"
+            )
         }
 
-        val autocompleteFragment = childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+        val autocompleteFragment =
+            childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
 
         autocompleteFragment.setPlaceFields(
             listOf(
@@ -66,7 +77,6 @@ class NewTripFragment: Fragment() {
             )
         )
 
-        // Quando l'utente seleziona un luogo dai suggerimenti
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
                 Timber.i("Luogo selezionato: ${place.displayName}, ${place.formattedAddress}")
@@ -75,10 +85,17 @@ class NewTripFragment: Fragment() {
 
             override fun onError(status: Status) {
                 Timber.e("Errore Autocomplete: $status")
-                Toast.makeText(requireContext(), "Errore: ${status.statusMessage}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Errore: ${status.statusMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
+    }
 
+    //inizializza i listener degli altri elementi del fragment
+    private fun initListeners() {
         binding.editStartDate.setOnClickListener {
             showDateTimePicker(binding.editStartDate, onlyTime = false)
         }
@@ -89,183 +106,114 @@ class NewTripFragment: Fragment() {
             showDateTimePicker(binding.editEndDate, onlyTime)
         }
 
+        binding.spinnerTripType.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val selected = parent.getItemAtPosition(position).toString()
+                    binding.editEndDate.visibility = View.VISIBLE
 
-        binding.spinnerTripType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val selected = parent.getItemAtPosition(position).toString()
+                    when (selected) {
+                        "Viaggio di più giorni" -> {
+                            binding.editEndLayout.hint = "Data e ora fine viaggio"
+                            if (previousTripType != "Viaggio di più giorni") {
+                                binding.editEndDate.setText("")
+                            }
+                        }
 
-                // Mostra sempre il campo fine
-                binding.editEndDate.visibility = View.VISIBLE
+                        "Gita Giornaliera", "Viaggio Locale" -> {
+                            binding.editEndLayout.hint = "Ora fine viaggio"
+                            if (previousTripType == "Viaggio di più giorni") {
+                                binding.editEndDate.setText("")
+                            }
+                        }
 
-                //costrutto che serve per fare in modo che quando si cambia tipo di viaggio
-                //il campo di fine viaggio venga pulito solo quando si passa dal/al tipo di viaggio su più giorni
-                when (selected) {
-                    "Viaggio di più giorni" -> {
-                        binding.editEndLayout.hint = "Data e ora fine viaggio"
-                        if (previousTripType != "Viaggio di più giorni") {
+                        else -> {
+                            binding.editEndDate.visibility = View.GONE
                             binding.editEndDate.setText("")
                         }
                     }
 
-                    "Gita Giornaliera", "Viaggio Locale" -> {
-                        binding.editEndLayout.hint = "Ora fine viaggio"
-                        if (previousTripType == "Viaggio di più giorni") {
-                            binding.editEndDate.setText("")
-                        }
-                    }
-
-                    else -> {
-                        binding.editEndDate.visibility = View.GONE
-                        binding.editEndDate.setText("")
-                    }
+                    previousTripType = selected
                 }
 
-                previousTripType = selected
+                override fun onNothingSelected(parent: AdapterView<*>) {}
             }
-
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
 
         binding.btnCreateTrip.setOnClickListener {
-            val destination = viewModel.selectedDestinationName
-            val startStr = binding.editStartDate.text.toString()
-            val endStr = binding.editEndDate.text.toString()
-            val type = binding.spinnerTripType.selectedItem.toString()
+            viewModel.onCreateTripClicked(
+                destination = viewModel.selectedDestinationName,
+                startDateStr = binding.editStartDate.text.toString(),
+                endDateStr = binding.editEndDate.text.toString(),
+                type = binding.spinnerTripType.selectedItem.toString()
+            )
+        }
+    }
 
-            //controllo che tutti i campi siano compilati
-            if (destination.isBlank() || startStr.isBlank() || (type == "Viaggio di più giorni" && endStr.isBlank())) {
-                Toast.makeText(requireContext(), "Compila i campi obbligatori", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val startDate = Utils.dateTimeFormat.parse(startStr)
-            val endDate = if (type == "Viaggio di più giorni") Utils.dateFormat.parse(endStr) else null
-
-            //controllo date di inizio
-            if (startDate == null || (type == "Viaggio di più giorni" && endDate == null)) {
-                Toast.makeText(requireContext(), "Formato data non valido", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val now = System.currentTimeMillis()
-            if (startDate.time <= now) {
-                Toast.makeText(requireContext(), "La data di inizio deve essere futura", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (type == "Viaggio di più giorni" && endDate!!.time <= startDate.time) {
-                Toast.makeText(requireContext(), "La data di fine deve essere dopo la data di inizio", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val endInput = binding.editEndDate.text.toString()
-            val calendar = Calendar.getInstance()
-            calendar.time = startDate
-
-            //controllo date di fine viaggio
-            val finalEndDate: Long = when (type) {
-                "Viaggio di più giorni" -> {
-                    if (endInput.isBlank()) {
-                        Toast.makeText(requireContext(), "Inserisci la data di fine", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
-                    }
-                    val parsed = Utils.dateFormat.parse(endInput)
-                    if (parsed == null || parsed.time <= startDate.time) {
-                        Toast.makeText(requireContext(), "La data di fine deve essere dopo l'inizio", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
-                    }
-                    parsed.time
+    //osserva i dati dal view model
+    private fun observeViewModel() {
+        viewModel.uiEvent.observe(viewLifecycleOwner) { event ->
+            when (event) {
+                is TripsViewModel.Event.ShowMessage -> {
+                    Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
                 }
 
-                "Gita Giornaliera", "Viaggio Locale" -> {
-                    //se il campo è nullo imposto la fine della giornata selezionata
-                    if (endInput.isBlank()) {
-                        calendar.set(Calendar.HOUR_OF_DAY, 23)
-                        calendar.set(Calendar.MINUTE, 59)
-                        calendar.set(Calendar.SECOND, 59)
-                        calendar.timeInMillis
-                    } else {
-                        val timeParts = endInput.split(":")
-                        if (timeParts.size != 2) {
-                            Toast.makeText(requireContext(), "Inserisci l'ora di fine nel formato HH:mm", Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        val hour = timeParts[0].toIntOrNull()
-                        val minute = timeParts[1].toIntOrNull()
-                        if (hour == null || minute == null) {
-                            Toast.makeText(requireContext(), "Orario non valido", Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        calendar.set(Calendar.HOUR_OF_DAY, hour)
-                        calendar.set(Calendar.MINUTE, minute)
-                        calendar.set(Calendar.SECOND, 0)
-
-                        val endMillis = calendar.timeInMillis
-                        if (endMillis <= startDate.time) {
-                            Toast.makeText(requireContext(), "L'ora di fine deve essere successiva a quella di inizio", Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        endMillis
-                    }
-                }
-
-                else -> {
-                    // caso di fallback, mai usato
-                    calendar.set(Calendar.HOUR_OF_DAY, 23)
-                    calendar.set(Calendar.MINUTE, 59)
-                    calendar.set(Calendar.SECOND, 59)
-                    calendar.timeInMillis
-                }
-            }
-
-
-            viewModel.insertTrip(destination, startDate.time, finalEndDate, type) { success ->
-                requireActivity().runOnUiThread {
-                    if (success) {
-                        findNavController().navigateUp()
-                    } else {
-                        Toast.makeText(requireContext(), "Esiste già un viaggio in questo intervallo di tempo", Toast.LENGTH_LONG).show()
-                    }
+                TripsViewModel.Event.Success -> {
+                    findNavController().navigateUp()
                 }
             }
         }
-
     }
 
+    //imposta lo stile del picker a seconda del tipo di viaggio
+    @SuppressLint("DefaultLocale")
     private fun showDateTimePicker(target: EditText, onlyTime: Boolean = false) {
         val calendar = Calendar.getInstance()
 
         if (onlyTime) {
-            // Solo selezione dell’ora
-            TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
-                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                calendar.set(Calendar.MINUTE, minute)
-                calendar.set(Calendar.SECOND, 0)
-
-                // Format only time (es: 18:30)
-                target.setText(String.format("%02d:%02d", hourOfDay, minute))
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
-        } else {
-            // Selezione data + ora
-            DatePickerDialog(requireContext(), { _, year, month, day ->
-                calendar.set(Calendar.YEAR, year)
-                calendar.set(Calendar.MONTH, month)
-                calendar.set(Calendar.DAY_OF_MONTH, day)
-
-                TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
+            TimePickerDialog(
+                requireContext(),
+                { _, hourOfDay, minute ->
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                     calendar.set(Calendar.MINUTE, minute)
                     calendar.set(Calendar.SECOND, 0)
+                    target.setText(String.format("%02d:%02d", hourOfDay, minute))
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true
+            ).show()
+        } else {
+            DatePickerDialog(
+                requireContext(),
+                { _, year, month, day ->
+                    calendar.set(Calendar.YEAR, year)
+                    calendar.set(Calendar.MONTH, month)
+                    calendar.set(Calendar.DAY_OF_MONTH, day)
 
-                    target.setText(Utils.dateTimeFormat.format(calendar.time))
-                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
-
-            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+                    TimePickerDialog(
+                        requireContext(),
+                        { _, hourOfDay, minute ->
+                            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                            calendar.set(Calendar.MINUTE, minute)
+                            calendar.set(Calendar.SECOND, 0)
+                            target.setText(Utils.dateTimeFormat.format(calendar.time))
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
         }
     }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()
