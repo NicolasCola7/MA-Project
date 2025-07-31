@@ -140,8 +140,8 @@ class TripDetailsFragment: Fragment() {
     private fun showTripInfo(trip: TripEntity) {
         binding.tvDestination.text = trip.destination
         binding.tvType.text = trip.type
-        binding.tvDates.text = "${Utils.dateFormat.format(Date(trip.startDate))} - ${
-            trip.endDate?.let { Utils.dateFormat.format(Date(it)) } ?: "—"
+        binding.tvDates.text = "${Utils.dateTimeFormat.format(Date(trip.startDate))} - ${
+            trip.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
         }"
         binding.tvStatus.text = "Stato: ${trip.status.name}"
     }

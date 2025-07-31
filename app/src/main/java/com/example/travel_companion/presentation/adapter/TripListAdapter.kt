@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
+import com.example.travel_companion.presentation.Utils
 import dagger.hilt.android.scopes.FragmentScoped
 
 import java.text.SimpleDateFormat
@@ -38,8 +39,8 @@ class TripListAdapter (
     override fun onBindViewHolder(holder: VH, pos: Int) {
         val t = trips[pos]
         holder.dest.text = t.destination
-        val start = dateFormat.format(Date(t.startDate))
-        val end = t.endDate?.let { dateFormat.format(Date(it)) } ?: "—"
+        val start = Utils.dateTimeFormat.format(Date(trips[pos].startDate))
+        val end = t.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
         holder.dates.text = "$start – $end"
     }
 

@@ -28,4 +28,8 @@ class TripRepository @Inject constructor(
     suspend fun getTripById(id: Long): TripEntity? {
         return tripDao.getTripById(id)
     }
+
+    suspend fun isTripOverlapping(start: Long, end: Long): Boolean {
+        return tripDao.getOverlappingTrips(start, end).isNotEmpty()
+    }
 }

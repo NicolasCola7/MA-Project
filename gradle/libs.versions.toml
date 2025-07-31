@@ -35,6 +35,7 @@ playServicesLocation = "21.3.0"
 playServicesMaps = "19.2.0"
 androidx-navigation = "2.9.2"
 navigationFragment = "2.9.2"
+places = "4.4.1"
 
 [libraries]
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
@@ -77,6 +78,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
 
 
 [plugins]

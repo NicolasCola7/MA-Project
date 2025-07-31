@@ -15,6 +15,8 @@ object Utils {
     val DEFAULT_POSITION =  LatLng(44.4949, 11.3426)
 
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
+    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
+
 
     fun hasLocationPermissions(context: Context) =
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
