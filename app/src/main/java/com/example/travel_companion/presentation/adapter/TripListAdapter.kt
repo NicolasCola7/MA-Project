@@ -3,17 +3,15 @@ package com.example.travel_companion.presentation.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.presentation.Utils
-import dagger.hilt.android.scopes.FragmentScoped
-
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 class TripListAdapter (
     private var trips: List<TripEntity>,
@@ -25,10 +23,12 @@ class TripListAdapter (
     inner class VH(item: View): RecyclerView.ViewHolder(item) {
         val dest: TextView = item.findViewById(R.id.tvDestination)
         val dates: TextView = item.findViewById(R.id.tvDates)
+        val tripImage: ImageView = item.findViewById(R.id.ivTripImage) // Nuovo campo
+        val imagePlaceholder: View = item.findViewById(R.id.viewImagePlaceholder) // Placeholder opzionale
 
         init {
             itemView.setOnClickListener {
-                onTripClick(trips[getAbsoluteAdapterPosition()])
+                onTripClick(trips[absoluteAdapterPosition])
             }
         }
     }
@@ -39,9 +39,22 @@ class TripListAdapter (
     override fun onBindViewHolder(holder: VH, pos: Int) {
         val t = trips[pos]
         holder.dest.text = t.destination
-        val start = Utils.dateTimeFormat.format(Date(trips[pos].startDate))
-        val end = t.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
+
+        val start = Utils.dateTimeFormat.format(Date(t.startDate))
+        val end = Utils.dateTimeFormat.format(Date(t.endDate))
         holder.dates.text = "$start – $end"
+
+        // Gestione dell'immagine
+        val bitmap = Utils.byteArrayToBitmap(t.imageData)
+        if (bitmap != null) {
+            holder.tripImage.setImageBitmap(bitmap)
+            holder.tripImage.visibility = View.VISIBLE
+            // Nascondi il placeholder se presente
+            holder.imagePlaceholder?.visibility = View.GONE
+        } else {
+            //mostra il placeholder
+            holder.imagePlaceholder?.visibility = View.VISIBLE
+        }
     }
 
     override fun getItemCount() = trips.size

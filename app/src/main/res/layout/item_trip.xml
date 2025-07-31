@@ -1,20 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:padding="12dp"
-    android:orientation="vertical"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
 
-    <TextView
-        android:id="@+id/tvDestination"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp">
 
-    <TextView
-        android:id="@+id/tvDates"
-        android:textSize="14sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-</LinearLayout>
+        <!-- Immagine del viaggio -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="12dp"
+            app:cardCornerRadius="8dp">
+
+            <ImageView
+                android:id="@+id/ivTripImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="Immagine del viaggio"
+                tools:src="@drawable/ic_launcher_background" />
+
+            <!-- Placeholder opzionale quando non c'è immagine -->
+            <View
+                android:id="@+id/viewImagePlaceholder"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/gray_light"
+                android:visibility="gone" />
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Contenuto testuale -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvDestination"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Roma, Italia" />
+
+            <TextView
+                android:id="@+id/tvDates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@color/gray_dark"
+                android:layout_marginTop="4dp"
+                tools:text="15/12/2024 10:00 – 20/12/2024 18:00" />
+
+        </LinearLayout>
+
+        <!-- Freccia o icona per indicare che è cliccabile -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical"
+            android:contentDescription="Vai ai dettagli"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

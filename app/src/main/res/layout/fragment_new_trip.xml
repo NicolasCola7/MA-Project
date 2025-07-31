@@ -26,6 +26,38 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- ImageView per mostrare l'immagine del luogo -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_place_image"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <ImageView
+                    android:id="@+id/image_place"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Immagine del luogo selezionato"
+                    tools:src="@drawable/ic_launcher_background" />
+
+                <!-- Overlay con il nome del luogo -->
+                <TextView
+                    android:id="@+id/text_place_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/gradient_overlay"
+                    android:padding="12dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Nome del luogo" />
+            </androidx.cardview.widget.CardView>
 
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -67,9 +99,7 @@
                 android:entries="@array/trip_types"
                 android:backgroundTint="?attr/colorControlNormal"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
-                />
-
+                android:layout_marginBottom="12dp" />
 
             <Button
                 android:id="@+id/btn_create_trip"
