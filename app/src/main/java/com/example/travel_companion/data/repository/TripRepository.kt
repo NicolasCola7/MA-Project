@@ -32,4 +32,8 @@ class TripRepository @Inject constructor(
     suspend fun isTripOverlapping(start: Long, end: Long): Boolean {
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
+
+    suspend fun getTripAtTime(timestamp: Long): TripEntity? {
+        return tripDao.getTripAtTime(timestamp)
+    }
 }

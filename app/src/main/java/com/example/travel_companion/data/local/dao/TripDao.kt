@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.example.travel_companion.data.local.entity.TripEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TripDao {
@@ -28,4 +29,6 @@ interface TripDao {
     @Query(" SELECT * FROM trip WHERE (:newStart BETWEEN startDate AND endDate) OR (:newEnd BETWEEN startDate AND endDate) OR (startDate BETWEEN :newStart AND :newEnd)")
     suspend fun getOverlappingTrips(newStart: Long, newEnd: Long): List<TripEntity>
 
+    @Query("SELECT * FROM trip WHERE startDate <= :timestamp AND endDate >= :timestamp LIMIT 1")
+    suspend fun getTripAtTime(timestamp: Long): TripEntity?
 }
