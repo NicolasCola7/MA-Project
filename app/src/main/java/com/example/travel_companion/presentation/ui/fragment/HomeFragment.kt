@@ -1,5 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentHomeBinding
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
@@ -37,24 +40,39 @@ class HomeFragment : Fragment() {
 
         viewModel.todayTrip.observe(viewLifecycleOwner) { trip ->
             if (trip != null) {
-                // Mostra la card del viaggio
                 binding.cardTrip.visibility = View.VISIBLE
                 binding.tvNoTrip.visibility = View.GONE
 
+                // Destinazione
                 binding.tvDestination.text = trip.destination
 
+                // Date
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                val start = dateFormat.format(Date(trip.startDate))
-                val end = dateFormat.format(Date(trip.endDate))
-                binding.tvDates.text = "Dal $start al $end"
+                binding.tvDates.text = "${dateFormat.format(Date(trip.startDate))} – ${dateFormat.format(Date(trip.endDate))}"
 
-                // Stato IN CORSO
+                // Stato
                 binding.tvTripStatus.text = "IN CORSO"
                 binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
-                binding.imgStatus.setColorFilter(ContextCompat.getColor(requireContext(), R.color.green))
+
+                // Immagine o placeholder
+                if (trip.imageData != null) {
+                    binding.viewImagePlaceholder.visibility = View.GONE
+                    val bmp = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
+                    binding.ivTripImage.setImageBitmap(bmp)
+                } else {
+                    binding.viewImagePlaceholder.visibility = View.VISIBLE
+                    binding.ivTripImage.setImageDrawable(null)
+                }
+
+                // Click → dettagli viaggio
+                binding.cardTrip.setOnClickListener {
+                    // Navigazione ai dettagli
+                    findNavController().navigate(
+                        HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
+                    )
+                }
 
             } else {
-                // Nessun viaggio oggi
                 binding.cardTrip.visibility = View.GONE
                 binding.tvNoTrip.visibility = View.VISIBLE
             }

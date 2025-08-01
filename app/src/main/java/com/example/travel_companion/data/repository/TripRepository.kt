@@ -3,6 +3,7 @@ package com.example.travel_companion.data.repository
 import androidx.lifecycle.LiveData
 import com.example.travel_companion.data.local.dao.TripDao
 import com.example.travel_companion.data.local.entity.TripEntity
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class TripRepository @Inject constructor(
@@ -33,7 +34,8 @@ class TripRepository @Inject constructor(
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
 
-    suspend fun getTripAtTime(timestamp: Long): TripEntity? {
-        return tripDao.getTripAtTime(timestamp)
+    fun getTripAtTimeFlow(timestamp: Long): Flow<TripEntity?> {
+        return tripDao.getTripAtTimeFlow(timestamp)
     }
+
 }

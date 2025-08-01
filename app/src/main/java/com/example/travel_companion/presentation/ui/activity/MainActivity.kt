@@ -47,10 +47,18 @@ class MainActivity : AppCompatActivity() {
         bottomNavigationView.setupWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            when(destination.id) {
+            when (destination.id) {
+                R.id.homeFragment -> binding.tvToolbarTitle.text = "Home"
+                R.id.tripsFragment -> binding.tvToolbarTitle.text = "Viaggi"
+                R.id.statisticsFragment -> binding.tvToolbarTitle.text = "Statistiche"
+                R.id.tripDetailFragment -> binding.tvToolbarTitle.text = "Dettaglio viaggio"
+            }
+
+            // Mostra/nascondi la BottomNavigation
+            when (destination.id) {
                 R.id.homeFragment, R.id.tripsFragment, R.id.statisticsFragment ->
-                    bottomNavigationView.visibility = View.VISIBLE
-                else -> bottomNavigationView.visibility = View.GONE
+                    binding.bottomNavigationView.visibility = View.VISIBLE
+                else -> binding.bottomNavigationView.visibility = View.GONE
             }
         }
 

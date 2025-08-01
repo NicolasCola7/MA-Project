@@ -30,5 +30,5 @@ interface TripDao {
     suspend fun getOverlappingTrips(newStart: Long, newEnd: Long): List<TripEntity>
 
     @Query("SELECT * FROM trip WHERE startDate <= :timestamp AND endDate >= :timestamp LIMIT 1")
-    suspend fun getTripAtTime(timestamp: Long): TripEntity?
+    fun getTripAtTimeFlow(timestamp: Long): Flow<TripEntity?>
 }
