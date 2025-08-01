@@ -34,8 +34,7 @@ class TripRepository @Inject constructor(
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
 
-    fun getTripAtTimeFlow(timestamp: Long): Flow<TripEntity?> {
-        return tripDao.getTripAtTimeFlow(timestamp)
+    fun getTripAtTimeLive(timestamp: Long): LiveData<TripEntity?> {
+        return tripDao.getTripAtTimeLive(timestamp)
     }
-
 }

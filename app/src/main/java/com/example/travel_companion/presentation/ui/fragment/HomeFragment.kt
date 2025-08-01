@@ -43,28 +43,27 @@ class HomeFragment : Fragment() {
                 binding.cardTrip.visibility = View.VISIBLE
                 binding.tvNoTrip.visibility = View.GONE
 
-                // Destinazione
                 binding.tvDestination.text = trip.destination
 
-                // Date
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                binding.tvDates.text = "${dateFormat.format(Date(trip.startDate))} – ${dateFormat.format(Date(trip.endDate))}"
+                val start = dateFormat.format(Date(trip.startDate))
+                val end = dateFormat.format(Date(trip.endDate))
+                binding.tvDates.text = "$start - $end"
 
-                // Stato
                 binding.tvTripStatus.text = "IN CORSO"
-                binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+                binding.tvTripStatus.setTextColor(
+                    ContextCompat.getColor(requireContext(), R.color.green)
+                )
 
-                // Immagine o placeholder
-                if (trip.imageData != null) {
-                    binding.viewImagePlaceholder.visibility = View.GONE
-                    val bmp = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
+                //Mostra immagine se presente
+                trip.imageData?.let {
+                    val bmp = BitmapFactory.decodeByteArray(it, 0, it.size)
                     binding.ivTripImage.setImageBitmap(bmp)
-                } else {
+                    binding.viewImagePlaceholder.visibility = View.GONE
+                } ?: run {
                     binding.viewImagePlaceholder.visibility = View.VISIBLE
-                    binding.ivTripImage.setImageDrawable(null)
                 }
 
-                // Click → dettagli viaggio
                 binding.cardTrip.setOnClickListener {
                     // Navigazione ai dettagli
                     findNavController().navigate(
@@ -78,6 +77,7 @@ class HomeFragment : Fragment() {
             }
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -29,6 +29,6 @@ interface TripDao {
     @Query(" SELECT * FROM trip WHERE (:newStart BETWEEN startDate AND endDate) OR (:newEnd BETWEEN startDate AND endDate) OR (startDate BETWEEN :newStart AND :newEnd)")
     suspend fun getOverlappingTrips(newStart: Long, newEnd: Long): List<TripEntity>
 
-    @Query("SELECT * FROM trip WHERE startDate <= :timestamp AND endDate >= :timestamp LIMIT 1")
-    fun getTripAtTimeFlow(timestamp: Long): Flow<TripEntity?>
+    @Query(" SELECT * FROM trip WHERE :timestamp BETWEEN startDate AND endDate LIMIT 1")
+    fun getTripAtTimeLive(timestamp: Long): LiveData<TripEntity?>
 }

@@ -18,22 +18,12 @@ class HomeViewModel @Inject constructor(
     private val tripRepository: TripRepository
 ) : ViewModel() {
 
-    private val _todayTrip = MutableLiveData<TripEntity?>()
-    val todayTrip: LiveData<TripEntity?> get() = _todayTrip
-
-    private val _currentDate = MutableLiveData<String>()
-    val currentDate: LiveData<String> get() = _currentDate
-
-    init {
+    val currentDate: LiveData<String> = MutableLiveData<String>().apply {
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
-        _currentDate.value = dateFormat.format(Date())
-
-        // osserva cambiamenti in tempo reale
-        val now = System.currentTimeMillis()
-        viewModelScope.launch {
-            tripRepository.getTripAtTimeFlow(now).collect { trip ->
-                _todayTrip.postValue(trip)
-            }
-        }
+        value = dateFormat.format(Date())
     }
+
+    //si aggiorna automaticamente se il viaggio cambia o viene eliminato
+    val todayTrip: LiveData<TripEntity?> =
+        tripRepository.getTripAtTimeLive(System.currentTimeMillis())
 }
