@@ -3,6 +3,7 @@ package com.example.travel_companion.presentation.viewmodel
 import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
+import com.example.travel_companion.domain.model.TripStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,16 +20,19 @@ class HomeViewModel @Inject constructor(
     private val _currentDate = MutableLiveData<String>()
     val currentDate: LiveData<String> get() = _currentDate
 
-    // LiveData del viaggio in corso
+    // LiveData del viaggio in corso (ora basato sullo status nel DB)
     private val currentTrip: LiveData<TripEntity?> =
         liveData(Dispatchers.IO) {
-            emitSource(tripRepository.getTripAtTimeLive(System.currentTimeMillis()))
-        }
+            emitSource(tripRepository.getTripsByStatus(TripStatus.STARTED))
+        }.map { trips -> trips.firstOrNull() }
 
     // LiveData del prossimo viaggio programmato
     private val nextTrip: LiveData<TripEntity?> =
         liveData(Dispatchers.IO) {
-            emitSource(tripRepository.getNextPlannedTripLive(System.currentTimeMillis()))
+            emitSource(tripRepository.getTripsByStatus(TripStatus.PLANNED))
+        }.map { trips ->
+            trips.filter { it.startDate > System.currentTimeMillis() }
+                .minByOrNull { it.startDate }
         }
 
     // LiveData del tempo corrente, aggiornato ogni minuto
@@ -45,7 +49,7 @@ class HomeViewModel @Inject constructor(
             }
         }
         addSource(nowLive) {
-            // Forza il ricalcolo dello stato senza nuova query se necessario
+            // Forza il ricalcolo dello stato
             value = currentTrip.value ?: nextTrip.value
         }
     }
@@ -54,6 +58,9 @@ class HomeViewModel @Inject constructor(
         // Aggiorna la data odierna
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
         _currentDate.value = dateFormat.format(Date())
+
+        // Avvia il monitoraggio automatico degli stati
+        tripRepository.startStatusMonitoring(viewModelScope)
 
         // Aggiorna "ora" ogni minuto
         viewModelScope.launch {

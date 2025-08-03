@@ -52,15 +52,32 @@ class HomeFragment : Fragment() {
                 val end = dateFormat.format(Date(trip.endDate))
                 binding.tvDates.text = "$start – $end"
 
-                // Stato viaggio
-                if (System.currentTimeMillis() in trip.startDate..trip.endDate) {
-                    // Viaggio in corso
-                    binding.tvTripStatus.text = "IN CORSO"
-                    binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
-                } else {
-                    // Prossimo viaggio
-                    binding.tvTripStatus.text = "PROGRAMMATO"
-                    binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.purple_700))
+                // Stato viaggio basato sul campo status nel database
+                when (trip.status) {
+                    TripStatus.PLANNED -> {
+                        binding.tvTripStatus.text = "PROGRAMMATO"
+                        binding.tvTripStatus.setTextColor(
+                            ContextCompat.getColor(requireContext(), R.color.purple_700)
+                        )
+                    }
+                    TripStatus.STARTED -> {
+                        binding.tvTripStatus.text = "IN CORSO"
+                        binding.tvTripStatus.setTextColor(
+                            ContextCompat.getColor(requireContext(), R.color.green)
+                        )
+                    }
+                    TripStatus.PAUSED -> {
+                        binding.tvTripStatus.text = "IN PAUSA"
+                        binding.tvTripStatus.setTextColor(
+                            ContextCompat.getColor(requireContext(), R.color.red)
+                        )
+                    }
+                    TripStatus.FINISHED -> {
+                        binding.tvTripStatus.text = "COMPLETATO"
+                        binding.tvTripStatus.setTextColor(
+                            ContextCompat.getColor(requireContext(), R.color.gray_dark)
+                        )
+                    }
                 }
 
                 // Immagine
@@ -79,6 +96,7 @@ class HomeFragment : Fragment() {
                         HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
                     )
                 }
+
             } else {
                 // Nessun viaggio
                 binding.cardTrip.visibility = View.GONE
