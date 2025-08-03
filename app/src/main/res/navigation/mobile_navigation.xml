@@ -45,14 +45,6 @@
             app:destination="@id/photoGalleryFragment"/>
 
         <action
-            android:id="@+id/action_tripDetailFragment_to_createNoteFragment"
-            app:destination="@id/createNoteFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim"
-            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
-
-        <action
             android:id="@+id/action_tripDetailFragment_to_noteListFragment"
             app:destination="@id/noteListFragment" />
 
@@ -85,9 +77,18 @@
         android:id="@+id/noteListFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NotesListFragment"
         android:label="Note">
+
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_notesListFragment_to_createNoteFragment"
+            app:destination="@id/createNoteFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
 

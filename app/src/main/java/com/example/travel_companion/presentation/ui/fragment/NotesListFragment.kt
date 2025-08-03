@@ -7,7 +7,9 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNoteListBinding
 import com.example.travel_companion.presentation.adapter.NotesListAdapter
@@ -40,6 +42,7 @@ class NotesListFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
         binding.recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         return binding.root
     }
@@ -47,7 +50,18 @@ class NotesListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //Il fragment osserva il LiveData del ViewModel e aggiorna l’adapter con le nuove note.
+        binding.addNote.setOnClickListener {
+            val action = NotesListFragmentDirections
+                .actionNotesListFragmentToCreateNoteFragment(args.tripId)
+            findNavController().navigate(action)
+        }
+
+        initNotesData()
+    }
+
+    private fun initNotesData() {
+        viewModel.loadNotes(args.tripId)
+
         viewModel.notes.observe(viewLifecycleOwner) { notes ->
             adapter.submitList(notes)
         }
