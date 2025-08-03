@@ -4,9 +4,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
+import com.example.travel_companion.databinding.ItemTripBinding
 import com.example.travel_companion.presentation.Utils
 import dagger.hilt.android.scopes.FragmentScoped
 
@@ -15,39 +18,50 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
-class TripListAdapter (
-    private var trips: List<TripEntity>,
+class TripListAdapter(
     private val onTripClick: (TripEntity) -> Unit
-) : RecyclerView.Adapter<TripListAdapter.VH>() {
+) : ListAdapter<TripEntity, TripListAdapter.TripViewHolder>(TripDiffCallback()) {
 
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
+        val binding = ItemTripBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return TripViewHolder(binding)
+    }
 
-    inner class VH(item: View): RecyclerView.ViewHolder(item) {
-        val dest: TextView = item.findViewById(R.id.tvDestination)
-        val dates: TextView = item.findViewById(R.id.tvDates)
+    override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
+        holder.bind(getItem(position), onTripClick)
+    }
 
-        init {
-            itemView.setOnClickListener {
-                onTripClick(trips[getAbsoluteAdapterPosition()])
-            }
+    inner class TripViewHolder(private val binding: ItemTripBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(
+            trip: TripEntity,
+            onTripClick: (TripEntity) -> Unit,
+        ) {
+            binding.tvDestination.text = trip.destination
+
+            // Format dates with null safety
+            val startDate = Utils.dateTimeFormat.format(Date(trip.startDate))
+            val endDate = trip.endDate?.let {
+                Utils.dateTimeFormat.format(Date(it))
+            } ?: "—"
+            binding.tvDates.text = "$startDate – $endDate"
+
+            binding.root.setOnClickListener { onTripClick(trip) }
         }
     }
+}
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_trip, parent, false))
-
-    override fun onBindViewHolder(holder: VH, pos: Int) {
-        val t = trips[pos]
-        holder.dest.text = t.destination
-        val start = Utils.dateTimeFormat.format(Date(trips[pos].startDate))
-        val end = t.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
-        holder.dates.text = "$start – $end"
+class TripDiffCallback : DiffUtil.ItemCallback<TripEntity>() {
+    override fun areItemsTheSame(oldItem: TripEntity, newItem: TripEntity): Boolean {
+        return oldItem.id == newItem.id
     }
 
-    override fun getItemCount() = trips.size
-
-    fun update(newData: List<TripEntity>) {
-        trips = newData
-        notifyDataSetChanged()
+    override fun areContentsTheSame(oldItem: TripEntity, newItem: TripEntity): Boolean {
+        return oldItem == newItem
     }
 }

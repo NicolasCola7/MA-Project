@@ -15,7 +15,8 @@ import com.example.travel_companion.data.local.entity.*
         PhotoEntity::class,
         NoteEntity::class
     ],
-    version = 1
+    version = 1,
+    exportSchema = true
 )
 
 abstract class AppDatabase : RoomDatabase() {
