@@ -69,62 +69,70 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkLocationPermission() {
-        if (checkSelfPermission(
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        val fineLocation = checkSelfPermission(
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-                AlertDialog.Builder(this)
-                    .setTitle("Permessi Localizzazione Richiesti")
-                    .setMessage("Questa app richiede tutti i permessi di localizzazione per funzionare correttamente, accettali per poterla usare.")
-                    .setPositiveButton(
-                        "OK"
-                    ) { _, _ ->
-                        //Prompt the user once explanation has been shown
-                        requestLocationPermission()
-                    }
-                    .create()
-                    .show()
-            } else {
-                // No explanation needed, we can request the permission.
-                requestLocationPermission()
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val backgroundLocation = checkSelfPermission(
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            manageLocationPermission(fineLocation && backgroundLocation)
         } else {
-            checkBackgroundLocation()
+            manageLocationPermission(fineLocation)
         }
     }
 
-    private fun checkBackgroundLocation() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestBackgroundLocationPermission()
+    private fun manageLocationPermission(permissionsGranted: Boolean) {
+        if(permissionsGranted)
+            return
+
+        val dialog =  AlertDialog.Builder(this)
+            .setTitle("Permessi Localizzazione Richiesti")
+            .setMessage("Questa app richiede tutti i permessi di localizzazione per funzionare correttamente, accettali per poterla usare.")
+            .setPositiveButton(
+                "OK"
+            ) { _, _ ->
+                //Prompt the user once explanation has been shown
+                requestLocationPermission()
+            }
+            .create()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (shouldShowRequestPermissionRationale(
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            ) {
+                dialog.show()
+            } else {
+                requestLocationPermission()
+            }
+        } else {
+            if (shouldShowRequestPermissionRationale(
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+            ) {
+                dialog.show()
+            } else {
+                requestLocationPermission()
+            }
         }
     }
 
     private fun requestLocationPermission() {
-        requestPermissions(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            ),
-            MY_PERMISSIONS_REQUEST_LOCATION
-        )
-    }
-
-    private fun requestBackgroundLocationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             requestPermissions(
                 arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 ),
-                MY_PERMISSIONS_REQUEST_BACKGROUND_LOCATION
+                CURRENT_LOCATION_PERMISSIONS_REQUEST
             )
         } else {
             requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                MY_PERMISSIONS_REQUEST_LOCATION
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ),
+                OLDER_LOCATION_PERMISSIONS_REQUEST
             )
         }
     }
@@ -137,59 +145,61 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when (requestCode) {
-            MY_PERMISSIONS_REQUEST_LOCATION -> {
-
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        // Now check background location
-                        checkBackgroundLocation()
-                } else {
-                    Toast.makeText(this, "Concedi tutti i permessi di localizzazione per usare l'app", Toast.LENGTH_LONG).show()
-
-                    // Check if we are in a state where the user has denied the permission and
-                    // selected Don't ask again
-                    if (!shouldShowRequestPermissionRationale(
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                        )
-                    ) {
-                        startActivity(
-                            Intent(
-                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.fromParts("package", this.packageName, null),
-                            ),
-                        )
-                    } else {
-                        finish()
-                    }
-                }
-                return
+            CURRENT_LOCATION_PERMISSIONS_REQUEST -> {
+                handleLocationPermissionResults(grantResults, true)
             }
-            MY_PERMISSIONS_REQUEST_BACKGROUND_LOCATION -> {
-                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    // permission denied
-                    Toast.makeText(this, "Concedi tutti i permessi di localizzazione per usare l'app", Toast.LENGTH_LONG).show()
-                    startActivity(
-                        Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", this.packageName, null),
-                        )
+            OLDER_LOCATION_PERMISSIONS_REQUEST -> {
+                handleLocationPermissionResults(grantResults, false)
+            }
+        }
+    }
+
+    private fun handleLocationPermissionResults(grantResults: IntArray, current: Boolean) {
+        if(current) {
+            if (grantResults.isEmpty() ||
+                grantResults[0] != PackageManager.PERMISSION_GRANTED ||
+                grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+
+                Toast.makeText(
+                    this,
+                    "Concedi tutti i permessi di localizzazione per usare l'app",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", this.packageName, null),
+                    ),
+                )
+            }
+        } else {
+            if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                // permission denied
+                Toast.makeText(
+                    this,
+                    "Concedi tutti i permessi di localizzazione per usare l'app",
+                    Toast.LENGTH_LONG
+                ).show()
+                
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", this.packageName, null),
                     )
-                }
-                return
+                )
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_DENIED
-        ) {
-            requestLocationPermission()
-        }
+
+        checkLocationPermission()
     }
 
     companion object {
-        private const val MY_PERMISSIONS_REQUEST_LOCATION = 99
-        private const val MY_PERMISSIONS_REQUEST_BACKGROUND_LOCATION = 66
+        private const val CURRENT_LOCATION_PERMISSIONS_REQUEST = 99 // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        private const val OLDER_LOCATION_PERMISSIONS_REQUEST = 66  //  Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
     }
 }
