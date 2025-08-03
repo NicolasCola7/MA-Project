@@ -1,6 +1,8 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.content.Intent
+import android.location.Geocoder
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -8,6 +10,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
@@ -26,11 +29,14 @@ import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.TrackingService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.IOException
 import java.util.Date
+import java.util.Locale
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -64,19 +70,26 @@ class TripDetailsFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        binding.mapView.onCreate(savedInstanceState)
         setupTopMenu()
         setupBottomNavigation()
         initTripData()
         setupClickListeners()
+        initializeMap()
+        subscribeToObservers()
 
-        // initialize map
+    }
+
+    private fun initializeMap() {
         binding.mapView.getMapAsync {
             map = it
             addAllPolylines()
         }
 
-        subscribeToObservers()
+        //TODO:
+        // insert in the TripEntity the ccordinates of the destination and init the map with these
+        //map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+
     }
 
     private fun setupTopMenu() {
@@ -119,12 +132,8 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun setupClickListeners() {
-        binding.btnStartTrip.setOnClickListener {
-            startTracking()
-        }
-
-        binding.btnPauseTrip.setOnClickListener {
-            startTracking()
+        binding.btnToggleTracking.setOnClickListener {
+            toggleTracking()
         }
     }
 
@@ -133,12 +142,13 @@ class TripDetailsFragment: Fragment() {
 
         viewModel.trip.observe(viewLifecycleOwner) {
             trip -> trip?.let {
-                showTripInfo(it)
+
+                //showTripInfo(it)
             }
         }
 
         viewModel.coordinates.observe(viewLifecycleOwner) { coordinates ->
-            binding.tvCoordinatesCount.text = "Coordinate registrate: ${coordinates.size}"
+            // binding.tvCoordinatesCount.text = "Coordinate registrate: ${coordinates.size}"
             if(coordinates.isNotEmpty()) {
                 // TODO: initialize map with stored coordinates
                 //showTripStats(coordinates)
@@ -154,15 +164,19 @@ class TripDetailsFragment: Fragment() {
         TrackingService.pathPoints.observe(viewLifecycleOwner) {
             pathPoints = it
 
+            /* TODO provare senza CoordinateEntity
             val lat = it.last().last().latitude
             val long = it.last().last().longitude
             viewModel.insertCoordinate(lat, long, args.tripId)
+
+             */
 
             addLatestPolyline()
             moveCameraToUser()
         }
     }
 
+    /*
     private fun showTripInfo(trip: TripEntity) {
         binding.tvDestination.text = trip.destination
         binding.tvType.text = trip.type
@@ -170,14 +184,14 @@ class TripDetailsFragment: Fragment() {
             trip.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
         }"
         binding.tvStatus.text = "Stato: ${trip.status.name}"
-    }
+    }*/
 
-    private fun startTracking() {
-        sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
-    }
-
-    private fun pauseTracking() {
-        sendCommandToService("ACTION_PAUSE_SERVICE")
+    private fun toggleTracking() {
+        if(isTracking) {
+            sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
+        } else {
+            sendCommandToService("ACTION_PAUSE_SERVICE")
+        }
     }
 
     private fun showDeleteTripDialog() {
@@ -285,14 +299,15 @@ class TripDetailsFragment: Fragment() {
         super.onPause()
         binding.mapView.onPause()
     }
-    /*
+
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         binding.mapView.onSaveInstanceState(outState)
-    } */
+    }
 
     override fun onDestroyView() {
-        //pauseTracking()
+        //sendCommandToService("ACTION_PAUSE_SERVICE")
         super.onDestroyView()
         _binding = null
     }

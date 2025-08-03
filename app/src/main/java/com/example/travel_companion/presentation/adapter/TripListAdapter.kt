@@ -51,6 +51,7 @@ class TripListAdapter(
             } ?: "—"
             binding.tvDates.text = "$startDate – $endDate"
 
+
             binding.root.setOnClickListener { onTripClick(trip) }
         }
     }
