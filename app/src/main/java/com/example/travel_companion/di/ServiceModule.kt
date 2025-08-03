@@ -44,7 +44,7 @@ object ServiceModule {
     ) = NotificationCompat.Builder(app, "tracking_channel")
         .setAutoCancel(false)
         .setOngoing(true)
-        .setContentTitle("Running App")
+        .setContentTitle("Travel Companion")
         .setContentText("00:00:00")
         .setContentIntent(pendingIntent)
 }
