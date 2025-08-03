@@ -65,6 +65,8 @@ class TripDetailsFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupTopMenu()
+        setupBottomNavigation()
         initTripData()
         setupClickListeners()
 
@@ -77,27 +79,7 @@ class TripDetailsFragment: Fragment() {
         subscribeToObservers()
     }
 
-    private fun setupClickListeners() {
-        binding.btnStartTrip.setOnClickListener {
-            startTracking()
-        }
-
-        binding.btnPauseTrip.setOnClickListener {
-            startTracking()
-        }
-
-        binding.btnNotes.setOnClickListener {
-            val action = TripDetailsFragmentDirections
-                .actionTripDetailFragmentToNoteListFragment(args.tripId)
-            findNavController().navigate(action)
-        }
-
-        binding.btnPhotos.setOnClickListener {
-            val action = TripDetailsFragmentDirections
-                .actionTripDetailFragmentToPhotoGalleryFragment(args.tripId)
-            findNavController().navigate(action)
-        }
-
+    private fun setupTopMenu() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_trip_detail, menu)
@@ -114,6 +96,36 @@ class TripDetailsFragment: Fragment() {
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.goToPhotoGallery -> {
+                    findNavController().navigate(
+                        TripDetailsFragmentDirections.actionTripDetailFragmentToPhotoGalleryFragment(args.tripId)
+                    )
+                    true
+                }
+                R.id.goToNotes -> {
+                    findNavController().navigate(
+                        TripDetailsFragmentDirections.actionTripDetailFragmentToNoteListFragment(args.tripId)
+                    )
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun setupClickListeners() {
+        binding.btnStartTrip.setOnClickListener {
+            startTracking()
+        }
+
+        binding.btnPauseTrip.setOnClickListener {
+            startTracking()
+        }
     }
 
     private fun initTripData() {

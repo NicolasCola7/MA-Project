@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.travel_companion.R
@@ -63,9 +64,29 @@ class PhotoGalleryFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        setupBottomNavigation()
         setupClickListeners()
         initGalleryData()
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.goToNotes -> {
+                    findNavController().navigate(
+                        PhotoGalleryFragmentDirections.actionPhotoGalleryFragmenttToNoteListFragment(args.tripId)
+                    )
+                    true
+                }
+                R.id.goToTripDetails -> {
+                    findNavController().navigate(
+                        PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToTripDetailsFragment(args.tripId)
+                    )
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun setupClickListeners() {

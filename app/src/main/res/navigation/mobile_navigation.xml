@@ -62,6 +62,14 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_photoGalleryFragment_to_tripDetailsFragment"
+            app:destination="@id/tripDetailFragment"/>
+
+        <action
+            android:id="@+id/action_photoGalleryFragmentt_to_noteListFragment"
+            app:destination="@id/noteListFragment" />
     </fragment>
 
     <fragment
@@ -89,6 +97,14 @@
             app:exitAnim="@anim/nav_default_exit_anim"
             app:popEnterAnim="@anim/nav_default_pop_enter_anim"
             app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+
+        <action
+            android:id="@+id/action_notesListFragment_to_photoGalleryFragment"
+            app:destination="@id/photoGalleryFragment"/>
+
+        <action
+            android:id="@+id/action_notesListFragment_to_tripdetailsFragment"
+            app:destination="@id/tripDetailFragment" />
     </fragment>
 
 

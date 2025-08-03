@@ -55,8 +55,29 @@ class NotesListFragment : Fragment() {
                 .actionNotesListFragmentToCreateNoteFragment(args.tripId)
             findNavController().navigate(action)
         }
+        setupBottomNavigation()
 
         initNotesData()
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.goToTripDetails -> {
+                    findNavController().navigate(
+                        NotesListFragmentDirections.actionNotesListFragmentToTripdetailsFragment(args.tripId)
+                    )
+                    true
+                }
+                R.id.goToPhotoGallery -> {
+                    findNavController().navigate(
+                        NotesListFragmentDirections.actionNotesListFragmentToPhotoGalleryFragment(args.tripId)
+                    )
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun initNotesData() {
