@@ -123,32 +123,20 @@
                 android:text="Termina viaggio" />
 
             <Button
-                android:id="@+id/btnTakePhoto"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Scatta foto"
-                android:layout_marginTop="16dp" />
-
-            <Button
-                android:id="@+id/btnGallery"
+                android:id="@+id/btnPhotos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Galleria foto"
+                android:text="Foto"
                 android:layout_marginTop="8dp" />
 
             <Button
-                android:id="@+id/btnCreateNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Crea nota"
-                android:layout_marginTop="8dp" />
-
-            <Button
-                android:id="@+id/btnViewNotes"
+                android:id="@+id/btnNotes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Visualizza note"
+                android:text="Note"
                 android:layout_marginTop="8dp" />
+
+
         </LinearLayout>
     </ScrollView>
 </layout>

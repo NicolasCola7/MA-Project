@@ -10,7 +10,7 @@ import com.example.travel_companion.databinding.ItemNoteBinding
 import dagger.hilt.android.scopes.FragmentScoped
 import javax.inject.Inject
 
-class NotesListAdapter (private var notes: List<NoteEntity>) :
+class NotesListAdapter () :
     ListAdapter<NoteEntity, NotesListAdapter.NotesViewHolder>(NotesDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotesViewHolder {
@@ -23,10 +23,8 @@ class NotesListAdapter (private var notes: List<NoteEntity>) :
     }
 
     override fun onBindViewHolder(holder: NotesViewHolder, position: Int) {
-        holder.bind(notes[position])
+        holder.bind(getItem(position))
     }
-
-    override fun getItemCount(): Int = notes.size
 
     inner class NotesViewHolder(private val binding: ItemNoteBinding) :
         RecyclerView.ViewHolder(binding.root) {

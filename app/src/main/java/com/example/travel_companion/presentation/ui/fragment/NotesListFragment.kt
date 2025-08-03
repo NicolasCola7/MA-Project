@@ -25,7 +25,7 @@ class NotesListFragment : Fragment() {
     private val args: NotesListFragmentArgs by navArgs()
     private val viewModel: NotesViewModel by viewModels()
 
-    lateinit var adapter: NotesListAdapter
+    private var adapter = NotesListAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,

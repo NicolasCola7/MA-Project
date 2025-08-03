@@ -66,13 +66,36 @@ class TripDetailsFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initTripData()
+        setupClickListeners()
 
+        // initialize map
+        binding.mapView.getMapAsync {
+            map = it
+            addAllPolylines()
+        }
+
+        subscribeToObservers()
+    }
+
+    private fun setupClickListeners() {
         binding.btnStartTrip.setOnClickListener {
             startTracking()
         }
 
         binding.btnPauseTrip.setOnClickListener {
             startTracking()
+        }
+
+        binding.btnNotes.setOnClickListener {
+            val action = TripDetailsFragmentDirections
+                .actionTripDetailFragmentToNoteListFragment(args.tripId)
+            findNavController().navigate(action)
+        }
+
+        binding.btnPhotos.setOnClickListener {
+            val action = TripDetailsFragmentDirections
+                .actionTripDetailFragmentToPhotoGalleryFragment(args.tripId)
+            findNavController().navigate(action)
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {
@@ -91,15 +114,6 @@ class TripDetailsFragment: Fragment() {
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-
-
-        // initialize map
-        binding.mapView.getMapAsync {
-            map = it
-            addAllPolylines()
-        }
-
-        subscribeToObservers()
     }
 
     private fun initTripData() {
@@ -259,11 +273,11 @@ class TripDetailsFragment: Fragment() {
         super.onPause()
         binding.mapView.onPause()
     }
-
+    /*
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         binding.mapView.onSaveInstanceState(outState)
-    }
+    } */
 
     override fun onDestroyView() {
         //pauseTracking()
