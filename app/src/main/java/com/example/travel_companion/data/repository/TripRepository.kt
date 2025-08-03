@@ -37,4 +37,9 @@ class TripRepository @Inject constructor(
     fun getTripAtTimeLive(timestamp: Long): LiveData<TripEntity?> {
         return tripDao.getTripAtTimeLive(timestamp)
     }
+
+    fun getNextPlannedTripLive(timestamp: Long): LiveData<TripEntity?> {
+        return tripDao.getNextPlannedTripLive(timestamp)
+    }
+
 }

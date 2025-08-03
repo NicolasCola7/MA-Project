@@ -31,4 +31,8 @@ interface TripDao {
 
     @Query(" SELECT * FROM trip WHERE :timestamp BETWEEN startDate AND endDate LIMIT 1")
     fun getTripAtTimeLive(timestamp: Long): LiveData<TripEntity?>
+
+    @Query("SELECT * FROM trip WHERE startDate > :timestamp ORDER BY startDate ASC LIMIT 1")
+    fun getNextPlannedTripLive(timestamp: Long): LiveData<TripEntity?>
+
 }

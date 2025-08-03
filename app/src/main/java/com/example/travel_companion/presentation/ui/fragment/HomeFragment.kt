@@ -10,9 +10,9 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.bumptech.glide.Glide
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentHomeBinding
+import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
@@ -38,29 +38,38 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.todayTrip.observe(viewLifecycleOwner) { trip ->
+        viewModel.tripToShow.observe(viewLifecycleOwner) { trip ->
             if (trip != null) {
                 binding.cardTrip.visibility = View.VISIBLE
                 binding.tvNoTrip.visibility = View.GONE
 
+                // Destinazione
                 binding.tvDestination.text = trip.destination
 
+                // Date formato "data ora – data ora"
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 val start = dateFormat.format(Date(trip.startDate))
                 val end = dateFormat.format(Date(trip.endDate))
-                binding.tvDates.text = "$start - $end"
+                binding.tvDates.text = "$start – $end"
 
-                binding.tvTripStatus.text = "IN CORSO"
-                binding.tvTripStatus.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.green)
-                )
+                // Stato viaggio
+                if (System.currentTimeMillis() in trip.startDate..trip.endDate) {
+                    // Viaggio in corso
+                    binding.tvTripStatus.text = "IN CORSO"
+                    binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+                } else {
+                    // Prossimo viaggio
+                    binding.tvTripStatus.text = "PROGRAMMATO"
+                    binding.tvTripStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.purple_700))
+                }
 
-                //Mostra immagine se presente
-                trip.imageData?.let {
-                    val bmp = BitmapFactory.decodeByteArray(it, 0, it.size)
-                    binding.ivTripImage.setImageBitmap(bmp)
+                // Immagine
+                if (trip.imageData != null) {
+                    val bitmap = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
+                    binding.ivTripImage.setImageBitmap(bitmap)
                     binding.viewImagePlaceholder.visibility = View.GONE
-                } ?: run {
+                } else {
+                    binding.ivTripImage.setImageDrawable(null)
                     binding.viewImagePlaceholder.visibility = View.VISIBLE
                 }
 
@@ -70,14 +79,13 @@ class HomeFragment : Fragment() {
                         HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
                     )
                 }
-
             } else {
+                // Nessun viaggio
                 binding.cardTrip.visibility = View.GONE
                 binding.tvNoTrip.visibility = View.VISIBLE
             }
         }
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
