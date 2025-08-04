@@ -12,6 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ServiceComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
+import com.example.travel_companion.R
 
 @Module
 @InstallIn(ServiceComponent::class)
@@ -33,7 +34,7 @@ object ServiceModule {
         Intent(app, MainActivity::class.java).also {
             it.action = "ACTION_SHOW_TRACKING_FRAGMENT"
         },
-        PendingIntent.FLAG_UPDATE_CURRENT
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
     @ServiceScoped
@@ -44,6 +45,7 @@ object ServiceModule {
     ) = NotificationCompat.Builder(app, "tracking_channel")
         .setAutoCancel(false)
         .setOngoing(true)
+        .setSmallIcon(R.drawable.ic_directions_run_black_24dp)
         .setContentTitle("Travel Companion")
         .setContentText("00:00:00")
         .setContentIntent(pendingIntent)

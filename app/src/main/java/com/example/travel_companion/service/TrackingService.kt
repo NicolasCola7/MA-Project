@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
@@ -21,6 +22,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
@@ -58,6 +60,7 @@ class TrackingService : LifecycleService() {
         super.onCreate()
         curNotificationBuilder = baseNotificationBuilder
         postInitialValues()
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         isTracking.observe(this) { // observes for changes in the tracking state
             updateLocationTracking(it)
@@ -112,12 +115,12 @@ class TrackingService : LifecycleService() {
             val pauseIntent = Intent(this, TrackingService::class.java).apply {
                 action = "ACTION_PAUSE_SERVICE"
             }
-            PendingIntent.getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
+            PendingIntent.getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE)
         } else {
             val resumeIntent = Intent(this, TrackingService::class.java).apply {
                 action = "ACTION_START_OR_RESUME_SERVICE"
             }
-            PendingIntent.getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT)
+            PendingIntent.getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE)
         }
 
         val notificationManager =

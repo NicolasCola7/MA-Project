@@ -1,8 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.content.Intent
-import android.location.Geocoder
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -10,8 +8,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.RequiresApi
-import androidx.compose.ui.graphics.Color
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -20,23 +16,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
-import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.TrackingService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import java.io.IOException
-import java.util.Date
-import java.util.Locale
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -87,7 +77,7 @@ class TripDetailsFragment: Fragment() {
         }
 
         //TODO:
-        // insert in the TripEntity the ccordinates of the destination and init the map with these
+        // insert in the TripEntity the coordinates of the destination and init the map with these
         //map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
 
     }
@@ -187,7 +177,7 @@ class TripDetailsFragment: Fragment() {
     }*/
 
     private fun toggleTracking() {
-        if(isTracking) {
+        if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
@@ -300,14 +290,14 @@ class TripDetailsFragment: Fragment() {
         binding.mapView.onPause()
     }
 
-
+    /*
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         binding.mapView.onSaveInstanceState(outState)
-    }
+    }*/
 
     override fun onDestroyView() {
-        //sendCommandToService("ACTION_PAUSE_SERVICE")
+        sendCommandToService("ACTION_PAUSE_SERVICE")
         super.onDestroyView()
         _binding = null
     }
