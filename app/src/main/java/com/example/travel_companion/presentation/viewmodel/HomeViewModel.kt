@@ -59,7 +59,6 @@ class HomeViewModel @Inject constructor(
     init {
         setupCurrentDate()
         startStatusMonitoring()
-        startTimeUpdates()
     }
 
     private fun setupCurrentDate() {
@@ -69,15 +68,6 @@ class HomeViewModel @Inject constructor(
 
     private fun startStatusMonitoring() {
         tripMonitoringService.startMonitoring(viewModelScope)
-    }
-
-    private fun startTimeUpdates() {
-        viewModelScope.launch {
-            while (true) {
-                delay(60_000) // ogni minuto
-                nowLive.postValue(System.currentTimeMillis())
-            }
-        }
     }
 
     override fun onCleared() {
