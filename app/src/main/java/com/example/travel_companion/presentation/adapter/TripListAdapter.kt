@@ -3,20 +3,19 @@ package com.example.travel_companion.presentation.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.ItemTripBinding
 import com.example.travel_companion.presentation.Utils
-import dagger.hilt.android.scopes.FragmentScoped
-
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 class TripListAdapter(
     private val onTripClick: (TripEntity) -> Unit
@@ -28,6 +27,7 @@ class TripListAdapter(
             parent,
             false
         )
+
         return TripViewHolder(binding)
     }
 
@@ -37,19 +37,33 @@ class TripListAdapter(
 
     inner class TripViewHolder(private val binding: ItemTripBinding) :
         RecyclerView.ViewHolder(binding.root) {
-
         fun bind(
             trip: TripEntity,
             onTripClick: (TripEntity) -> Unit,
         ) {
             binding.tvDestination.text = trip.destination
-
-            // Format dates with null safety
             val startDate = Utils.dateTimeFormat.format(Date(trip.startDate))
             val endDate = trip.endDate?.let {
                 Utils.dateTimeFormat.format(Date(it))
             } ?: "—"
             binding.tvDates.text = "$startDate – $endDate"
+
+            // Gestione dell'immagine
+            binding.ivTripImage.apply {
+                Glide.with(
+                    this
+                ).load(trip.imageData).into(binding.ivTripImage)
+            } 
+
+            if (binding.ivTripImage != null) {
+                binding.ivTripImage.visibility = View.VISIBLE
+                // Nascondi il placeholder se presente
+                binding.viewImagePlaceholder?.visibility = View.GONE
+
+            } else {
+                //mostra il placeholder
+                binding.viewImagePlaceholder?.visibility = View.VISIBLE
+            }
 
             binding.root.setOnClickListener { onTripClick(trip) }
         }

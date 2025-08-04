@@ -242,27 +242,27 @@ class TripDetailsFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        binding.mapView.onResume()
+        _binding?.mapView?.onResume()
     }
 
     override fun onStart() {
         super.onStart()
-        binding.mapView.onStart()
+        _binding?.mapView?.onStart()
     }
 
     override fun onStop() {
         super.onStop()
-        binding.mapView.onStop()
+        _binding?.mapView?.onStop()
     }
 
     override fun onPause() {
         super.onPause()
-        binding.mapView.onPause()
+        _binding?.mapView?.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        binding.mapView.onSaveInstanceState(outState)
+        _binding?.mapView?.onSaveInstanceState(outState) // safe call per evitare NPE
     }
 
     override fun onDestroyView() {
