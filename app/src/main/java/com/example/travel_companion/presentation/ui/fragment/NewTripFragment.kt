@@ -3,6 +3,7 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +21,10 @@ import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import com.google.android.gms.common.api.Status
 import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPhotoRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,6 +38,7 @@ class NewTripFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: TripsViewModel by viewModels()
     private var previousTripType: String? = null
+    private lateinit var placesClient: PlacesClient
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,6 +70,8 @@ class NewTripFragment : Fragment() {
             )
         }
 
+        placesClient = Places.createClient(requireContext())
+
         val autocompleteFragment =
             childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
 
@@ -73,14 +80,28 @@ class NewTripFragment : Fragment() {
                 Place.Field.ID,
                 Place.Field.DISPLAY_NAME,
                 Place.Field.FORMATTED_ADDRESS,
-                Place.Field.LOCATION
+                Place.Field.LOCATION,
+                Place.Field.PHOTO_METADATAS
             )
         )
 
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
-                Timber.i("Luogo selezionato: ${place.displayName}, ${place.formattedAddress}")
-                viewModel.selectedDestinationName = place.displayName ?: ""
+                val placeName = place.displayName ?: ""
+                val placeAddress = place.formattedAddress ?: ""
+
+                Timber.i("Luogo selezionato: $placeName, $placeAddress")
+                viewModel.selectedDestinationName = placeName
+
+                // Mostra il nome del luogo nell'overlay (se presente nel layout)
+                try {
+                    binding.textPlaceName.text = placeName
+                } catch (e: Exception) {
+                    Timber.d("textPlaceName non presente nel layout")
+                }
+
+                // Carica la foto del luogo
+                loadPlacePhoto(place)
             }
 
             override fun onError(status: Status) {
@@ -92,6 +113,57 @@ class NewTripFragment : Fragment() {
                 ).show()
             }
         })
+    }
+
+    private fun loadPlacePhoto(place: Place) {
+        val photoMetadatas = place.photoMetadatas
+        if (photoMetadatas.isNullOrEmpty()) {
+            Timber.d("Nessuna foto disponibile per questo luogo")
+            // Gestisci il caso in cui gli elementi UI non esistono ancora
+            try {
+                binding.cardPlaceImage.visibility = View.GONE
+            } catch (e: Exception) {
+                Timber.d("cardPlaceImage non presente nel layout")
+            }
+            viewModel.selectedPlaceImageData = null
+            return
+        }
+
+        // Prendi la prima foto disponibile
+        val photoMetadata = photoMetadatas[0]
+
+        // Crea la richiesta per scaricare la foto
+        val photoRequest = FetchPhotoRequest.builder(photoMetadata)
+            .setMaxWidth(800) // Larghezza massima in pixel
+            .setMaxHeight(600) // Altezza massima in pixel
+            .build()
+
+        placesClient.fetchPhoto(photoRequest)
+            .addOnSuccessListener { fetchPhotoResponse ->
+                val bitmap: Bitmap = fetchPhotoResponse.bitmap
+
+                // Gestisci il caso in cui gli elementi UI potrebbero non esistere
+                try {
+                    binding.imagePlace.setImageBitmap(bitmap)
+                    binding.cardPlaceImage.visibility = View.VISIBLE
+                } catch (e: Exception) {
+                    Timber.d("Elementi UI per l'immagine non presenti nel layout, ma l'immagine è stata comunque salvata")
+                }
+
+                // Salva l'immagine nel ViewModel per poi salvarla nel database
+                viewModel.setPlaceImage(bitmap)
+
+                Timber.d("Foto del luogo caricata con successo")
+            }
+            .addOnFailureListener { exception: Exception ->
+                Timber.e(exception, "Errore nel caricamento della foto")
+                try {
+                    binding.cardPlaceImage.visibility = View.GONE
+                } catch (e: Exception) {
+                    Timber.d("cardPlaceImage non presente nel layout")
+                }
+                viewModel.selectedPlaceImageData = null
+            }
     }
 
     //inizializza i listener degli altri elementi del fragment
@@ -217,6 +289,8 @@ class NewTripFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Reset dei dati quando si esce dal fragment
+        viewModel.resetData()
         _binding = null
     }
 }

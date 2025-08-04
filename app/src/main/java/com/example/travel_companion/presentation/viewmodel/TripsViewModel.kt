@@ -1,10 +1,11 @@
 package com.example.travel_companion.presentation.viewmodel
 
-import android.text.TextUtils
+import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.travel_companion.data.local.converter.Converters
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.presentation.Utils
@@ -21,6 +22,8 @@ class TripsViewModel @Inject constructor(
 
     val trips: LiveData<List<TripEntity>> = tripRepository.getAllTrips()
     var selectedDestinationName: String = ""
+    var selectedPlaceImageData: ByteArray? = null
+    private val converters = Converters()
 
     // Eventi UI
     private val _uiEvent = MutableLiveData<Event>()
@@ -65,7 +68,6 @@ class TripsViewModel @Inject constructor(
                 return
             }
         }
-
 
         val calendar = Calendar.getInstance()
         calendar.time = startDate
@@ -121,7 +123,8 @@ class TripsViewModel @Inject constructor(
             destination = destination,
             startDate = start,
             endDate = end,
-            type = type
+            type = type,
+            imageData = selectedPlaceImageData
         )
 
         //provo ad inserire un nuovo viaggio sul db, se il db mi dice che non ci sono conflitti lo inserisco
@@ -134,6 +137,25 @@ class TripsViewModel @Inject constructor(
                 _uiEvent.postValue(Event.ShowMessage("Esiste già un viaggio in questo intervallo di tempo"))
             }
         }
+    }
+
+    // Funzione per salvare l'immagine del luogo selezionato
+    fun setPlaceImage(bitmap: Bitmap) {
+        // Ridimensiona l'immagine per ottimizzare lo spazio su database
+        val resizedBitmap = Utils.resizeBitmap(bitmap, 400, 300)
+        // Usa il converter per convertire bitmap a ByteArray
+        selectedPlaceImageData = converters.fromBitmap(resizedBitmap)
+    }
+
+    // Funzione per ottenere il bitmap da ByteArray
+    fun getTripImage(trip: TripEntity): Bitmap? {
+        return trip.imageData?.let { converters.toBitmap(it) }
+    }
+
+    // Reset dei dati quando si esce dal fragment
+    fun resetData() {
+        selectedDestinationName = ""
+        selectedPlaceImageData = null
     }
 
     sealed class Event {

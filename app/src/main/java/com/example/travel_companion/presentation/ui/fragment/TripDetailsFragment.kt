@@ -8,6 +8,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -16,8 +17,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.TrackingService
@@ -27,6 +30,7 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Date
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -272,28 +276,28 @@ class TripDetailsFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        binding.mapView.onResume()
+        _binding?.mapView?.onResume()
     }
 
     override fun onStart() {
         super.onStart()
-        binding.mapView.onStart()
+        _binding?.mapView?.onStart()
     }
 
     override fun onStop() {
         super.onStop()
-        binding.mapView.onStop()
+        _binding?.mapView?.onStop()
     }
 
     override fun onPause() {
         super.onPause()
-        binding.mapView.onPause()
+        _binding?.mapView?.onPause()
     }
 
     /*
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        binding.mapView.onSaveInstanceState(outState)
+        _binding.mapView.onSaveInstanceState(outState)
     }*/
 
     override fun onDestroyView() {
