@@ -16,8 +16,8 @@ class TripRepository @Inject constructor(
         return tripDao.getAll()
     }
 
-    suspend fun addTrip(trip: TripEntity) {
-        tripDao.insert(trip)
+    suspend fun addTrip(trip: TripEntity): Long {
+        return tripDao.insert(trip)
     }
 
     suspend fun updateTrip(trip: TripEntity) {
@@ -36,7 +36,6 @@ class TripRepository @Inject constructor(
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
 
-    //per nic
     suspend fun updateTripStatus(tripId: Long, status: TripStatus) {
         tripDao.updateTripStatus(tripId, status)
     }
@@ -45,11 +44,21 @@ class TripRepository @Inject constructor(
         return tripDao.getTripsByStatus(status)
     }
 
+    suspend fun getTripsByStatusSync(status: TripStatus): List<TripEntity> {
+        return tripDao.getTripsByStatusSync(status)
+    }
+
     suspend fun updatePlannedTripsToStarted(currentTime: Long): Int {
         return tripDao.updatePlannedTripsToStarted(currentTime)
     }
 
     suspend fun updateStartedTripsToFinished(currentTime: Long): Int {
         return tripDao.updateStartedTripsToFinished(currentTime)
+    }
+
+    suspend fun forceUpdateAllStatuses() {
+        val currentTime = System.currentTimeMillis()
+        updatePlannedTripsToStarted(currentTime)
+        updateStartedTripsToFinished(currentTime)
     }
 }

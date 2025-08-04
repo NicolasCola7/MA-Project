@@ -4,10 +4,8 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.service.TripMonitoringService
+import com.example.travel_companion.service.TripManagerService
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -15,8 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val tripRepository: TripRepository,
-    private val tripMonitoringService: TripMonitoringService
+    private val tripRepository: TripRepository, // Per le query
+    private val tripManagerService: TripManagerService // Per le operazioni
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
@@ -24,23 +22,18 @@ class HomeViewModel @Inject constructor(
 
     // LiveData del viaggio in corso
     private val currentTrip: LiveData<TripEntity?> =
-        liveData(Dispatchers.IO) {
-            emitSource(tripRepository.getTripsByStatus(TripStatus.STARTED))
-        }.map { trips -> trips.firstOrNull() }
+        tripRepository.getTripsByStatus(TripStatus.STARTED)
+            .map { trips -> trips.firstOrNull() }
 
     // LiveData del prossimo viaggio programmato
     private val nextTrip: LiveData<TripEntity?> =
-        liveData(Dispatchers.IO) {
-            emitSource(tripRepository.getTripsByStatus(TripStatus.PLANNED))
-        }.map { trips ->
-            trips.filter { it.startDate > System.currentTimeMillis() }
-                .minByOrNull { it.startDate }
-        }
+        tripRepository.getTripsByStatus(TripStatus.PLANNED)
+            .map { trips ->
+                trips.filter { it.startDate > System.currentTimeMillis() }
+                    .minByOrNull { it.startDate }
+            }
 
-    // LiveData del tempo corrente, aggiornato ogni minuto
-    private val nowLive = MutableLiveData(System.currentTimeMillis())
-
-    // LiveData unico che la UI osserva
+    // LiveData che la UI osserva
     val tripToShow = MediatorLiveData<TripEntity?>().apply {
         addSource(currentTrip) { current ->
             value = current ?: nextTrip.value
@@ -50,15 +43,10 @@ class HomeViewModel @Inject constructor(
                 value = next
             }
         }
-        addSource(nowLive) {
-            // Forza il ricalcolo dello stato
-            value = currentTrip.value ?: nextTrip.value
-        }
     }
 
     init {
         setupCurrentDate()
-        startStatusMonitoring()
     }
 
     private fun setupCurrentDate() {
@@ -66,12 +54,29 @@ class HomeViewModel @Inject constructor(
         _currentDate.value = dateFormat.format(Date())
     }
 
-    private fun startStatusMonitoring() {
-        tripMonitoringService.startMonitoring(viewModelScope)
+    // Metodo per refresh manuale se necessario
+    fun refreshTripStatuses() {
+        viewModelScope.launch {
+            tripManagerService.forceUpdateAllStatuses()
+        }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        tripMonitoringService.stopMonitoring()
+    // Se gestisci i trip da questo ViewModel, usa questi metodi:
+    fun addTrip(trip: TripEntity) {
+        viewModelScope.launch {
+            tripManagerService.addTrip(trip)
+        }
+    }
+
+    fun updateTrip(trip: TripEntity) {
+        viewModelScope.launch {
+            tripManagerService.updateTrip(trip)
+        }
+    }
+
+    fun deleteTrip(trip: TripEntity) {
+        viewModelScope.launch {
+            tripManagerService.deleteTrip(trip)
+        }
     }
 }
