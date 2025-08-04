@@ -36,14 +36,7 @@ class TripRepository @Inject constructor(
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
 
-    fun getTripAtTimeLive(timestamp: Long): LiveData<TripEntity?> {
-        return tripDao.getTripAtTimeLive(timestamp)
-    }
-
-    fun getNextPlannedTripLive(timestamp: Long): LiveData<TripEntity?> {
-        return tripDao.getNextPlannedTripLive(timestamp)
-    }
-
+    //per nic
     suspend fun updateTripStatus(tripId: Long, status: TripStatus) {
         tripDao.updateTripStatus(tripId, status)
     }
@@ -52,12 +45,11 @@ class TripRepository @Inject constructor(
         return tripDao.getTripsByStatus(status)
     }
 
-    // Metodi interni per batch update (chiamati dal Use Case)
-    internal suspend fun updatePlannedTripsToStarted(currentTime: Long): Int {
+    suspend fun updatePlannedTripsToStarted(currentTime: Long): Int {
         return tripDao.updatePlannedTripsToStarted(currentTime)
     }
 
-    internal suspend fun updateStartedTripsToFinished(currentTime: Long): Int {
+    suspend fun updateStartedTripsToFinished(currentTime: Long): Int {
         return tripDao.updateStartedTripsToFinished(currentTime)
     }
 }

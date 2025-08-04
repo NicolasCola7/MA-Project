@@ -4,7 +4,7 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.service.TripStatusMonitoringService
+import com.example.travel_companion.service.TripMonitoringService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -16,7 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val tripRepository: TripRepository,
-    private val tripStatusMonitoringService: TripStatusMonitoringService
+    private val tripMonitoringService: TripMonitoringService
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
@@ -68,7 +68,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun startStatusMonitoring() {
-        tripStatusMonitoringService.startMonitoring(viewModelScope)
+        tripMonitoringService.startMonitoring(viewModelScope)
     }
 
     private fun startTimeUpdates() {
@@ -82,6 +82,6 @@ class HomeViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        tripStatusMonitoringService.stopMonitoring()
+        tripMonitoringService.stopMonitoring()
     }
 }
