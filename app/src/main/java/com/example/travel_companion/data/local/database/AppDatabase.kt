@@ -3,7 +3,6 @@ package com.example.travel_companion.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.travel_companion.data.local.converter.Converters
 import com.example.travel_companion.data.local.dao.*
 import com.example.travel_companion.data.local.entity.*
 

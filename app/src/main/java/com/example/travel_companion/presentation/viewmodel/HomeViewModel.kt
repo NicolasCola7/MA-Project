@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.service.TripStatusMonitoringService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -14,13 +15,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val tripRepository: TripRepository
+    private val tripRepository: TripRepository,
+    private val tripStatusMonitoringService: TripStatusMonitoringService
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
     val currentDate: LiveData<String> get() = _currentDate
 
-    // LiveData del viaggio in corso (ora basato sullo status nel DB)
+    // LiveData del viaggio in corso
     private val currentTrip: LiveData<TripEntity?> =
         liveData(Dispatchers.IO) {
             emitSource(tripRepository.getTripsByStatus(TripStatus.STARTED))
@@ -55,19 +57,31 @@ class HomeViewModel @Inject constructor(
     }
 
     init {
-        // Aggiorna la data odierna
+        setupCurrentDate()
+        startStatusMonitoring()
+        startTimeUpdates()
+    }
+
+    private fun setupCurrentDate() {
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
         _currentDate.value = dateFormat.format(Date())
+    }
 
-        // Avvia il monitoraggio automatico degli stati
-        tripRepository.startStatusMonitoring(viewModelScope)
+    private fun startStatusMonitoring() {
+        tripStatusMonitoringService.startMonitoring(viewModelScope)
+    }
 
-        // Aggiorna "ora" ogni minuto
+    private fun startTimeUpdates() {
         viewModelScope.launch {
             while (true) {
                 delay(60_000) // ogni minuto
                 nowLive.postValue(System.currentTimeMillis())
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        tripStatusMonitoringService.stopMonitoring()
     }
 }

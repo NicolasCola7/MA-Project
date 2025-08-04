@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.travel_companion.data.local.converter.Converters
+import com.example.travel_companion.data.local.database.Converters
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.presentation.Utils
