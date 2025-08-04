@@ -14,6 +14,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
@@ -168,9 +169,19 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
+    // Nel TripDetailsFragment, sostituisci il metodo deleteTrip():
+
     private fun deleteTrip() {
         viewModel.deleteTrip()
-        findNavController().navigate(R.id.action_tripDetailFragment_to_tripsFragment)
+
+        findNavController().navigate(
+            R.id.homeFragment,
+            null,
+            NavOptions.Builder()
+                .setPopUpTo(R.id.homeFragment, true) // Pulisce tutto lo stack fino alla home
+                .setLaunchSingleTop(true)
+                .build()
+        )
     }
 
     private fun updateTracking(isTracking: Boolean) {
