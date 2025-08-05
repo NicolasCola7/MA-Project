@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.local.database.Converters
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
+import com.example.travel_companion.service.TripManagerService
 import com.example.travel_companion.presentation.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TripsViewModel @Inject constructor(
-    private val tripRepository: TripRepository
+    private val tripRepository: TripRepository,      // Per query e controlli
+    private val tripManagerService: TripManagerService  // Per operazioni con scheduling
 ) : ViewModel() {
 
     val trips: LiveData<List<TripEntity>> = tripRepository.getAllTrips()
@@ -129,12 +131,18 @@ class TripsViewModel @Inject constructor(
 
         //provo ad inserire un nuovo viaggio sul db, se il db mi dice che non ci sono conflitti lo inserisco
         viewModelScope.launch(Dispatchers.IO) {
-            val hasConflict = tripRepository.isTripOverlapping(start, end)
-            if (!hasConflict) {
-                tripRepository.addTrip(newTrip)
-                _uiEvent.postValue(Event.Success)
-            } else {
-                _uiEvent.postValue(Event.ShowMessage("Esiste già un viaggio in questo intervallo di tempo"))
+            try {
+                val hasConflict = tripRepository.isTripOverlapping(start, end)
+                if (!hasConflict) {
+                    // USA TripManagerService invece di tripRepository direttamente
+                    // Questo includerà automaticamente lo scheduling degli alarm
+                    tripManagerService.addTrip(newTrip)
+                    _uiEvent.postValue(Event.Success)
+                } else {
+                    _uiEvent.postValue(Event.ShowMessage("Esiste già un viaggio in questo intervallo di tempo"))
+                }
+            } catch (e: Exception) {
+                _uiEvent.postValue(Event.ShowMessage("Errore durante la creazione del viaggio"))
             }
         }
     }
