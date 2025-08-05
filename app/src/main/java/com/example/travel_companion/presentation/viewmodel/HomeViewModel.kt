@@ -53,30 +53,4 @@ class HomeViewModel @Inject constructor(
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
         _currentDate.value = dateFormat.format(Date())
     }
-
-    // Metodo per refresh manuale se necessario
-    fun refreshTripStatuses() {
-        viewModelScope.launch {
-            tripManagerService.forceUpdateAllStatuses()
-        }
-    }
-
-    // Se gestisci i trip da questo ViewModel, usa questi metodi:
-    fun addTrip(trip: TripEntity) {
-        viewModelScope.launch {
-            tripManagerService.addTrip(trip)
-        }
-    }
-
-    fun updateTrip(trip: TripEntity) {
-        viewModelScope.launch {
-            tripManagerService.updateTrip(trip)
-        }
-    }
-
-    fun deleteTrip(trip: TripEntity) {
-        viewModelScope.launch {
-            tripManagerService.deleteTrip(trip)
-        }
-    }
 }

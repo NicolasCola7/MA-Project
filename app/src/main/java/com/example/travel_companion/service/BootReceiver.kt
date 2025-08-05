@@ -11,6 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/*
+    CLASSE CHE PERMETTE DI RIPRENDERE LA PROGRAMMAZIONE DEI VIAGGI A SEGUITO DI UNO SPEGNIMENTO DELLO SMARTPHONE
+
+    Questa classe ascolta l'evento Intent.ACTION_BOOT_COMPLETED. Nel momento in cui questo evento si verifica la
+    classe ottiene dal db i plannedTrips e lo startedTrip, rischedulandoli tramite il metodo rescheduleActiveTrips dello
+    scheduler.
+ */
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
 
@@ -30,10 +37,10 @@ class BootReceiver : BroadcastReceiver() {
                     val plannedTrips = tripRepository.getTripsByStatusSync(TripStatus.PLANNED)
                         .map { TripScheduler.TripData(it.id, it.startDate, it.endDate) }
 
-                    val startedTrips = tripRepository.getTripsByStatusSync(TripStatus.STARTED)
+                    val startedTrip = tripRepository.getTripsByStatusSync(TripStatus.STARTED)
                         .map { TripScheduler.TripData(it.id, it.startDate, it.endDate) }
 
-                    tripScheduler.rescheduleActiveTrips(plannedTrips, startedTrips)
+                    tripScheduler.rescheduleActiveTrips(plannedTrips, startedTrip)
                 } finally {
                     pendingResult.finish()
                 }

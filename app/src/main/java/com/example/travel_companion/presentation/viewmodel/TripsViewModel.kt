@@ -134,8 +134,7 @@ class TripsViewModel @Inject constructor(
             try {
                 val hasConflict = tripRepository.isTripOverlapping(start, end)
                 if (!hasConflict) {
-                    // USA TripManagerService invece di tripRepository direttamente
-                    // Questo includerà automaticamente lo scheduling degli alarm
+                    // USA TripManagerService invece di tripRepository direttamente, questo includerà automaticamente lo scheduling degli alarm
                     tripManagerService.addTrip(newTrip)
                     _uiEvent.postValue(Event.Success)
                 } else {

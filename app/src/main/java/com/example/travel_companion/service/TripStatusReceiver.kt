@@ -10,7 +10,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+/*
+    CLASSE CHE GESTISCE LA RICEZIONE E AGGIORNAMENTO DELLO STATO
+    La classe riceve il broadcast dal sistema. Legge, da intent, le informazioni relative all'id (del viaggio a cui
+    bisogna aggiornare lo stato) e il nuovo stato.
+    Infine richiama il metodo "updateTripStatus" della classe TripRepository per aggiornare lo stato sul db.
+    Inoltre tramite "goAsync()" e coroutine non viene bloccato il thread del sistema.
 
+    Risultato: L’aggiornamento avviene in background e in modo sicuro anche se
+    il ricevitore viene chiamato mentre l’app è chiusa.
+ */
 @AndroidEntryPoint
 class TripStatusReceiver : BroadcastReceiver() {
 

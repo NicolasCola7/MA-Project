@@ -9,7 +9,20 @@ import com.example.travel_companion.domain.model.TripStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+/*
+    CLASSE DEDICATA ALLA SCHEDULAZIONE DI VIAGGI. Ciò serve per ottimizzare la soluzione rispetto all'utilizzo
+    di un semplice polling. Facendo così infatti, l’app sa già quando dovrà aggiornare lo stato, e lo dice ad Android subito.
 
+    Il metodo scheduleTrip, chiamato dalla classe TripManagerservice, ha il compito di schedulare un viaggio.
+    La schedulazione viene svolta tramite la creazione di due allarmi:
+        - uno per l'inizio
+        - uno per la fine
+    Gli allarmi sono gestiti tramite AlertManager. In particolare l'allarme scatta alla data e ora precisa
+    anche se il telefono è in modalità Doze (risparmio energetico).
+    Per ogni viaggio vengono creati Intent differenti per inizio e fine.
+    Nel momento in cui scatta l'allarme, Android invia un broadcast a TripStatusReceiver svegliando così l’app esattamente
+    al momento giusto, senza bisogno di fare polling.
+ */
 @Singleton
 class TripScheduler @Inject constructor(
     @ApplicationContext private val context: Context
