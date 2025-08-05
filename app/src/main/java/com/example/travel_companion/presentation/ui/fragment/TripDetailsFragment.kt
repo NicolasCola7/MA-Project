@@ -169,20 +169,25 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
-    // Nel TripDetailsFragment, sostituisci il metodo deleteTrip():
-
     private fun deleteTrip() {
         viewModel.deleteTrip()
 
+        val fromScreen = args.fromScreen
+        val destinationId = when (fromScreen) {
+            "list" -> R.id.tripsFragment
+            else -> R.id.homeFragment
+        }
+
         findNavController().navigate(
-            R.id.homeFragment,
+            destinationId,
             null,
             NavOptions.Builder()
-                .setPopUpTo(R.id.homeFragment, true) // Pulisce tutto lo stack fino alla home
+                .setPopUpTo(destinationId, true)
                 .setLaunchSingleTop(true)
                 .build()
         )
     }
+
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
