@@ -13,7 +13,9 @@ data class TripEntity(
     val endDate: Long,
     val type: String,
     val status: TripStatus = TripStatus.PLANNED,
-    val imageData: ByteArray? = null
+    val imageData: ByteArray? = null,
+    val trackedDistance: Double = 0.0,
+    val map: ByteArray? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

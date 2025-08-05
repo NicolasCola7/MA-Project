@@ -8,29 +8,30 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.graphics.Color
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
-import com.example.travel_companion.data.local.entity.TripEntity
+import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
+import com.example.travel_companion.service.Polylines
 import com.example.travel_companion.service.TrackingService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.Date
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -44,6 +45,8 @@ class TripDetailsFragment: Fragment() {
     private var pathPoints = mutableListOf<Polyline>()
     private var map: GoogleMap? = null
 
+    private var trackingObserver: Observer<Boolean>? = null
+    private var pathPointsObserver: Observer<Polylines>? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -78,12 +81,8 @@ class TripDetailsFragment: Fragment() {
         binding.mapView.getMapAsync {
             map = it
             addAllPolylines()
+            zoomToSeeWholeTrack()
         }
-
-        //TODO:
-        // insert in the TripEntity the coordinates of the destination and init the map with these
-        //map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-
     }
 
     private fun setupTopMenu() {
@@ -133,41 +132,75 @@ class TripDetailsFragment: Fragment() {
 
     private fun initTripData() {
         viewModel.loadTrip(args.tripId)
+        viewModel.loadCoordinates(args.tripId)
 
         viewModel.trip.observe(viewLifecycleOwner) {
-            trip -> trip?.let {
+            trip -> trip.let {
 
                 //showTripInfo(it)
             }
         }
 
-        viewModel.coordinates.observe(viewLifecycleOwner) { coordinates ->
-            // binding.tvCoordinatesCount.text = "Coordinate registrate: ${coordinates.size}"
-            if(coordinates.isNotEmpty()) {
-                // TODO: initialize map with stored coordinates
-                //showTripStats(coordinates)
+        viewModel.coordinates.observe(viewLifecycleOwner) {
+            coordinates -> coordinates.let {
+                if(it.isNotEmpty()) {
+                    initPathPoints(coordinates)
+                }
             }
         }
+
+    }
+
+    private fun initPathPoints(coordinates: List<CoordinateEntity>) {
+        var previousTimestamp: Long = coordinates[0].timestamp
+        var currentPolyline: Polyline = mutableListOf()
+
+        for (coordinate in coordinates) {
+            if((coordinate.timestamp - previousTimestamp) > (Utils.TRACKING_TIME * 2)) {
+                pathPoints.add(currentPolyline)
+                currentPolyline = mutableListOf() // reset current polyline
+                pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
+                // Timber.d("New polylyne detected")
+            }
+
+            val pos = LatLng(coordinate.latitude, coordinate.longitude)
+            currentPolyline.add(pos)
+            // Timber.d("Add coord to current polyline" + "Lat: " + coordinate.latitude +"; Long: " + coordinate.longitude + "; timestamp: " + Utils.dateTimeFormat.format(Date(coordinate.timestamp)))
+            previousTimestamp = coordinate.timestamp
+        }
+
+        pathPoints.add(mutableListOf())
+        addAllPolylines()
+        zoomToSeeWholeTrack()
     }
 
     private fun subscribeToObservers() {
-        TrackingService.isTracking.observe(viewLifecycleOwner) {
-            updateTracking(it)
+        trackingObserver = Observer<Boolean> { isTracking ->
+            if (isResumed) {
+                updateTracking(isTracking)
+            } else {
+                this.isTracking = isTracking
+            }
         }
 
-        TrackingService.pathPoints.observe(viewLifecycleOwner) {
-            pathPoints = it
+        pathPointsObserver = Observer<Polylines> { pathPointsList ->
+            pathPoints = pathPointsList
 
-            /* TODO provare senza CoordinateEntity
-            val lat = it.last().last().latitude
-            val long = it.last().last().longitude
-            viewModel.insertCoordinate(lat, long, args.tripId)
+            if(pathPointsList.isNotEmpty() && pathPointsList.last().isNotEmpty()) {
+                val lat = pathPointsList.last().last().latitude
+                val long = pathPointsList.last().last().longitude
+                viewModel.insertCoordinate(lat, long, args.tripId)
+                //Timber.d("stored")
+            }
 
-             */
-
-            addLatestPolyline()
-            moveCameraToUser()
+            // Only update UI if fragment is visible
+            if (isResumed) {
+                addLatestPolyline()
+            }
         }
+
+        TrackingService.isTracking.observeForever(trackingObserver!!)
+        TrackingService.pathPoints.observeForever(pathPointsObserver!!)
     }
 
     /*
@@ -183,8 +216,11 @@ class TripDetailsFragment: Fragment() {
     private fun toggleTracking() {
         if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
+
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
+            // saveTrackingProgress()
+            zoomToSeeWholeTrack()
         }
     }
 
@@ -211,8 +247,10 @@ class TripDetailsFragment: Fragment() {
         this.isTracking = isTracking
         if(!isTracking) {
             viewModel.updateTripStatus(TripStatus.PAUSED)
+            binding.btnToggleTracking.text = "Start"
         } else {
             viewModel.updateTripStatus(TripStatus.STARTED)
+            binding.btnToggleTracking.text = "Stop"
         }
     }
 
@@ -228,6 +266,9 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun zoomToSeeWholeTrack() {
+        if(pathPoints.isEmpty())
+            return
+
         val bounds = LatLngBounds.Builder()
         for(polyline in pathPoints) {
             for(pos in polyline) {
@@ -268,6 +309,13 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /*
+    private fun saveTrackingProgress() {
+        for(polyline in pathPoints) {
+            distanceInMeters += Utils.calculatePolylineLength(polyline).toInt()
+        }
+    } */
+
     private fun sendCommandToService(action: String) =
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action
@@ -277,6 +325,9 @@ class TripDetailsFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         _binding?.mapView?.onResume()
+
+        updateTracking(isTracking)
+        addAllPolylines()
     }
 
     override fun onStart() {
@@ -294,14 +345,22 @@ class TripDetailsFragment: Fragment() {
         _binding?.mapView?.onPause()
     }
 
-    /*
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        _binding.mapView.onSaveInstanceState(outState)
-    }*/
+        _binding?.mapView?.onSaveInstanceState(outState)
+    }
 
     override fun onDestroyView() {
-        sendCommandToService("ACTION_PAUSE_SERVICE")
+        //remove observers
+        trackingObserver?.let {
+            TrackingService.isTracking.removeObserver(it)
+        }
+        pathPointsObserver?.let {
+            TrackingService.pathPoints.removeObserver(it)
+        }
+
+        sendCommandToService("ACTION_STOP_SERVICE")
+        //saveTrackingProgress()
         super.onDestroyView()
         _binding = null
     }
