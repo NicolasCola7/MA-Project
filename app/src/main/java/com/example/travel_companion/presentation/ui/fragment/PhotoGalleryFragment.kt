@@ -80,7 +80,7 @@ class PhotoGalleryFragment: Fragment() {
                 }
                 R.id.goToTripDetails -> {
                     findNavController().navigate(
-                        PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToTripDetailsFragment(args.tripId)
+                        PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToTripDetailsFragment(args.tripId, "home")
                     )
                     true
                 }

@@ -65,7 +65,7 @@ class NotesListFragment : Fragment() {
             when (item.itemId) {
                 R.id.goToTripDetails -> {
                     findNavController().navigate(
-                        NotesListFragmentDirections.actionNotesListFragmentToTripdetailsFragment(args.tripId)
+                        NotesListFragmentDirections.actionNotesListFragmentToTripdetailsFragment(args.tripId, "home")
                     )
                     true
                 }
