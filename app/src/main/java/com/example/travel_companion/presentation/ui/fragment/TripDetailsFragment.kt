@@ -32,6 +32,8 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
+import java.util.Date
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -160,15 +162,16 @@ class TripDetailsFragment: Fragment() {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
-                // Timber.d("New polylyne detected")
+                //Timber.d("New polylyne detected")
             }
 
             val pos = LatLng(coordinate.latitude, coordinate.longitude)
             currentPolyline.add(pos)
-            // Timber.d("Add coord to current polyline" + "Lat: " + coordinate.latitude +"; Long: " + coordinate.longitude + "; timestamp: " + Utils.dateTimeFormat.format(Date(coordinate.timestamp)))
+          //Timber.d("Add coord to current polyline --> " + "Lat: " + coordinate.latitude +"; Long: " + coordinate.longitude + "; timestamp: " + Utils.dateTimeFormat.format(Date(coordinate.timestamp)))
             previousTimestamp = coordinate.timestamp
         }
 
+        pathPoints.add(currentPolyline)
         pathPoints.add(mutableListOf())
         addAllPolylines()
         zoomToSeeWholeTrack()
