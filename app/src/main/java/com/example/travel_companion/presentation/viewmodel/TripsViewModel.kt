@@ -13,6 +13,7 @@ import com.example.travel_companion.presentation.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
 
@@ -31,7 +32,7 @@ class TripsViewModel @Inject constructor(
     private val _uiEvent = MutableLiveData<Event>()
     val uiEvent: LiveData<Event> get() = _uiEvent
 
-    fun onCreateTripClicked(destination: String, startDateStr: String, endDateStr: String, type: String) {
+    fun onCreateTripClicked(destination: String, startDateStr: String, endDateStr: String, type: String, lat: Double, long: Double) {
         // Validazioni di base
         if (destination.isBlank() || startDateStr.isBlank() || (type == "Viaggio di più giorni" && endDateStr.isBlank())) {
             _uiEvent.value = Event.ShowMessage("Compila i campi obbligatori")
@@ -117,16 +118,18 @@ class TripsViewModel @Inject constructor(
             }
         }
 
-        insertTrip(destination, startDate.time, finalEndDate, type)
+        insertTrip(destination, startDate.time, finalEndDate, type, lat, long)
     }
 
-    private fun insertTrip(destination: String, start: Long, end: Long, type: String) {
+    private fun insertTrip(destination: String, start: Long, end: Long, type: String, lat: Double, long: Double) {
         val newTrip = TripEntity(
             destination = destination,
             startDate = start,
             endDate = end,
             type = type,
-            imageData = selectedPlaceImageData
+            imageData = selectedPlaceImageData,
+            destinationLatitude = lat,
+            destinationLongitude = long
         )
 
         //provo ad inserire un nuovo viaggio sul db, se il db mi dice che non ci sono conflitti lo inserisco
@@ -142,6 +145,7 @@ class TripsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiEvent.postValue(Event.ShowMessage("Errore durante la creazione del viaggio"))
+                Timber.d(e.message)
             }
         }
     }

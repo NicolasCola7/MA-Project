@@ -74,6 +74,7 @@ class TripScheduler @Inject constructor(
         alarmManager.cancel(endPendingIntent)
     }
 
+
     @SuppressLint("ScheduleExactAlarm")
     private fun scheduleStatusUpdate(tripId: Long, triggerTime: Long, status: TripStatus) {
         val intent = createStatusUpdateIntent(tripId, status)

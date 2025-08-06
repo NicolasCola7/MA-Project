@@ -30,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,16 +76,16 @@ class TripDetailsFragment: Fragment() {
         setupBottomNavigation()
         initTripData()
         setupClickListeners()
-        initializeMap()
         subscribeToObservers()
-
     }
 
-    private fun initializeMap() {
+    private fun initializeMap(targetLocation: LatLng) {
         binding.mapView.getMapAsync {
             map = it
             addAllPolylines()
-            zoomToSeeWholeTrack()
+
+            if(pathPoints.isEmpty())
+                map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(targetLocation, 15F))
         }
     }
 
@@ -139,6 +140,9 @@ class TripDetailsFragment: Fragment() {
 
         viewModel.trip.observe(viewLifecycleOwner) {
             trip -> trip.let {
+                val destinationCoordinates = LatLng(it!!.destinationLatitude, it.destinationLongitude)
+                //Timber.d("Lat: " + it.destinationLatitude + "; Long: " + it.destinationLongitude)
+                initializeMap(destinationCoordinates)
 
                 //showTripInfo(it)
             }
@@ -167,6 +171,11 @@ class TripDetailsFragment: Fragment() {
             }
 
             val pos = LatLng(coordinate.latitude, coordinate.longitude)
+
+            if((coordinate.timestamp - previousTimestamp) > 1000000) {
+                addStopMarker(pos)
+            }
+
             currentPolyline.add(pos)
           //Timber.d("Add coord to current polyline --> " + "Lat: " + coordinate.latitude +"; Long: " + coordinate.longitude + "; timestamp: " + Utils.dateTimeFormat.format(Date(coordinate.timestamp)))
             previousTimestamp = coordinate.timestamp
@@ -270,17 +279,6 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
-    private fun moveCameraToUser() {
-        if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
-            map?.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(
-                    pathPoints.last().last(),
-                    15f //map's zoom
-                )
-            )
-        }
-    }
-
     private fun zoomToSeeWholeTrack() {
         if(pathPoints.isEmpty())
             return
@@ -325,12 +323,24 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
-    /*
+    private fun addStopMarker(coordinates: LatLng) {
+        map?.addMarker(
+            MarkerOptions()
+                .position(coordinates)
+                .title("Fermata")
+        )
+    }
+
+
     private fun saveTrackingProgress() {
+        var distanceInMeters = 0.0
+
         for(polyline in pathPoints) {
             distanceInMeters += Utils.calculatePolylineLength(polyline).toInt()
         }
-    } */
+
+        viewModel.updateTripDistance(distanceInMeters)
+    }
 
     private fun sendCommandToService(action: String) =
         Intent(requireContext(), TrackingService::class.java).also {
@@ -376,7 +386,7 @@ class TripDetailsFragment: Fragment() {
         }
 
         sendCommandToService("ACTION_STOP_SERVICE")
-        //saveTrackingProgress()
+        saveTrackingProgress()
         super.onDestroyView()
         _binding = null
     }

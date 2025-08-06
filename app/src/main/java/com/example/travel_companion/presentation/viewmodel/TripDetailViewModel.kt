@@ -61,9 +61,17 @@ class TripDetailViewModel  @Inject constructor (
         }
     }
 
-
     fun updateTripStatus(status: TripStatus) {
         val updated = _trip.value?.copy(status = status) ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            tripRepository.updateTrip(updated)
+            _trip.postValue(updated)
+        }
+    }
+
+    fun updateTripDistance(newDistance: Double) {
+        val updated = _trip.value?.copy(trackedDistance = newDistance) ?: return
+
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
             _trip.postValue(updated)

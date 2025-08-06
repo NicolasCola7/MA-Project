@@ -61,4 +61,5 @@ class TripRepository @Inject constructor(
         updatePlannedTripsToStarted(currentTime)
         updateStartedTripsToFinished(currentTime)
     }
+
 }
