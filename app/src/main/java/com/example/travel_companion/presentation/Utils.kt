@@ -1,24 +1,22 @@
 package com.example.travel_companion.presentation
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.location.Location
 import android.os.Build
+import android.view.View
+import android.widget.PopupMenu
+import com.example.travel_companion.R
 import com.example.travel_companion.service.Polyline
-import com.google.android.gms.maps.model.LatLng
 import pub.devrel.easypermissions.EasyPermissions
-import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 object Utils {
-
-    val DEFAULT_POSITION =  LatLng(44.4949, 11.3426)
     const val TRACKING_TIME: Long = 3000
 
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
 
 
@@ -78,6 +76,68 @@ object Utils {
         val newHeight = (originalHeight * scaleFactor).toInt()
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
+    /**
+     * Mostra un PopupMenu per la cancellazione
+     *
+     * @param context Il context del fragment/activity
+     * @param anchorView La view su cui ancorare il popup
+     * @param itemName Il nome dell'elemento da eliminare (es. "viaggio", "nota", "immagine")
+     * @param onDeleteConfirmed Callback eseguito quando l'utente conferma l'eliminazione
+     */
+    fun showDeletePopup(
+        context: Context,
+        anchorView: View,
+        itemName: String,
+        onDeleteConfirmed: () -> Unit
+    ) {
+        val popupMenu = PopupMenu(context, anchorView)
+        popupMenu.menuInflater.inflate(R.menu.delete_context_menu, popupMenu.menu)
+
+        // Forza la visualizzazione delle icone nei menu
+        try {
+            val fieldMPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldMPopup.isAccessible = true
+            val mPopup = fieldMPopup.get(popupMenu)
+            mPopup.javaClass
+                .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
+                .invoke(mPopup, true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_delete -> {
+                    showDeleteConfirmation(context, itemName, onDeleteConfirmed)
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popupMenu.show()
+    }
+
+    /**
+     * Mostra il dialog di conferma per l'eliminazione
+     */
+    private fun showDeleteConfirmation(
+        context: Context,
+        itemName: String,
+        onDeleteConfirmed: () -> Unit
+    ) {
+        val message = "Sei sicuro di voler eliminare questo ${itemName.lowercase()}?"
+
+        AlertDialog.Builder(context)
+            .setTitle("Elimina ${itemName.lowercase()}")
+            .setMessage(message)
+            .setPositiveButton("Elimina") { _, _ ->
+                onDeleteConfirmed()
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
     }
 }
 
