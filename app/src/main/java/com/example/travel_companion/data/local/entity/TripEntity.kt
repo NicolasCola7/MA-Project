@@ -15,7 +15,6 @@ data class TripEntity(
     val status: TripStatus = TripStatus.PLANNED,
     val imageData: ByteArray? = null,
     val trackedDistance: Double = 0.0,
-    val map: ByteArray? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -33,6 +32,7 @@ data class TripEntity(
             if (other.imageData == null) return false
             if (!imageData.contentEquals(other.imageData)) return false
         } else if (other.imageData != null) return false
+        if (trackedDistance != other.trackedDistance) return false
 
         return true
     }
@@ -45,6 +45,7 @@ data class TripEntity(
         result = 31 * result + type.hashCode()
         result = 31 * result + status.hashCode()
         result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + trackedDistance.hashCode()
         return result
     }
 }
