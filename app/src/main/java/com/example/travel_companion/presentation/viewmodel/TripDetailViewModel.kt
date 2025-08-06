@@ -10,6 +10,8 @@ import com.example.travel_companion.data.repository.CoordinateRepository
 import com.example.travel_companion.data.repository.PhotoRepository
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.service.TripManagerService
+import com.example.travel_companion.service.TripScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,6 +20,7 @@ import javax.inject.Inject
 class TripDetailViewModel  @Inject constructor (
     private val tripRepository: TripRepository,
     private val coordinateRepository: CoordinateRepository,
+    private val tripManagerService: TripManagerService
 ) : ViewModel() {
 
     private val _trip = MutableLiveData<TripEntity?>()
@@ -54,7 +57,7 @@ class TripDetailViewModel  @Inject constructor (
 
     fun deleteTrip() {
         viewModelScope.launch(Dispatchers.IO) {
-            tripRepository.deleteTrip(trip.value!!)
+            tripManagerService.deleteTrip(trip.value!!)
         }
     }
 

@@ -39,7 +39,7 @@ class TripsFragment: Fragment() {
 
         adapter = TripListAdapter(
             onTripClick = { trip ->
-                val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
+                val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id, "list")
                 findNavController().navigate(action)
             }
         )

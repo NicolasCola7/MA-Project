@@ -4,9 +4,6 @@ import androidx.lifecycle.LiveData
 import com.example.travel_companion.data.local.dao.TripDao
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.domain.model.TripStatus
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,8 +16,8 @@ class TripRepository @Inject constructor(
         return tripDao.getAll()
     }
 
-    suspend fun addTrip(trip: TripEntity) {
-        tripDao.insert(trip)
+    suspend fun addTrip(trip: TripEntity): Long {
+        return tripDao.insert(trip)
     }
 
     suspend fun updateTrip(trip: TripEntity) {
@@ -39,32 +36,29 @@ class TripRepository @Inject constructor(
         return tripDao.getOverlappingTrips(start, end).isNotEmpty()
     }
 
+    suspend fun updateTripStatus(tripId: Long, status: TripStatus) {
+        tripDao.updateTripStatus(tripId, status)
+    }
+
     fun getTripsByStatus(status: TripStatus): LiveData<List<TripEntity>> {
         return tripDao.getTripsByStatus(status)
     }
 
-    suspend fun updateTripStatuses() {
+    suspend fun getTripsByStatusSync(status: TripStatus): List<TripEntity> {
+        return tripDao.getTripsByStatusSync(status)
+    }
+
+    suspend fun updatePlannedTripsToStarted(currentTime: Long): Int {
+        return tripDao.updatePlannedTripsToStarted(currentTime)
+    }
+
+    suspend fun updateStartedTripsToFinished(currentTime: Long): Int {
+        return tripDao.updateStartedTripsToFinished(currentTime)
+    }
+
+    suspend fun forceUpdateAllStatuses() {
         val currentTime = System.currentTimeMillis()
-
-        // Aggiorna i viaggi programmati che sono iniziati
-        tripDao.updatePlannedTripsToStarted(currentTime)
-
-        // Aggiorna i viaggi iniziati che sono finiti
-        tripDao.updateStartedTripsToFinished(currentTime)
-    }
-
-    // Metodo per avviare il monitoraggio automatico degli stati
-    fun startStatusMonitoring(scope: CoroutineScope) {
-        scope.launch {
-            while (true) {
-                updateTripStatuses()
-                delay(60_000) // Controlla ogni minuto
-            }
-        }
-    }
-
-    // Metodo per forzare un aggiornamento immediato degli stati
-    suspend fun forceStatusUpdate() {
-        updateTripStatuses()
+        updatePlannedTripsToStarted(currentTime)
+        updateStartedTripsToFinished(currentTime)
     }
 }
