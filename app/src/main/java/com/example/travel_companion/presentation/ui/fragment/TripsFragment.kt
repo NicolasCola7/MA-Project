@@ -41,7 +41,7 @@ class TripsFragment: Fragment() {
 
         adapter = TripListAdapter(
             onTripClick = { trip ->
-                val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id, "list")
+                val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
                 findNavController().navigate(action)
             },
             onTripLongClick = { trip, view ->
