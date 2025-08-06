@@ -98,11 +98,14 @@ class TripListAdapter(
                 binding.viewImagePlaceholder.visibility = View.VISIBLE
             }
 
-            // Sfondo se selezionato
+            val cardView = binding.root
+            val strokeWidthPx = (6 * binding.root.context.resources.displayMetrics.density).toInt()
             if (isSelected) {
-                binding.root.setBackgroundColor(
-                    ContextCompat.getColor(binding.root.context, R.color.selectedItemBackground)
-                )
+                cardView.strokeWidth = strokeWidthPx
+                cardView.strokeColor = ContextCompat.getColor(binding.root.context, R.color.red)
+            } else {
+                cardView.strokeWidth = 0
+                cardView.strokeColor = ContextCompat.getColor(binding.root.context, android.R.color.transparent)
             }
         }
     }

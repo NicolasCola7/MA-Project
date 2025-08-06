@@ -78,6 +78,7 @@ class TripsFragment : Fragment() {
             .setPositiveButton("Elimina") { _, _ ->
                 trips.forEach { trip -> viewModel.deleteTripById(trip) }
                 adapter.clearSelection()
+                updateDeleteButton(0)
             }
             .setNegativeButton("Annulla", null)
             .show()
