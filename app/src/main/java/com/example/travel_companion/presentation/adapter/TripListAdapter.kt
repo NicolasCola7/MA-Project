@@ -19,24 +19,24 @@ class TripListAdapter(
     private val onSelectionChanged: (Int) -> Unit
 ) : ListAdapter<TripEntity, TripListAdapter.TripViewHolder>(TripDiffCallback()) {
 
-    private val selectedIds = mutableSetOf<Long>()
+    private val selectedTrips = mutableSetOf<TripEntity>()
     var selectionMode = false
 
     fun toggleSelection(trip: TripEntity) {
-        if (selectedIds.contains(trip.id)) {
-            selectedIds.remove(trip.id)
+        if (selectedTrips.contains(trip)) {
+            selectedTrips.remove(trip)
         } else {
-            selectedIds.add(trip.id)
+            selectedTrips.add(trip)
         }
-        selectionMode = selectedIds.isNotEmpty()
-        onSelectionChanged(selectedIds.size)
+        selectionMode = selectedTrips.isNotEmpty()
+        onSelectionChanged(selectedTrips.size)
         notifyDataSetChanged()
     }
 
-    fun getSelectedTrips(): List<Long> = selectedIds.toList()
+    fun getSelectedTrips(): List<TripEntity> = selectedTrips.toList()
 
     fun clearSelection() {
-        selectedIds.clear()
+        selectedTrips.clear()
         selectionMode = false
         notifyDataSetChanged()
     }
@@ -52,9 +52,9 @@ class TripListAdapter(
 
     override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
         val trip = getItem(position)
-        val isSelected = selectedIds.contains(trip.id)
+        val isSelected = selectedTrips.contains(trip)
 
-        holder.bind(trip, isSelected, onTripClick) { toggleSelection(trip) }
+        holder.bind(trip, isSelected)
 
         holder.itemView.setOnClickListener {
             if (selectionMode) {
@@ -75,14 +75,11 @@ class TripListAdapter(
 
         fun bind(
             trip: TripEntity,
-            isSelected: Boolean,
-            onTripClick: (TripEntity) -> Unit,
-            onToggleSelection: () -> Unit
+            isSelected: Boolean
         ) {
-            // Destinazione
+            // Dati testuali
             binding.tvDestination.text = trip.destination
 
-            // Date formattate
             val startDate = Utils.dateTimeFormat.format(Date(trip.startDate))
             val endDate = trip.endDate?.let {
                 Utils.dateTimeFormat.format(Date(it))
@@ -92,13 +89,13 @@ class TripListAdapter(
             // Immagine o placeholder
             if (trip.imageData != null) {
                 binding.ivTripImage.visibility = View.VISIBLE
-                binding.viewImagePlaceholder?.visibility = View.GONE
+                binding.viewImagePlaceholder.visibility = View.GONE
                 Glide.with(binding.ivTripImage)
                     .load(trip.imageData)
                     .into(binding.ivTripImage)
             } else {
                 binding.ivTripImage.visibility = View.GONE
-                binding.viewImagePlaceholder?.visibility = View.VISIBLE
+                binding.viewImagePlaceholder.visibility = View.VISIBLE
             }
 
             // Sfondo se selezionato

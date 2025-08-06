@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripsBinding
 import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
@@ -70,12 +71,12 @@ class TripsFragment : Fragment() {
         binding.deleteSelectedTrips.text = "Elimina ($selectedCount)"
     }
 
-    private fun showDeleteConfirmationMultiple(ids: List<Long>) {
+    private fun showDeleteConfirmationMultiple(trips: List<TripEntity>) {
         AlertDialog.Builder(requireContext())
             .setTitle("Elimina viaggi")
-            .setMessage("Sei sicuro di voler eliminare ${ids.size} viaggi selezionati?")
+            .setMessage("Sei sicuro di voler eliminare ${trips.size} viaggi selezionati?")
             .setPositiveButton("Elimina") { _, _ ->
-                ids.forEach { id -> viewModel.deleteTripById(id) }
+                trips.forEach { trip -> viewModel.deleteTripById(trip) }
                 adapter.clearSelection()
             }
             .setNegativeButton("Annulla", null)
