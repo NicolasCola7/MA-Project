@@ -1,17 +1,13 @@
 package com.example.travel_companion.presentation.viewmodel
 
-import com.example.travel_companion.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.CoordinateEntity
-import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.CoordinateRepository
-import com.example.travel_companion.data.repository.PhotoRepository
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.service.TripManagerService
-import com.example.travel_companion.service.TripScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -54,13 +50,6 @@ class TripDetailViewModel  @Inject constructor (
             _coordinates.postValue(loadedTripCoordinates)
         }
     }
-
-    fun deleteTrip() {
-        viewModelScope.launch(Dispatchers.IO) {
-            tripManagerService.deleteTrip(trip.value!!)
-        }
-    }
-
 
     fun updateTripStatus(status: TripStatus) {
         val updated = _trip.value?.copy(status = status) ?: return

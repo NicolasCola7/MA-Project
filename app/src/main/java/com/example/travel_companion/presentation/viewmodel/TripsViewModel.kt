@@ -146,6 +146,12 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+    fun deleteTrip(trip: TripEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            tripManagerService.deleteTrip(trip)
+        }
+    }
+
     // Funzione per salvare l'immagine del luogo selezionato
     fun setPlaceImage(bitmap: Bitmap) {
         // Ridimensiona l'immagine per ottimizzare lo spazio su database

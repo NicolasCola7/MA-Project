@@ -3,22 +3,18 @@ package com.example.travel_companion.presentation.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.ItemTripBinding
 import com.example.travel_companion.presentation.Utils
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 class TripListAdapter(
-    private val onTripClick: (TripEntity) -> Unit
+    private val onTripClick: (TripEntity) -> Unit,
+    private val onTripLongClick: (TripEntity, View) -> Unit
 ) : ListAdapter<TripEntity, TripListAdapter.TripViewHolder>(TripDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
@@ -66,6 +62,11 @@ class TripListAdapter(
             }
 
             binding.root.setOnClickListener { onTripClick(trip) }
+
+            binding.root.setOnLongClickListener { view ->
+                onTripLongClick(trip, view)
+                true
+            }
         }
     }
 }
