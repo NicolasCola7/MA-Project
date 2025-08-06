@@ -76,7 +76,7 @@ class TripsFragment : Fragment() {
             .setTitle("Elimina viaggi")
             .setMessage("Sei sicuro di voler eliminare ${trips.size} viaggi selezionati?")
             .setPositiveButton("Elimina") { _, _ ->
-                trips.forEach { trip -> viewModel.deleteTripById(trip) }
+                trips.forEach { trip -> viewModel.deleteTrip(trip) }
                 adapter.clearSelection()
                 updateDeleteButton(0)
             }
