@@ -219,7 +219,6 @@ class TripDetailsFragment: Fragment() {
     private fun toggleTracking() {
         if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
-
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
             // saveTrackingProgress()
@@ -249,10 +248,8 @@ class TripDetailsFragment: Fragment() {
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if(!isTracking) {
-            viewModel.updateTripStatus(TripStatus.PAUSED)
             binding.btnToggleTracking.text = "Start"
         } else {
-            viewModel.updateTripStatus(TripStatus.STARTED)
             binding.btnToggleTracking.text = "Stop"
         }
     }
