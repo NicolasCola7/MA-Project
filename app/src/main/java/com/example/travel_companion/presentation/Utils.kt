@@ -19,7 +19,7 @@ object Utils {
     const val TRACKING_TIME: Long = 3000
 
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
-    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
+    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
 
 
     fun hasLocationPermissions(context: Context) =

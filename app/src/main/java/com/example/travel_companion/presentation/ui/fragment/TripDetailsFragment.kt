@@ -1,5 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,12 +14,14 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.CoordinateEntity
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.Utils
@@ -48,6 +51,8 @@ class TripDetailsFragment: Fragment() {
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
     private var map: GoogleMap? = null
+    private var trackedDistance: MutableLiveData<Double> = MutableLiveData(0.0)
+    private var stopPoints: MutableList<LatLng> = mutableListOf()
 
     private var trackingObserver: Observer<Boolean>? = null
     private var pathPointsObserver: Observer<Polylines>? = null
@@ -75,8 +80,8 @@ class TripDetailsFragment: Fragment() {
         setupTopMenu()
         setupBottomNavigation()
         initTripData()
-        setupClickListeners()
         subscribeToObservers()
+        setupClickListeners()
     }
 
     private fun initializeMap(targetLocation: LatLng) {
@@ -84,8 +89,14 @@ class TripDetailsFragment: Fragment() {
             map = it
             addAllPolylines()
 
+            for(point in stopPoints) {
+                addStopMarker(point)
+            }
+
             if(pathPoints.isEmpty())
                 map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(targetLocation, 15F))
+            else
+                zoomToSeeWholeTrack()
         }
     }
 
@@ -132,59 +143,92 @@ class TripDetailsFragment: Fragment() {
         binding.btnToggleTracking.setOnClickListener {
             toggleTracking()
         }
+
+        binding.btnFinishTrip.setOnClickListener {
+            showFinishTripDialog()
+        }
+    }
+
+    private fun showFinishTripDialog() {
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.Theme_ProvaProgetto_PopupOverlay)
+            .setTitle("Terminazione viaggio")
+            .setMessage("terminando il viaggio non sarai più in grado di tracciare i tuoi spostament, sei sicuro di voler continuare?")
+            .setPositiveButton("Si") { _, _ ->
+                finishTrip()
+            }
+            .setNegativeButton("No") { dialogInterface, _ ->
+                dialogInterface.cancel()
+            }
+            .create()
+        dialog.show()
+    }
+
+    private fun finishTrip() {
+        sendCommandToService("ACTION_STOP_SERVICE")
+        viewModel.updateTripStatus(TripStatus.FINISHED)
+
+        binding.btnFinishTrip.visibility = View.GONE
+        binding.btnToggleTracking.visibility = View.GONE
+
+        viewModel.updateTripDistance(trackedDistance.value!!)
     }
 
     private fun initTripData() {
         viewModel.loadTrip(args.tripId)
         viewModel.loadCoordinates(args.tripId)
 
-        viewModel.trip.observe(viewLifecycleOwner) {
-            trip -> trip.let {
-                val destinationCoordinates = LatLng(it!!.destinationLatitude, it.destinationLongitude)
-                //Timber.d("Lat: " + it.destinationLatitude + "; Long: " + it.destinationLongitude)
-                initializeMap(destinationCoordinates)
-
-                //showTripInfo(it)
-            }
-        }
-
-        viewModel.coordinates.observe(viewLifecycleOwner) {
-            coordinates -> coordinates.let {
-                if(it.isNotEmpty()) {
+        viewModel.coordinates.observe(viewLifecycleOwner) { coordinates ->
+            coordinates.let {
+                if (it.isNotEmpty()) {
                     initPathPoints(coordinates)
                 }
             }
         }
 
+        viewModel.trip.observe(viewLifecycleOwner) { trip ->
+            trip.let {
+                trackedDistance.postValue(it!!.trackedDistance)
+
+                val destinationCoordinates = LatLng(it.destinationLatitude, it.destinationLongitude)
+                initializeMap(destinationCoordinates)
+
+                showTripInfo(it)
+            }
+        }
+
+        trackedDistance.observe(viewLifecycleOwner) {
+            if(trackedDistance.value!! >= 1000.00) {
+                val distanceInKM = trackedDistance.value!! / 1000
+                binding.tvDistance.text = distanceInKM.toString() + " Km"
+            } else {
+                binding.tvDistance.text = trackedDistance.value!!.toInt().toString() + " m"
+            }
+        }
     }
 
     private fun initPathPoints(coordinates: List<CoordinateEntity>) {
         var previousTimestamp: Long = coordinates[0].timestamp
         var currentPolyline: Polyline = mutableListOf()
+        var previousCoordinate = LatLng(coordinates[0].latitude, coordinates[0].longitude)
 
         for (coordinate in coordinates) {
             if((coordinate.timestamp - previousTimestamp) > (Utils.TRACKING_TIME * 2)) {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
-                //Timber.d("New polylyne detected")
             }
-
-            val pos = LatLng(coordinate.latitude, coordinate.longitude)
 
             if((coordinate.timestamp - previousTimestamp) > 1000000) {
-                addStopMarker(pos)
+                stopPoints.add(previousCoordinate)
             }
 
-            currentPolyline.add(pos)
-          //Timber.d("Add coord to current polyline --> " + "Lat: " + coordinate.latitude +"; Long: " + coordinate.longitude + "; timestamp: " + Utils.dateTimeFormat.format(Date(coordinate.timestamp)))
             previousTimestamp = coordinate.timestamp
+            previousCoordinate =  LatLng(coordinate.latitude, coordinate.longitude)
+            currentPolyline.add(previousCoordinate)
         }
 
         pathPoints.add(currentPolyline)
         pathPoints.add(mutableListOf())
-        addAllPolylines()
-        zoomToSeeWholeTrack()
     }
 
     private fun subscribeToObservers() {
@@ -198,6 +242,14 @@ class TripDetailsFragment: Fragment() {
 
         pathPointsObserver = Observer<Polylines> { pathPointsList ->
             pathPoints = pathPointsList
+
+            if (pathPointsList.isNotEmpty()) {
+                var totalDistance = 0.0
+                for (polyline in pathPointsList) {
+                    totalDistance += Utils.calculatePolylineLength(polyline)
+                }
+                trackedDistance.postValue(totalDistance)
+            }
 
             if(pathPointsList.isNotEmpty() && pathPointsList.last().isNotEmpty()) {
                 val lat = pathPointsList.last().last().latitude
@@ -216,23 +268,22 @@ class TripDetailsFragment: Fragment() {
         TrackingService.pathPoints.observeForever(pathPointsObserver!!)
     }
 
-    /*
+
+    @SuppressLint("SetTextI18n")
     private fun showTripInfo(trip: TripEntity) {
         binding.tvDestination.text = trip.destination
-        binding.tvType.text = trip.type
-        binding.tvDates.text = "${Utils.dateTimeFormat.format(Date(trip.startDate))} - ${
-            trip.endDate?.let { Utils.dateTimeFormat.format(Date(it)) } ?: "—"
-        }"
-        binding.tvStatus.text = "Stato: ${trip.status.name}"
-    }*/
+        binding.tvStartDate.text = Utils.dateTimeFormat.format(Date(trip.startDate))
+        binding.tvEndDate.text = Utils.dateTimeFormat.format(Date(trip.endDate))
+        binding.tvDistance.text = trip.trackedDistance.toString()
+        binding.tvStatus.text = trip.status.toString()
+    }
 
     private fun toggleTracking() {
         if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
-            // saveTrackingProgress()
-            zoomToSeeWholeTrack()
+            viewModel.updateTripDistance(trackedDistance.value!!)
         }
     }
 
@@ -274,21 +325,26 @@ class TripDetailsFragment: Fragment() {
         this.isTracking = isTracking
         if(!isTracking) {
             binding.btnToggleTracking.text = "Start"
+            binding.btnFinishTrip.visibility = View.VISIBLE
         } else {
             binding.btnToggleTracking.text = "Stop"
+            binding.btnFinishTrip.visibility = View.GONE
         }
     }
 
     private fun zoomToSeeWholeTrack() {
-        if(pathPoints.isEmpty())
-            return
-
+        var hasPoints = false
         val bounds = LatLngBounds.Builder()
+
         for(polyline in pathPoints) {
             for(pos in polyline) {
+                hasPoints = true
                 bounds.include(pos)
             }
         }
+
+        if(!hasPoints)
+            return
 
         map?.moveCamera(
             CameraUpdateFactory.newLatLngBounds(
@@ -329,17 +385,6 @@ class TripDetailsFragment: Fragment() {
                 .position(coordinates)
                 .title("Fermata")
         )
-    }
-
-
-    private fun saveTrackingProgress() {
-        var distanceInMeters = 0.0
-
-        for(polyline in pathPoints) {
-            distanceInMeters += Utils.calculatePolylineLength(polyline).toInt()
-        }
-
-        viewModel.updateTripDistance(distanceInMeters)
     }
 
     private fun sendCommandToService(action: String) =
@@ -386,7 +431,7 @@ class TripDetailsFragment: Fragment() {
         }
 
         sendCommandToService("ACTION_STOP_SERVICE")
-        saveTrackingProgress()
+        viewModel.updateTripDistance(trackedDistance.value!!)
         super.onDestroyView()
         _binding = null
     }
