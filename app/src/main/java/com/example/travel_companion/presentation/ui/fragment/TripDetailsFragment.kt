@@ -14,6 +14,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
@@ -170,8 +171,23 @@ class TripDetailsFragment: Fragment() {
 
     private fun deleteTrip() {
         viewModel.deleteTrip()
-        findNavController().navigate(R.id.action_tripDetailFragment_to_tripsFragment)
+
+        val fromScreen = args.fromScreen
+        val destinationId = when (fromScreen) {
+            "list" -> R.id.tripsFragment
+            else -> R.id.homeFragment
+        }
+
+        findNavController().navigate(
+            destinationId,
+            null,
+            NavOptions.Builder()
+                .setPopUpTo(destinationId, true)
+                .setLaunchSingleTop(true)
+                .build()
+        )
     }
+
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking

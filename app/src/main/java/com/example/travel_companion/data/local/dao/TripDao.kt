@@ -58,4 +58,7 @@ interface TripDao {
 
     @Query("UPDATE trip SET status = 'FINISHED' WHERE status = 'STARTED' AND endDate <= :currentTime")
     suspend fun updateStartedTripsToFinished(currentTime: Long): Int
+
+    @Query("SELECT * FROM trip WHERE status = :status ORDER BY startDate ASC")
+    suspend fun getTripsByStatusSync(status: TripStatus): List<TripEntity>
 }

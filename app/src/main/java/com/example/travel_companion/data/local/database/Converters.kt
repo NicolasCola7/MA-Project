@@ -1,4 +1,4 @@
-package com.example.travel_companion.data.local.converter
+package com.example.travel_companion.data.local.database
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
