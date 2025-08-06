@@ -24,8 +24,8 @@ class TripRepository @Inject constructor(
         tripDao.updateTrip(trip)
     }
 
-    suspend fun deleteTrip(trip: TripEntity) {
-        tripDao.deleteTrip(trip)
+    suspend fun deleteTrips(tripIds: List<Long>) {
+        tripDao.deleteTrips(tripIds)
     }
 
     suspend fun getTripById(id: Long): TripEntity? {

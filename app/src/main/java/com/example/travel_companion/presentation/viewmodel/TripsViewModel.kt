@@ -146,9 +146,9 @@ class TripsViewModel @Inject constructor(
         }
     }
 
-    fun deleteTrip(trip: TripEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            tripManagerService.deleteTrip(trip)
+    fun deleteTrips(tripIds: List<Long>) {
+        viewModelScope.launch {
+            tripManagerService.deleteTrips(tripIds)
         }
     }
 
@@ -158,11 +158,6 @@ class TripsViewModel @Inject constructor(
         val resizedBitmap = Utils.resizeBitmap(bitmap, 400, 300)
         // Usa il converter per convertire bitmap a ByteArray
         selectedPlaceImageData = converters.fromBitmap(resizedBitmap)
-    }
-
-    // Funzione per ottenere il bitmap da ByteArray
-    fun getTripImage(trip: TripEntity): Bitmap? {
-        return trip.imageData?.let { converters.toBitmap(it) }
     }
 
     // Reset dei dati quando si esce dal fragment

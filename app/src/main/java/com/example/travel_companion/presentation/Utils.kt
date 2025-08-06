@@ -19,7 +19,6 @@ object Utils {
 
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
 
-
     fun hasLocationPermissions(context: Context) =
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             EasyPermissions.hasPermissions(
@@ -55,23 +54,14 @@ object Utils {
         return distance
     }
 
-    /**
-     * Ridimensiona un bitmap mantenendo le proporzioni
-     * @param bitmap Il bitmap originale
-     * @param maxWidth Larghezza massima
-     * @param maxHeight Altezza massima
-     * @return Bitmap ridimensionato
-     */
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height
 
-        // Calcola il fattore di scala
         val scaleWidth = maxWidth.toFloat() / originalWidth
         val scaleHeight = maxHeight.toFloat() / originalHeight
         val scaleFactor = minOf(scaleWidth, scaleHeight)
 
-        // Calcola le nuove dimensioni
         val newWidth = (originalWidth * scaleFactor).toInt()
         val newHeight = (originalHeight * scaleFactor).toInt()
 
@@ -79,67 +69,36 @@ object Utils {
     }
 
     /**
-     * Mostra un PopupMenu per la cancellazione
-     *
-     * @param context Il context del fragment/activity
-     * @param anchorView La view su cui ancorare il popup
-     * @param itemName Il nome dell'elemento da eliminare (es. "viaggio", "nota", "immagine")
-     * @param onDeleteConfirmed Callback eseguito quando l'utente conferma l'eliminazione
+     * Helper per gestire le operazioni di selezione multipla
      */
-    fun showDeletePopup(
-        context: Context,
-        anchorView: View,
-        itemName: String,
-        onDeleteConfirmed: () -> Unit
-    ) {
-        val popupMenu = PopupMenu(context, anchorView)
-        popupMenu.menuInflater.inflate(R.menu.delete_context_menu, popupMenu.menu)
+    object SelectionHelper {
 
-        // Forza la visualizzazione delle icone nei menu
-        try {
-            val fieldMPopup = PopupMenu::class.java.getDeclaredField("mPopup")
-            fieldMPopup.isAccessible = true
-            val mPopup = fieldMPopup.get(popupMenu)
-            mPopup.javaClass
-                .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
-                .invoke(mPopup, true)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        /**
+         * Mostra dialog di conferma per eliminazione multipla
+         * @param context Context
+         * @param count Numero di elementi selezionati
+         * @param itemType Tipo di elemento (es. "viaggi", "note", "immagini")
+         * @param onConfirmed Callback eseguito alla conferma
+         */
+        fun showMultipleDeleteConfirmation(
+            context: Context,
+            count: Int,
+            itemType: String,
+            onConfirmed: () -> Unit
+        ) {
+            val message = if (count == 1) {
+                "Sei sicuro di voler eliminare 1 ${itemType.dropLast(1)}?" // Rimuove la 's' finale per il singolare
+            } else {
+                "Sei sicuro di voler eliminare $count $itemType?"
+            }
+
+            AlertDialog.Builder(context)
+                .setTitle("Elimina $itemType")
+                .setMessage(message)
+                .setPositiveButton("Elimina") { _, _ -> onConfirmed() }
+                .setNegativeButton("Annulla", null)
+                .show()
         }
 
-        popupMenu.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_delete -> {
-                    showDeleteConfirmation(context, itemName, onDeleteConfirmed)
-                    true
-                }
-                else -> false
-            }
-        }
-
-        popupMenu.show()
-    }
-
-    /**
-     * Mostra il dialog di conferma per l'eliminazione
-     */
-    private fun showDeleteConfirmation(
-        context: Context,
-        itemName: String,
-        onDeleteConfirmed: () -> Unit
-    ) {
-        val message = "Sei sicuro di voler eliminare questo ${itemName.lowercase()}?"
-
-        AlertDialog.Builder(context)
-            .setTitle("Elimina ${itemName.lowercase()}")
-            .setMessage(message)
-            .setPositiveButton("Elimina") { _, _ ->
-                onDeleteConfirmed()
-            }
-            .setNegativeButton("Annulla", null)
-            .show()
     }
 }
-
-
-

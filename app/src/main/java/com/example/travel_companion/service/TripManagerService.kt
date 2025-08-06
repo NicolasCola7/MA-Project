@@ -24,10 +24,10 @@ class TripManagerService @Inject constructor(
         tripScheduler.scheduleTrip(trip.id, trip.startDate, trip.endDate)
     }
 
-    suspend fun deleteTrip(trip: TripEntity) {
+    suspend fun deleteTrips(tripIds: List<Long>) {
         // Cancella scheduling prima di eliminare
-        tripScheduler.cancelTripAlarms(trip.id)
-        tripRepository.deleteTrip(trip)
+        tripScheduler.cancelTripAlarms(tripIds)
+        tripRepository.deleteTrips(tripIds)
     }
 
     suspend fun forceUpdateAllStatuses() {

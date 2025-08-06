@@ -37,7 +37,7 @@ class TripScheduler @Inject constructor(
 
     fun scheduleTrip(tripId: Long, startTime: Long, endTime: Long) {
         // Cancella eventuali alarm esistenti per questo trip
-        cancelTripAlarms(tripId)
+        cancelTripAlarms(listOf(tripId))
 
         val currentTime = System.currentTimeMillis()
 
@@ -52,26 +52,38 @@ class TripScheduler @Inject constructor(
         }
     }
 
-    fun cancelTripAlarms(tripId: Long) {
-        // Cancella alarm per inizio
-        val startIntent = createStatusUpdateIntent(tripId, TripStatus.STARTED)
-        val startPendingIntent = PendingIntent.getBroadcast(
-            context,
-            "start_$tripId".hashCode(),
-            startIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(startPendingIntent)
+    fun cancelTripAlarms(tripIds: List<Long>) {
+        if (tripIds.isEmpty()) return
 
-        // Cancella alarm per fine
-        val endIntent = createStatusUpdateIntent(tripId, TripStatus.FINISHED)
-        val endPendingIntent = PendingIntent.getBroadcast(
-            context,
-            "end_$tripId".hashCode(),
-            endIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(endPendingIntent)
+        val pendingIntentsToCancel = mutableListOf<PendingIntent>()
+
+        // Prepara tutti i PendingIntent
+        tripIds.forEach { tripId ->
+            // PendingIntent per inizio
+            val startIntent = createStatusUpdateIntent(tripId, TripStatus.STARTED)
+            val startPendingIntent = PendingIntent.getBroadcast(
+                context,
+                "start_$tripId".hashCode(),
+                startIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            pendingIntentsToCancel.add(startPendingIntent)
+
+            // PendingIntent per fine
+            val endIntent = createStatusUpdateIntent(tripId, TripStatus.FINISHED)
+            val endPendingIntent = PendingIntent.getBroadcast(
+                context,
+                "end_$tripId".hashCode(),
+                endIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            pendingIntentsToCancel.add(endPendingIntent)
+        }
+
+        // Cancella tutti gli allarmi
+        pendingIntentsToCancel.forEach { pendingIntent ->
+            alarmManager.cancel(pendingIntent)
+        }
     }
 
     @SuppressLint("ScheduleExactAlarm")

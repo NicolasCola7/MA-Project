@@ -2,7 +2,6 @@ package com.example.travel_companion.presentation.ui.fragment
 
 import android.os.Bundle
 import android.view.*
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -11,6 +10,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripsBinding
+import com.example.travel_companion.presentation.Utils
 import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,8 +20,8 @@ class TripsFragment : Fragment() {
     private var _binding: FragmentTripsBinding? = null
     private val binding get() = _binding!!
 
-    val viewModel: TripsViewModel by viewModels()
-    lateinit var adapter: TripListAdapter
+    private val viewModel: TripsViewModel by viewModels()
+    private lateinit var adapter: TripListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,59 +29,102 @@ class TripsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = DataBindingUtil.inflate(inflater, R.layout.fragment_trips, container, false)
-
-        binding.addTrip.setOnClickListener {
-            val action = TripsFragmentDirections.actionTripsFragmentToNewTripFragment()
-            findNavController().navigate(action)
-        }
-
-        adapter = TripListAdapter(
-            onTripClick = { trip ->
-                val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
-                findNavController().navigate(action)
-            },
-            onSelectionChanged = { count ->
-                updateDeleteButton(count)
-            }
-        )
-
-        binding.recyclerView.adapter = adapter
-        binding.viewModel = viewModel
-        binding.lifecycleOwner = viewLifecycleOwner
-
-        binding.deleteSelectedTrips.setOnClickListener {
-            val selectedIds = adapter.getSelectedTrips()
-            if (selectedIds.isNotEmpty()) {
-                showDeleteConfirmationMultiple(selectedIds)
-            }
-        }
-
+        setupViews()
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.trips.observe(viewLifecycleOwner) { list ->
-            adapter.submitList(list)
+        observeData()
+    }
+
+    private fun setupViews() {
+        binding.addTrip.setOnClickListener {
+            navigateToNewTrip()
         }
+
+        setupAdapter()
+        setupRecyclerView()
+        setupDeleteButton()
+
+        binding.viewModel = viewModel
+        binding.lifecycleOwner = viewLifecycleOwner
+    }
+
+    private fun setupAdapter() {
+        adapter = TripListAdapter(
+            onTripClick = { trip ->
+                if (!adapter.selectionMode) {
+                    navigateToTripDetail(trip.id)
+                }
+            },
+            onSelectionChanged = { count ->
+                updateDeleteButton(count)
+            }
+        )
+    }
+
+    private fun setupRecyclerView() {
+        binding.recyclerView.adapter = adapter
+    }
+
+    private fun setupDeleteButton() {
+        binding.deleteSelectedTrips.setOnClickListener {
+            handleMultipleDelete()
+        }
+    }
+
+    private fun observeData() {
+        viewModel.trips.observe(viewLifecycleOwner) { tripList ->
+            adapter.submitList(tripList) {
+                // Dopo aver aggiornato la lista, verifica se ci sono selezioni da mantenere
+                adapter.updateSelectionAfterListChange()
+            }
+        }
+    }
+
+    private fun navigateToNewTrip() {
+        val action = TripsFragmentDirections.actionTripsFragmentToNewTripFragment()
+        findNavController().navigate(action)
+    }
+
+    private fun navigateToTripDetail(tripId: Long) {
+        val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(tripId)
+        findNavController().navigate(action)
     }
 
     private fun updateDeleteButton(selectedCount: Int) {
         binding.deleteSelectedTrips.isVisible = selectedCount > 0
-        binding.deleteSelectedTrips.text = "Elimina ($selectedCount)"
+
+        if (selectedCount > 0) {
+            binding.deleteSelectedTrips.text = "Elimina ( $selectedCount)"
+        }
     }
 
-    private fun showDeleteConfirmationMultiple(trips: List<TripEntity>) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Elimina viaggi")
-            .setMessage("Sei sicuro di voler eliminare ${trips.size} viaggi selezionati?")
-            .setPositiveButton("Elimina") { _, _ ->
-                trips.forEach { trip -> viewModel.deleteTrip(trip) }
-                adapter.clearSelection()
-                updateDeleteButton(0)
+    private fun handleMultipleDelete() {
+        val selectedTrips = adapter.getSelectedTrips()
+        if (selectedTrips.isEmpty()) return
+
+        Utils.SelectionHelper.showMultipleDeleteConfirmation(
+            context = requireContext(),
+            count = selectedTrips.size,
+            itemType = "viaggi",
+            onConfirmed = {
+                deleteSelectedTrips(selectedTrips)
             }
-            .setNegativeButton("Annulla", null)
-            .show()
+        )
+    }
+
+    private fun deleteSelectedTrips(trips: List<TripEntity>) {
+        // Estrai solo gli ID per l'operazione batch
+        val tripIds = trips.map { it.id }
+
+        // Operazione batch più efficiente
+        viewModel.deleteTrips(tripIds)
+
+        // Pulisci la selezione e aggiorna l'UI
+        adapter.clearSelection()
+        updateDeleteButton(0)
     }
 
     override fun onDestroyView() {
