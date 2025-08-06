@@ -93,7 +93,7 @@ class HomeFragment : Fragment() {
                 binding.cardTrip.setOnClickListener {
                     // Navigazione ai dettagli
                     findNavController().navigate(
-                        HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
+                        HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id,"home")
                     )
                 }
 

@@ -49,6 +49,9 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+        <argument
+            android:name="fromScreen"
+            app:argType="string" />
 
         <!-- Action per aprire la Galleria Foto -->
         <action
