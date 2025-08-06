@@ -27,5 +27,14 @@ class PhotoGalleryViewModel @Inject constructor (
         }
     }
 
+    fun insert(tripId: Long, uri: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val newPhoto = PhotoEntity (
+                tripId = tripId,
+                uri = uri
+            )
 
+            photoRepository.insert(newPhoto)
+        }
+    }
 }

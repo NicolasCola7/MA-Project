@@ -16,9 +16,10 @@ import java.util.Locale
 object Utils {
 
     val DEFAULT_POSITION =  LatLng(44.4949, 11.3426)
+    const val TRACKING_TIME: Long = 3000
 
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
-    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
+    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
 
 
     fun hasLocationPermissions(context: Context) =

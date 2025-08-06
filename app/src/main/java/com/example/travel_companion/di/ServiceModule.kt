@@ -12,6 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ServiceComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
+import com.example.travel_companion.R
 
 @Module
 @InstallIn(ServiceComponent::class)
@@ -23,28 +24,4 @@ object ServiceModule {
         @ApplicationContext app: Context
     ) = LocationServices.getFusedLocationProviderClient(app)
 
-    @ServiceScoped
-    @Provides
-    fun provideMainActivityPendingIntent(
-        @ApplicationContext app: Context
-    ) = PendingIntent.getActivity(
-        app,
-        0,
-        Intent(app, MainActivity::class.java).also {
-            it.action = "ACTION_SHOW_TRACKING_FRAGMENT"
-        },
-        PendingIntent.FLAG_UPDATE_CURRENT
-    )
-
-    @ServiceScoped
-    @Provides
-    fun provideBaseNotificationBuilder(
-        @ApplicationContext app: Context,
-        pendingIntent: PendingIntent
-    ) = NotificationCompat.Builder(app, "tracking_channel")
-        .setAutoCancel(false)
-        .setOngoing(true)
-        .setContentTitle("Travel Companion")
-        .setContentText("00:00:00")
-        .setContentIntent(pendingIntent)
 }
