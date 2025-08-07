@@ -1,12 +1,8 @@
 package com.example.travel_companion.presentation.ui.fragment
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.text.font.SystemFontFamily
@@ -17,15 +13,13 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
-import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.Polylines
@@ -236,7 +230,7 @@ class TripDetailsFragment: Fragment() {
         TrackingService.isTracking.observeForever(trackingObserver!!)
         TrackingService.pathPoints.observeForever(pathPointsObserver!!)
     }
-    
+
     private fun refreshTrackedDistance() {
         if (pathPoints.isNotEmpty()) {
             var totalDistance = 0.0
@@ -246,7 +240,7 @@ class TripDetailsFragment: Fragment() {
             trackedDistance.postValue(totalDistance)
         }
     }
-    
+
     private fun addNewCoordinate() {
         if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
             val lat = pathPoints.last().last().latitude

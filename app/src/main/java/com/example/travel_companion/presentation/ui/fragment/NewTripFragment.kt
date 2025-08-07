@@ -15,13 +15,12 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.travel_companion.BaseApplication
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import com.google.android.gms.common.api.Status
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.PlacesClient
@@ -67,14 +66,8 @@ class NewTripFragment : Fragment() {
 
     //inizializzazione fragment google
     private fun initPlacesAutocomplete() {
-        if (!Places.isInitialized()) {
-            Places.initialize(
-                requireContext().applicationContext,
-                "AIzaSyDEVW0HX64ZlwkoVMAZVr7OqgKO4IAuWno"
-            )
-        }
-
-        placesClient = Places.createClient(requireContext())
+        val app = requireActivity().application as BaseApplication
+        placesClient = app.placesClient
 
         val autocompleteFragment =
             childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
@@ -100,14 +93,7 @@ class NewTripFragment : Fragment() {
                 Timber.i("Luogo selezionato: $placeName, $placeAddress")
                 viewModel.selectedDestinationName = placeName
 
-                // Mostra il nome del luogo nell'overlay (se presente nel layout)
-                try {
-                    binding.textPlaceName.text = placeName
-                } catch (e: Exception) {
-                    Timber.d("textPlaceName non presente nel layout")
-                }
-
-                // Carica la foto del luogo
+                binding.textPlaceName.text = placeName
                 loadPlacePhoto(place)
             }
 
