@@ -36,4 +36,10 @@ class NotesViewModel @Inject constructor (
             noteRepository.insert(newNote)
         }
     }
+
+    fun deleteNotes(tripIds: List<Long>) {
+        viewModelScope.launch {
+            noteRepository.deleteNotes(tripIds)
+        }
+    }
 }

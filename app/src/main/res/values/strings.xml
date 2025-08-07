@@ -7,16 +7,16 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
-    <string name="menu_home">Home</string>
-    <string name="menu_new_trip">Nuovo viaggio</string>
-    <string name="menu_statistics">Statistiche</string>
     <string-array name="trip_types">
         <item>Viaggio Locale</item>
         <item>Gita Giornaliera</item>
         <item>Viaggio di più giorni</item>
     </string-array>
-
-    <string name="photo">Foto del viaggio</string>
-    <string name="newTripBtn">+</string>
-
+    <string name="HomeFragment">Home</string>
+    <string name="CreateNoteFragment">Nuova nota</string>
+    <string name="NewTripFragment">Nuovo viaggio</string>
+    <string name="NoteListFragment">Note</string>
+    <string name="PhotoGalleryFragment">Galleria</string>
+    <string name="TripDetailsFragment">Dettagli viaggio</string>
+    <string name="tripsFragment">Viaggi</string>
 </resources>

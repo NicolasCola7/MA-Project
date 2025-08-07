@@ -12,4 +12,7 @@ interface NoteDao {
 
     @Query("SELECT * FROM note WHERE tripId = :tripId ORDER BY timestamp DESC")
     suspend fun getNotesByTripId(tripId: Long): List<NoteEntity>
+
+    @Query("DELETE FROM note WHERE id IN (:noteIds)")
+    suspend fun deleteNotes(noteIds: List<Long>)
 }

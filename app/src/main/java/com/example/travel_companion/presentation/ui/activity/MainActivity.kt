@@ -46,19 +46,22 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         bottomNavigationView.setupWithNavController(navController)
 
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.homeFragment -> binding.tvToolbarTitle.text = "Home"
-                R.id.tripsFragment -> binding.tvToolbarTitle.text = "Viaggi"
-                R.id.statisticsFragment -> binding.tvToolbarTitle.text = "Statistiche"
-                R.id.tripDetailFragment -> binding.tvToolbarTitle.text = "Dettaglio viaggio"
-            }
+        // Lista dei fragment che mostrano la bottom navigation
+        val fragmentsWithBottomNav = setOf(
+            R.id.homeFragment,
+            R.id.tripsFragment,
+            R.id.statisticsFragment
+        )
 
-            // Mostra/nascondi la BottomNavigation
-            when (destination.id) {
-                R.id.homeFragment, R.id.tripsFragment, R.id.statisticsFragment ->
-                    binding.bottomNavigationView.visibility = View.VISIBLE
-                else -> binding.bottomNavigationView.visibility = View.GONE
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            // Usa automaticamente la label del fragment dal navigation graph
+            binding.tvToolbarTitle.text = destination.label ?: "Travel Companion"
+
+            // Gestisci visibilità bottom navigation
+            binding.bottomNavigationView.visibility = if (destination.id in fragmentsWithBottomNav) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
         }
 

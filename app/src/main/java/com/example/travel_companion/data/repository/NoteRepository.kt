@@ -15,4 +15,8 @@ class NoteRepository @Inject constructor (
     suspend fun getNotesByTripId(tripId: Long): List<NoteEntity> {
         return noteDao.getNotesByTripId(tripId)
     }
+
+    suspend fun deleteNotes(tripIds: List<Long>) {
+        noteDao.deleteNotes(tripIds)
+    }
 }

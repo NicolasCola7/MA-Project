@@ -12,7 +12,7 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.HomeFragment"
-        android:label="Home"
+        android:label="@string/HomeFragment"
         tools:layout="@layout/fragment_home">
 
         <action
@@ -23,7 +23,7 @@
     <fragment
         android:id="@+id/tripsFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.TripsFragment"
-        android:label="@string/menu_home"
+        android:label="@string/tripsFragment"
         tools:layout="@layout/fragment_trips">
 
         <action
@@ -39,13 +39,13 @@
     <fragment
         android:id="@+id/newTripFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NewTripFragment"
-        android:label="Nuovo Viaggio"
+        android:label="@string/NewTripFragment"
         tools:layout="@layout/fragment_new_trip" />
 
     <fragment
         android:id="@+id/tripDetailFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.TripDetailsFragment"
-        android:label="Dettaglio viaggio">
+        android:label="@string/TripDetailsFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
@@ -73,7 +73,7 @@
     <fragment
         android:id="@+id/photoGalleryFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.PhotoGalleryFragment"
-        android:label="Galleria">
+        android:label="@string/PhotoGalleryFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
@@ -94,7 +94,7 @@
     <fragment
         android:id="@+id/createNoteFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.CreateNoteFragment"
-        android:label="Crea nota">
+        android:label="@string/CreateNoteFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
@@ -103,7 +103,7 @@
     <fragment
         android:id="@+id/noteListFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NotesListFragment"
-        android:label="Note">
+        android:label="@string/NoteListFragment">
 
         <argument
             android:name="tripId"

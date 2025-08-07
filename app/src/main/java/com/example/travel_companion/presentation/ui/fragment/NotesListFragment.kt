@@ -11,13 +11,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.databinding.FragmentNoteListBinding
 import com.example.travel_companion.presentation.adapter.NotesListAdapter
-import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.NotesViewModel
-import com.example.travel_companion.presentation.viewmodel.TripsViewModel
+import com.example.travel_companion.util.Utils
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class NotesListFragment : Fragment() {
@@ -27,7 +26,7 @@ class NotesListFragment : Fragment() {
     private val args: NotesListFragmentArgs by navArgs()
     private val viewModel: NotesViewModel by viewModels()
 
-    private var adapter = NotesListAdapter()
+    private lateinit var adapter: NotesListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,8 +40,8 @@ class NotesListFragment : Fragment() {
 
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
-        binding.recyclerView.adapter = adapter
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        setupViews()
 
         return binding.root
     }
@@ -55,9 +54,44 @@ class NotesListFragment : Fragment() {
                 .actionNotesListFragmentToCreateNoteFragment(args.tripId)
             findNavController().navigate(action)
         }
-        setupBottomNavigation()
 
-        initNotesData()
+        setupBottomNavigation()
+        observeData()
+    }
+
+    private fun setupViews() {
+        setupAdapter()
+        setupRecyclerView()
+        setupDeleteButton()
+    }
+
+    private fun setupAdapter() {
+        adapter = NotesListAdapter(
+            onSelectionChanged = { count ->
+                updateDeleteButton(count)
+            }
+        )
+    }
+
+    private fun setupRecyclerView() {
+        binding.recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+    }
+
+    private fun setupDeleteButton() {
+        binding.deleteSelectedNotes.setOnClickListener {
+            handleMultipleDelete()
+        }
+    }
+
+    private fun observeData() {
+        viewModel.loadNotes(args.tripId)
+
+        viewModel.notes.observe(viewLifecycleOwner) { noteList ->
+            adapter.submitList(noteList) {
+                adapter.updateSelectionAfterListChange()
+            }
+        }
     }
 
     private fun setupBottomNavigation() {
@@ -86,12 +120,30 @@ class NotesListFragment : Fragment() {
         }
     }
 
-    private fun initNotesData() {
-        viewModel.loadNotes(args.tripId)
+    private fun updateDeleteButton(selectedCount: Int) {
+        Utils.SelectionHelper.updateDeleteButton(
+            button = binding.deleteSelectedNotes,
+            selectedCount = selectedCount,
+            baseText = "Elimina"
+        )
+    }
 
-        viewModel.notes.observe(viewLifecycleOwner) { notes ->
-            adapter.submitList(notes)
-        }
+    private fun handleMultipleDelete() {
+        val selectedNotes = adapter.getSelectedNotes()
+
+        Utils.SelectionHelper.handleMultipleDelete(
+            context = requireContext(),
+            selectedItems = selectedNotes,
+            itemType = "note",
+            onDelete = { notes -> deleteSelectedNotes(notes) },
+            onClearSelection = { adapter.clearSelection() },
+            onUpdateButton = { count -> updateDeleteButton(count) }
+        )
+    }
+
+    private fun deleteSelectedNotes(notes: List<NoteEntity>) {
+        val noteIds = notes.map { it.id }
+        viewModel.deleteNotes(noteIds)
     }
 
     override fun onDestroyView() {
