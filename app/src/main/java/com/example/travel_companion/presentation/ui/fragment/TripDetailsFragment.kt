@@ -9,6 +9,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.ui.text.font.SystemFontFamily
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -77,7 +78,6 @@ class TripDetailsFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.onCreate(savedInstanceState)
-        setupTopMenu()
         setupBottomNavigation()
         initTripData()
         subscribeToObservers()
@@ -98,25 +98,6 @@ class TripDetailsFragment: Fragment() {
             else
                 zoomToSeeWholeTrack()
         }
-    }
-
-    private fun setupTopMenu() {
-        requireActivity().addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.menu_trip_detail, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return when (menuItem.itemId) {
-                    R.id.action_delete -> {
-                        showDeleteTripDialog()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private fun setupBottomNavigation() {
@@ -243,20 +224,8 @@ class TripDetailsFragment: Fragment() {
         pathPointsObserver = Observer<Polylines> { pathPointsList ->
             pathPoints = pathPointsList
 
-            if (pathPointsList.isNotEmpty()) {
-                var totalDistance = 0.0
-                for (polyline in pathPointsList) {
-                    totalDistance += Utils.calculatePolylineLength(polyline)
-                }
-                trackedDistance.postValue(totalDistance)
-            }
-
-            if(pathPointsList.isNotEmpty() && pathPointsList.last().isNotEmpty()) {
-                val lat = pathPointsList.last().last().latitude
-                val long = pathPointsList.last().last().longitude
-                viewModel.insertCoordinate(lat, long, args.tripId)
-                //Timber.d("stored")
-            }
+            refreshTrackedDistance()
+            addNewCoordinate()
 
             // Only update UI if fragment is visible
             if (isResumed) {
@@ -267,7 +236,24 @@ class TripDetailsFragment: Fragment() {
         TrackingService.isTracking.observeForever(trackingObserver!!)
         TrackingService.pathPoints.observeForever(pathPointsObserver!!)
     }
-
+    
+    private fun refreshTrackedDistance() {
+        if (pathPoints.isNotEmpty()) {
+            var totalDistance = 0.0
+            for (polyline in pathPoints) {
+                totalDistance += Utils.calculatePolylineLength(polyline)
+            }
+            trackedDistance.postValue(totalDistance)
+        }
+    }
+    
+    private fun addNewCoordinate() {
+        if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
+            val lat = pathPoints.last().last().latitude
+            val long = pathPoints.last().last().longitude
+            viewModel.insertCoordinate(lat, long, args.tripId)
+        }
+    }
 
     @SuppressLint("SetTextI18n")
     private fun showTripInfo(trip: TripEntity) {
@@ -275,7 +261,12 @@ class TripDetailsFragment: Fragment() {
         binding.tvStartDate.text = Utils.dateTimeFormat.format(Date(trip.startDate))
         binding.tvEndDate.text = Utils.dateTimeFormat.format(Date(trip.endDate))
         binding.tvDistance.text = trip.trackedDistance.toString()
-        binding.tvStatus.text = trip.status.toString()
+        binding.tvStatus.text = trip.status.getValue()
+
+        if(trip.startDate > System.currentTimeMillis() || trip.endDate < System.currentTimeMillis()) {
+            binding.btnToggleTracking.visibility = View.GONE
+            binding.btnFinishTrip.visibility = View.GONE
+        }
     }
 
     private fun toggleTracking() {
@@ -286,40 +277,6 @@ class TripDetailsFragment: Fragment() {
             viewModel.updateTripDistance(trackedDistance.value!!)
         }
     }
-
-    private fun showDeleteTripDialog() {
-        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.Theme_ProvaProgetto_PopupOverlay)
-            .setTitle("Eliminazione viaggio")
-            .setMessage("Sei sicuro di voler eliminare il viaggio e tutti i dati relativi ad esso?")
-            .setPositiveButton("Si") { _, _ ->
-                deleteTrip()
-            }
-            .setNegativeButton("No") { dialogInterface, _ ->
-                dialogInterface.cancel()
-            }
-            .create()
-        dialog.show()
-    }
-
-    private fun deleteTrip() {
-        viewModel.deleteTrip()
-
-        val fromScreen = args.fromScreen
-        val destinationId = when (fromScreen) {
-            "list" -> R.id.tripsFragment
-            else -> R.id.homeFragment
-        }
-
-        findNavController().navigate(
-            destinationId,
-            null,
-            NavOptions.Builder()
-                .setPopUpTo(destinationId, true)
-                .setLaunchSingleTop(true)
-                .build()
-        )
-    }
-
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
