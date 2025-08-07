@@ -4,9 +4,7 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.service.TripManagerService
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -14,7 +12,6 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val tripRepository: TripRepository, // Per le query
-    private val tripManagerService: TripManagerService // Per le operazioni
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
