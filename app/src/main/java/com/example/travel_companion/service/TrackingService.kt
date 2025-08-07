@@ -97,17 +97,15 @@ class TrackingService : LifecycleService() {
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
         if (isTracking) {
-            if (Utils.hasLocationPermissions(this)) {
-                val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Utils.TRACKING_TIME)
-                    .setMinUpdateIntervalMillis(Utils.TRACKING_TIME)
-                    .build()
+            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Utils.TRACKING_TIME)
+                .setMinUpdateIntervalMillis(Utils.TRACKING_TIME)
+                .build()
 
-                fusedLocationProviderClient.requestLocationUpdates(
-                    request,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
-            }
+            fusedLocationProviderClient.requestLocationUpdates(
+                request,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         }

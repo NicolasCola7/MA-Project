@@ -16,24 +16,7 @@ import java.util.Locale
 
 object Utils {
     const val TRACKING_TIME: Long = 3000
-
-    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
-
-    fun hasLocationPermissions(context: Context) =
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            EasyPermissions.hasPermissions(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        } else {
-            EasyPermissions.hasPermissions(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-        }
+    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
 
     fun calculatePolylineLength(polyline: Polyline): Float {
         var distance = 0f
