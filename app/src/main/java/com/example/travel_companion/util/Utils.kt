@@ -18,25 +18,6 @@ object Utils {
     const val TRACKING_TIME: Long = 3000
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
 
-    fun calculatePolylineLength(polyline: Polyline): Float {
-        var distance = 0f
-        for(i in 0..polyline.size - 2) {
-            val pos1 = polyline[i]
-            val pos2 = polyline[i + 1]
-
-            val result = FloatArray(1)
-            Location.distanceBetween(
-                pos1.latitude,
-                pos1.longitude,
-                pos2.latitude,
-                pos2.longitude,
-                result
-            )
-            distance += result[0]
-        }
-        return distance
-    }
-
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height

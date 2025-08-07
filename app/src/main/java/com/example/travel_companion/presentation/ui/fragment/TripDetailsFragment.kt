@@ -2,6 +2,7 @@ package com.example.travel_companion.presentation.ui.fragment
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -234,7 +235,7 @@ class TripDetailsFragment: Fragment() {
         if (pathPoints.isNotEmpty()) {
             var totalDistance = 0.0
             for (polyline in pathPoints) {
-                totalDistance += Utils.calculatePolylineLength(polyline)
+                totalDistance += calculatePolylineLength(polyline)
             }
             trackedDistance.postValue(totalDistance)
         }
@@ -327,6 +328,25 @@ class TripDetailsFragment: Fragment() {
                 .add(lastLatLng)
             map?.addPolyline(polylineOptions)
         }
+    }
+
+   private fun calculatePolylineLength(polyline: Polyline): Float {
+        var distance = 0f
+        for(i in 0..polyline.size - 2) {
+            val pos1 = polyline[i]
+            val pos2 = polyline[i + 1]
+
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                pos1.latitude,
+                pos1.longitude,
+                pos2.latitude,
+                pos2.longitude,
+                result
+            )
+            distance += result[0]
+        }
+        return distance
     }
 
     private fun addStopMarker(coordinates: LatLng) {
