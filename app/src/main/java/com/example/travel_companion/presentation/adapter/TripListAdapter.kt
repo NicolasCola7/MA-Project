@@ -11,7 +11,7 @@ import com.bumptech.glide.Glide
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.ItemTripBinding
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import java.util.Date
 
 class TripListAdapter(

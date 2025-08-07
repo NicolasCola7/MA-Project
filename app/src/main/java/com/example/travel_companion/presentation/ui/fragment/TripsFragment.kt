@@ -10,7 +10,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripsBinding
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import dagger.hilt.android.AndroidEntryPoint

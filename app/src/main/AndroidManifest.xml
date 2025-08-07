@@ -69,12 +69,12 @@
         </provider>
 
         <receiver
-            android:name=".service.TripStatusReceiver"
+            android:name=".receiver.TripStatusReceiver"
             android:enabled="true"
             android:exported="false" />
 
         <receiver
-            android:name=".service.BootReceiver"
+            android:name=".receiver.BootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter android:priority="1000">

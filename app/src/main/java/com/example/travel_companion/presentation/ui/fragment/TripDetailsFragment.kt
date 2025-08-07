@@ -14,7 +14,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.Polylines

@@ -1,4 +1,4 @@
-package com.example.travel_companion.service
+package com.example.travel_companion.util
 
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.receiver.TripStatusReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

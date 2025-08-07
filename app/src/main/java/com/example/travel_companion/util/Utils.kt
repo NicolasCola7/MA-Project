@@ -1,4 +1,4 @@
-package com.example.travel_companion.presentation
+package com.example.travel_companion.util
 
 import android.Manifest
 import android.app.AlertDialog
@@ -6,9 +6,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.Build
-import android.view.View
-import android.widget.PopupMenu
-import com.example.travel_companion.R
 import com.example.travel_companion.service.Polyline
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat

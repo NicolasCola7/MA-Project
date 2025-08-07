@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.local.database.Converters
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
-import com.example.travel_companion.presentation.Utils
-import com.example.travel_companion.service.TripScheduler
+import com.example.travel_companion.util.Utils
+import com.example.travel_companion.util.TripScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
