@@ -1,6 +1,8 @@
 package com.example.travel_companion.presentation.adapter
 
+import android.icu.text.SimpleDateFormat
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -9,6 +11,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.databinding.ItemNoteBinding
+import com.google.android.material.card.MaterialCardView
+import java.util.Date
+import java.util.Locale
 
 class NotesListAdapter(
     private val onSelectionChanged: (Int) -> Unit = { }
@@ -106,8 +111,17 @@ class NotesListAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(note: NoteEntity, isSelected: Boolean) {
+            // Dati principali
             binding.tvNoteTitle.text = note.title
             binding.tvNoteContent.text = note.content
+
+            // Formatta e mostra la data
+            val date = Date(note.timestamp)
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            binding.tvNoteDate.text = dateFormat.format(date)
+
+            // Gestisci il tag/chip (opzionale, puoi rimuoverlo se non serve)
+            // binding.chipNoteTag.visibility = if (note.hasTag()) View.VISIBLE else View.GONE
 
             // Gestione selezione visuale
             updateSelectionUI(isSelected)
@@ -115,14 +129,19 @@ class NotesListAdapter(
 
         private fun updateSelectionUI(isSelected: Boolean) {
             val cardView = binding.root
-            val strokeWidthPx = (6 * binding.root.context.resources.displayMetrics.density).toInt()
 
             if (isSelected) {
-                cardView.strokeWidth = strokeWidthPx
-                cardView.strokeColor = ContextCompat.getColor(binding.root.context, R.color.red)
+                // Cambia lo sfondo per indicare la selezione
+                cardView.setBackgroundResource(R.drawable.note_card_selected)
+
+                // Aggiungi una leggera elevazione
+                cardView.cardElevation = 8f
             } else {
-                cardView.strokeWidth = 0
-                cardView.strokeColor = ContextCompat.getColor(binding.root.context, android.R.color.transparent)
+                // Ripristina lo sfondo normale
+                cardView.setBackgroundResource(R.drawable.note_card_gradient)
+
+                // Ripristina l'elevazione normale
+                cardView.cardElevation = 6f
             }
         }
     }
