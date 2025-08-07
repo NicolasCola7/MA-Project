@@ -3,25 +3,18 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
-import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripDetailViewModel
 import com.example.travel_companion.service.Polyline
 import com.example.travel_companion.service.Polylines
@@ -31,10 +24,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import timber.log.Timber
-import java.util.Date
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -71,7 +61,6 @@ class TripDetailsFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.onCreate(savedInstanceState)
-        setupTopMenu()
         setupBottomNavigation()
         initTripData()
         setupClickListeners()
@@ -86,25 +75,6 @@ class TripDetailsFragment: Fragment() {
             addAllPolylines()
             zoomToSeeWholeTrack()
         }
-    }
-
-    private fun setupTopMenu() {
-        requireActivity().addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.menu_trip_detail, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return when (menuItem.itemId) {
-                    R.id.action_delete -> {
-                        showDeleteTripDialog()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private fun setupBottomNavigation() {
@@ -226,40 +196,6 @@ class TripDetailsFragment: Fragment() {
             zoomToSeeWholeTrack()
         }
     }
-
-    private fun showDeleteTripDialog() {
-        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.Theme_ProvaProgetto_PopupOverlay)
-            .setTitle("Eliminazione viaggio")
-            .setMessage("Sei sicuro di voler eliminare il viaggio e tutti i dati relativi ad esso?")
-            .setPositiveButton("Si") { _, _ ->
-                deleteTrip()
-            }
-            .setNegativeButton("No") { dialogInterface, _ ->
-                dialogInterface.cancel()
-            }
-            .create()
-        dialog.show()
-    }
-
-    private fun deleteTrip() {
-        viewModel.deleteTrip()
-
-        val fromScreen = args.fromScreen
-        val destinationId = when (fromScreen) {
-            "list" -> R.id.tripsFragment
-            else -> R.id.homeFragment
-        }
-
-        findNavController().navigate(
-            destinationId,
-            null,
-            NavOptions.Builder()
-                .setPopUpTo(destinationId, true)
-                .setLaunchSingleTop(true)
-                .build()
-        )
-    }
-
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking

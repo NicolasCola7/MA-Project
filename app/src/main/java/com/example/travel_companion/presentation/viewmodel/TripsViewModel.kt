@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.local.database.Converters
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.TripRepository
-import com.example.travel_companion.service.TripManagerService
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
+import com.example.travel_companion.util.TripScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TripsViewModel @Inject constructor(
     private val tripRepository: TripRepository,      // Per query e controlli
-    private val tripManagerService: TripManagerService  // Per operazioni con scheduling
+    private val tripScheduler: TripScheduler  // Per operazioni con scheduling
 ) : ViewModel() {
 
     val trips: LiveData<List<TripEntity>> = tripRepository.getAllTrips()
@@ -135,7 +135,8 @@ class TripsViewModel @Inject constructor(
                 val hasConflict = tripRepository.isTripOverlapping(start, end)
                 if (!hasConflict) {
                     // USA TripManagerService invece di tripRepository direttamente, questo includerà automaticamente lo scheduling degli alarm
-                    tripManagerService.addTrip(newTrip)
+                    val id = tripRepository.addTrip(newTrip)
+                    tripScheduler.scheduleTrip(id, newTrip.startDate, newTrip.endDate)
                     _uiEvent.postValue(Event.Success)
                 } else {
                     _uiEvent.postValue(Event.ShowMessage("Esiste già un viaggio in questo intervallo di tempo"))
@@ -146,17 +147,19 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+    fun deleteTrips(tripIds: List<Long>) {
+        viewModelScope.launch {
+            tripRepository.deleteTrips(tripIds)
+            tripScheduler.cancelTripAlarms(tripIds)
+        }
+    }
+
     // Funzione per salvare l'immagine del luogo selezionato
     fun setPlaceImage(bitmap: Bitmap) {
         // Ridimensiona l'immagine per ottimizzare lo spazio su database
         val resizedBitmap = Utils.resizeBitmap(bitmap, 400, 300)
         // Usa il converter per convertire bitmap a ByteArray
         selectedPlaceImageData = converters.fromBitmap(resizedBitmap)
-    }
-
-    // Funzione per ottenere il bitmap da ByteArray
-    fun getTripImage(trip: TripEntity): Bitmap? {
-        return trip.imageData?.let { converters.toBitmap(it) }
     }
 
     // Reset dei dati quando si esce dal fragment

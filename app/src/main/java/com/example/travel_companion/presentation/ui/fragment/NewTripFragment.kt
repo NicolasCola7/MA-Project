@@ -18,7 +18,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.BaseApplication
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
-import com.example.travel_companion.presentation.Utils
+import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import com.google.android.gms.common.api.Status
 import com.google.android.libraries.places.api.model.Place
