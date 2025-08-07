@@ -4,42 +4,48 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.data.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class NotesViewModel @Inject constructor (
+class NotesViewModel @Inject constructor(
     private val noteRepository: NoteRepository
 ) : ViewModel() {
 
-    //I dati sono esposti tramite LiveData, così il fragment può osservarli.
-    private val _notes = MutableLiveData<List<NoteEntity>>()
-    val notes: LiveData<List<NoteEntity>> get() = _notes
+    private val _currentTripId = MutableLiveData<Long>()
 
-    //Le note vengono caricate in background (Dispatchers.IO) e postate nel LiveData.
+    val notes: LiveData<List<NoteEntity>> = _currentTripId.switchMap { tripId ->
+        noteRepository.getNotesByTripId(tripId)
+    }
+
     fun loadNotes(tripId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val noteList = noteRepository.getNotesByTripId(tripId)
-            _notes.postValue(noteList)
-        }
+        _currentTripId.value = tripId
     }
 
     fun insertNote(tripId: Long, title: String, content: String) {
-        val newNote = NoteEntity(
-            title = title,
-            content = content,
-            tripId = tripId
-        )
-
-        viewModelScope.launch(Dispatchers.IO) {
-            noteRepository.insert(newNote)
+        viewModelScope.launch {
+            try {
+                val note = NoteEntity(
+                    tripId = tripId,
+                    title = title,
+                    content = content,
+                    timestamp = System.currentTimeMillis()
+                )
+                noteRepository.insert(note)
+            } catch (e: Exception) {
+                Timber.e("Errore nell'inserimento delle note")
+            }
         }
     }
 
-    fun deleteNotes(tripIds: List<Long>) {
+    fun deleteNotes(noteIds: List<Long>) {
         viewModelScope.launch {
-            noteRepository.deleteNotes(tripIds)
+            try {
+                noteRepository.deleteNotes(noteIds)
+            } catch (e: Exception) {
+                Timber.e("Errore nella cancellazione delle note")
+            }
         }
     }
 }

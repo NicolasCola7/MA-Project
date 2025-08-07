@@ -1,8 +1,8 @@
 package com.example.travel_companion.data.repository
 
+import androidx.lifecycle.LiveData
 import com.example.travel_companion.data.local.dao.NoteDao
 import com.example.travel_companion.data.local.entity.NoteEntity
-import com.example.travel_companion.data.local.entity.PhotoEntity
 import javax.inject.Inject
 
 class NoteRepository @Inject constructor (
@@ -12,7 +12,7 @@ class NoteRepository @Inject constructor (
         noteDao.insert(photo);
     }
 
-    suspend fun getNotesByTripId(tripId: Long): List<NoteEntity> {
+    fun getNotesByTripId(tripId: Long): LiveData<List<NoteEntity>> {
         return noteDao.getNotesByTripId(tripId)
     }
 
