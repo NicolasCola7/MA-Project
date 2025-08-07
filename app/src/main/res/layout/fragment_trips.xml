@@ -56,7 +56,8 @@
             android:visibility="gone"
             android:backgroundTint="@color/red"
             android:textColor="@android:color/white"
-            android:layout_margin="8dp"/>
+            android:layout_margin="8dp"
+            tools:ignore="MissingConstraints" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

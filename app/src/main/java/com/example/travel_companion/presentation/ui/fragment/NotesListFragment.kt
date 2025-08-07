@@ -63,6 +63,12 @@ class NotesListFragment : Fragment() {
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.homeFragment -> {
+                    findNavController().navigate(
+                        TripDetailsFragmentDirections.actionTripFragmentToHomeFragment()
+                    )
+                    true
+                }
                 R.id.goToTripDetails -> {
                     findNavController().navigate(
                         NotesListFragmentDirections.actionNotesListFragmentToTripdetailsFragment(args.tripId)

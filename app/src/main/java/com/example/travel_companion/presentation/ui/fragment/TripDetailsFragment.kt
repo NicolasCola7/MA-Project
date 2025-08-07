@@ -80,6 +80,12 @@ class TripDetailsFragment: Fragment() {
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.homeFragment -> {
+                    findNavController().navigate(
+                        TripDetailsFragmentDirections.actionTripFragmentToHomeFragment()
+                    )
+                    true
+                }
                 R.id.goToPhotoGallery -> {
                     findNavController().navigate(
                         TripDetailsFragmentDirections.actionTripDetailFragmentToPhotoGalleryFragment(args.tripId)

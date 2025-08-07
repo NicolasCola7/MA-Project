@@ -72,6 +72,12 @@ class PhotoGalleryFragment: Fragment() {
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.homeFragment -> {
+                    findNavController().navigate(
+                        TripDetailsFragmentDirections.actionTripFragmentToHomeFragment()
+                    )
+                    true
+                }
                 R.id.goToNotes -> {
                     findNavController().navigate(
                         PhotoGalleryFragmentDirections.actionPhotoGalleryFragmenttToNoteListFragment(args.tripId)

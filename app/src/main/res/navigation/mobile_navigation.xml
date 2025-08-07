@@ -50,6 +50,10 @@
             android:name="tripId"
             app:argType="long" />
 
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+
         <!-- Action per aprire la Galleria Foto -->
         <action
             android:id="@+id/action_tripDetailFragment_to_photoGalleryFragment"
@@ -73,6 +77,10 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
 
         <action
             android:id="@+id/action_photoGalleryFragment_to_tripDetailsFragment"
@@ -100,6 +108,10 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
 
         <action
             android:id="@+id/action_notesListFragment_to_createNoteFragment"
