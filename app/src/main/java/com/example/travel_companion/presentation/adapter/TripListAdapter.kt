@@ -137,14 +137,19 @@ class TripListAdapter(
 
         private fun updateSelectionUI(isSelected: Boolean) {
             val cardView = binding.root
-            val strokeWidthPx = (6 * binding.root.context.resources.displayMetrics.density).toInt()
 
             if (isSelected) {
-                cardView.strokeWidth = strokeWidthPx
-                cardView.strokeColor = ContextCompat.getColor(binding.root.context, R.color.red)
+                // Cambia lo sfondo per indicare la selezione
+                cardView.setBackgroundResource(R.drawable.note_card_selected)
+
+                // Aggiungi una leggera elevazione
+                cardView.cardElevation = 8f
             } else {
-                cardView.strokeWidth = 0
-                cardView.strokeColor = ContextCompat.getColor(binding.root.context, android.R.color.transparent)
+                // Ripristina lo sfondo normale
+                cardView.setBackgroundResource(R.drawable.note_card_gradient)
+
+                // Ripristina l'elevazione normale
+                cardView.cardElevation = 6f
             }
         }
     }
