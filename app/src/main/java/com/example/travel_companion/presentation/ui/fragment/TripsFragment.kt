@@ -94,37 +94,29 @@ class TripsFragment : Fragment() {
     }
 
     private fun updateDeleteButton(selectedCount: Int) {
-        binding.deleteSelectedTrips.isVisible = selectedCount > 0
-
-        if (selectedCount > 0) {
-            binding.deleteSelectedTrips.text = "Elimina ( $selectedCount)"
-        }
+        Utils.SelectionHelper.updateDeleteButton(
+            button = binding.deleteSelectedTrips,
+            selectedCount = selectedCount,
+            baseText = "Elimina"
+        )
     }
 
     private fun handleMultipleDelete() {
         val selectedTrips = adapter.getSelectedTrips()
-        if (selectedTrips.isEmpty()) return
 
-        Utils.SelectionHelper.showMultipleDeleteConfirmation(
+        Utils.SelectionHelper.handleMultipleDelete(
             context = requireContext(),
-            count = selectedTrips.size,
+            selectedItems = selectedTrips,
             itemType = "viaggi",
-            onConfirmed = {
-                deleteSelectedTrips(selectedTrips)
-            }
+            onDelete = { trips -> deleteSelectedTrips(trips) },
+            onClearSelection = { adapter.clearSelection() },
+            onUpdateButton = { count -> updateDeleteButton(count) }
         )
     }
 
     private fun deleteSelectedTrips(trips: List<TripEntity>) {
-        // Estrai solo gli ID per l'operazione batch
         val tripIds = trips.map { it.id }
-
-        // Operazione batch più efficiente
         viewModel.deleteTrips(tripIds)
-
-        // Pulisci la selezione e aggiorna l'UI
-        adapter.clearSelection()
-        updateDeleteButton(0)
     }
 
     override fun onDestroyView() {

@@ -6,6 +6,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.Build
+import android.view.View
+import android.widget.TextView
+import androidx.core.view.isVisible
 import com.example.travel_companion.service.Polyline
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
@@ -97,5 +100,53 @@ object Utils {
                 .show()
         }
 
+        /**
+         * Aggiorna la visibilità e il testo di un pulsante di eliminazione
+         * @param button Il pulsante da aggiornare
+         * @param selectedCount Numero di elementi selezionati
+         * @param baseText Testo base del pulsante (es. "Elimina")
+         */
+        fun updateDeleteButton(
+            button: View,
+            selectedCount: Int,
+            baseText: String = "Elimina"
+        ) {
+            button.isVisible = selectedCount > 0
+
+            if (selectedCount > 0 && button is TextView) {
+                button.text = "$baseText ( $selectedCount )"
+            }
+        }
+
+        /**
+         * Gestisce l'operazione di eliminazione multipla con conferma
+         * @param context Context
+         * @param selectedItems Lista degli elementi selezionati
+         * @param itemType Tipo di elemento (es. "viaggi", "note", "immagini")
+         * @param onDelete Callback per eseguire l'eliminazione effettiva
+         * @param onClearSelection Callback per pulire la selezione
+         * @param onUpdateButton Callback per aggiornare il pulsante
+         */
+        fun <T> handleMultipleDelete(
+            context: Context,
+            selectedItems: List<T>,
+            itemType: String,
+            onDelete: (List<T>) -> Unit,
+            onClearSelection: () -> Unit,
+            onUpdateButton: (Int) -> Unit
+        ) {
+            if (selectedItems.isEmpty()) return
+
+            showMultipleDeleteConfirmation(
+                context = context,
+                count = selectedItems.size,
+                itemType = itemType,
+                onConfirmed = {
+                    onDelete(selectedItems)
+                    onClearSelection()
+                    onUpdateButton(0)
+                }
+            )
+        }
     }
 }
