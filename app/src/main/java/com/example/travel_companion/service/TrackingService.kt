@@ -29,6 +29,12 @@ import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
@@ -129,6 +135,10 @@ class TrackingService : LifecycleService() {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
             pathPoints.value?.apply {
+                if (last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
+                    return
+                }
+
                 last().add(pos) // add new coordinate to the last polyline
                 pathPoints.postValue(this)
             }
@@ -139,6 +149,51 @@ class TrackingService : LifecycleService() {
         add(mutableListOf())
         pathPoints.postValue(this)
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
+
+
+    /**
+     * Calculate the distance between two GPS coordinates using the Haversine formula
+     * @param lat1 Latitude of first point in degrees
+     * @param lon1 Longitude of first point in degrees
+     * @param lat2 Latitude of second point in degrees
+     * @param lon2 Longitude of second point in degrees
+     * @return Distance in meters
+     */
+    private fun haversineDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadiusMeters = 6371000.0 // Earth's radius in meters
+
+        // Convert degrees to radians
+        val phi1 = lat1 * PI / 180
+        val phi2 = lat2 * PI / 180
+        val deltaPhi = (lat2 - lat1) * PI / 180
+        val deltaLambda = (lon2 - lon1) * PI / 180
+
+        val a = sin(deltaPhi / 2).pow(2) +
+                cos(phi1) * cos(phi2) *
+                sin(deltaLambda / 2).pow(2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadiusMeters * c
+    }
+
+    /**
+     * Check if two coordinates are considered the same location within a threshold
+     * @param lat1 Latitude of first point in degrees
+     * @param lon1 Longitude of first point in degrees
+     * @param lat2 Latitude of second point in degrees
+     * @param lon2 Longitude of second point in degrees
+     * @param thresholdMeters Maximum distance to consider coordinates as same (default: 5 meters)
+     * @return true if coordinates are within threshold, false otherwise
+     */
+    private fun areCoordinatesSame(first: LatLng, second: LatLng, thresholdMeters: Double = 5.0): Boolean {
+        val lat1 = first.latitude
+        val lon1 = first.longitude
+        val lat2 = second.latitude
+        val lon2 = second.longitude
+
+        return haversineDistance(lat1, lon1, lat2, lon2) <= thresholdMeters
+    }
 
     private fun startForegroundService() {
         addEmptyPolyline()

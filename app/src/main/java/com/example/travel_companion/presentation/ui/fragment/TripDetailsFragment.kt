@@ -47,7 +47,7 @@ class TripDetailsFragment: Fragment() {
     private var pathPoints = mutableListOf<Polyline>()
     private var map: GoogleMap? = null
     private var trackedDistance: MutableLiveData<Double> = MutableLiveData(0.0)
-    private var stopPoints: MutableList<LatLng> = mutableListOf()
+    private var stopPoints: MutableList<Pair<LatLng, Long>> = mutableListOf()
 
     private var trackingObserver: Observer<Boolean>? = null
     private var pathPointsObserver: Observer<Polylines>? = null
@@ -193,8 +193,9 @@ class TripDetailsFragment: Fragment() {
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
             }
 
-            if((coordinate.timestamp - previousTimestamp) > 1000000) {
-                stopPoints.add(previousCoordinate)
+            val stopTime = coordinate.timestamp - previousTimestamp
+            if(stopTime > 1000000) {
+                stopPoints.add(Pair(previousCoordinate, stopTime))
             }
 
             previousTimestamp = coordinate.timestamp
@@ -246,6 +247,7 @@ class TripDetailsFragment: Fragment() {
             val lat = pathPoints.last().last().latitude
             val long = pathPoints.last().last().longitude
             viewModel.insertCoordinate(lat, long, args.tripId)
+            Timber.d("Stored")
         }
     }
 
@@ -349,11 +351,14 @@ class TripDetailsFragment: Fragment() {
         return distance
     }
 
-    private fun addStopMarker(coordinates: LatLng) {
+    private fun addStopMarker(stop: Pair<LatLng, Long>) {
+       val formattedTime = Utils.timeFormat.format(Date(stop.second)).toString()
+
         map?.addMarker(
             MarkerOptions()
-                .position(coordinates)
+                .position(stop.first)
                 .title("Fermata")
+                .snippet("Ti sei fermato qui per $formattedTime")
         )
     }
 

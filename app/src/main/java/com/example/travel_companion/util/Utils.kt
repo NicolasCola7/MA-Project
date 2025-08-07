@@ -17,6 +17,7 @@ import java.util.Locale
 object Utils {
     const val TRACKING_TIME: Long = 3000
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
+    val timeFormat: SimpleDateFormat = SimpleDateFormat("HH:mm", Locale.ITALY)
 
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
