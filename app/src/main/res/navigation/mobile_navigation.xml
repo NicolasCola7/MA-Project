@@ -128,7 +128,21 @@
         <action
             android:id="@+id/action_notesListFragment_to_tripdetailsFragment"
             app:destination="@id/tripDetailFragment" />
+
+        <action
+            android:id="@+id/action_notesListFragment_to_noteDetailsFragment"
+            app:destination="@id/noteDetailsFragment" />
+
     </fragment>
 
+    <fragment
+        android:id="@+id/noteDetailsFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.NoteDetailsFragment"
+        android:label="@string/NoteDetailsFragment">
+
+        <argument
+            android:name="noteId"
+            app:argType="long" />
+    </fragment>
 
 </navigation>

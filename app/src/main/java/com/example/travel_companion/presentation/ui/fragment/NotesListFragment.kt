@@ -67,11 +67,17 @@ class NotesListFragment : Fragment() {
 
     private fun setupAdapter() {
         adapter = NotesListAdapter(
+            onItemClick = { note ->
+                val action = NotesListFragmentDirections
+                    .actionNotesListFragmentToNoteDetailsFragment(note.id)
+                findNavController().navigate(action)
+            },
             onSelectionChanged = { count ->
                 updateDeleteButton(count)
             }
         )
     }
+
 
     private fun setupRecyclerView() {
         binding.recyclerView.adapter = adapter

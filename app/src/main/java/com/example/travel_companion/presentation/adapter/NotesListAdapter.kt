@@ -16,6 +16,7 @@ import java.util.Date
 import java.util.Locale
 
 class NotesListAdapter(
+    private val onItemClick: (NoteEntity) -> Unit,
     private val onSelectionChanged: (Int) -> Unit = { }
 ) : ListAdapter<NoteEntity, NotesListAdapter.NotesViewHolder>(NotesDiffCallback()) {
 
@@ -96,8 +97,7 @@ class NotesListAdapter(
             if (selectionMode) {
                 toggleSelection(note, position)
             } else {
-                // Qui puoi aggiungere la logica per aprire/editare la nota
-                // onNoteClick?.invoke(note)
+                onItemClick(note)
             }
         }
 

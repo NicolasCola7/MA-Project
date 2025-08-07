@@ -16,4 +16,7 @@ interface NoteDao {
 
     @Query("DELETE FROM note WHERE id IN (:noteIds)")
     suspend fun deleteNotes(noteIds: List<Long>)
+
+    @Query("SELECT * FROM note WHERE id = :id")
+    fun getNoteById(id: Long): LiveData<NoteEntity>
 }

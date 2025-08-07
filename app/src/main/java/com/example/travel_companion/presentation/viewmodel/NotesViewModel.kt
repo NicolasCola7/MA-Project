@@ -39,6 +39,10 @@ class NotesViewModel @Inject constructor(
         }
     }
 
+    fun getNoteById(id: Long): LiveData<NoteEntity> {
+        return noteRepository.getNoteById(id)
+    }
+
     fun deleteNotes(noteIds: List<Long>) {
         viewModelScope.launch {
             try {

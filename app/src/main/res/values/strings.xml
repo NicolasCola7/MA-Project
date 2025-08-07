@@ -19,4 +19,5 @@
     <string name="PhotoGalleryFragment">Galleria</string>
     <string name="TripDetailsFragment">Dettagli viaggio</string>
     <string name="tripsFragment">Viaggi</string>
+    <string name="NoteDetailsFragment">Dettaglio nota</string>
 </resources>

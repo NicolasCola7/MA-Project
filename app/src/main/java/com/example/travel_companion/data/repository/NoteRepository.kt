@@ -19,4 +19,8 @@ class NoteRepository @Inject constructor (
     suspend fun deleteNotes(tripIds: List<Long>) {
         noteDao.deleteNotes(tripIds)
     }
+
+    fun getNoteById(id: Long): LiveData<NoteEntity> {
+        return noteDao.getNoteById(id)
+    }
 }
