@@ -6,34 +6,30 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.content.FileProvider
-import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.FragmentPhotoGalleryBinding
+import com.example.travel_companion.presentation.adapter.NotesListAdapter
 import com.example.travel_companion.presentation.adapter.PhotoAdapter
 import com.example.travel_companion.presentation.viewmodel.PhotoGalleryViewModel
+import com.example.travel_companion.util.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class PhotoGalleryFragment: Fragment() {
@@ -67,6 +63,18 @@ class PhotoGalleryFragment: Fragment() {
         setupBottomNavigation()
         setupClickListeners()
         initGalleryData()
+        setupAdapter()
+        observeData()
+    }
+
+    private fun observeData() {
+        viewModel.loadPhotos(args.tripId)
+
+        viewModel.photos.observe(viewLifecycleOwner) { photoList ->
+            adapter.submitList(photoList) {
+                adapter.updateSelectionAfterListChange()
+            }
+        }
     }
 
     private fun setupBottomNavigation() {
@@ -99,13 +107,24 @@ class PhotoGalleryFragment: Fragment() {
         binding.takePicture.setOnClickListener {
             handleTakePhoto()
         }
+        binding.deleteSelectedPhotos.setOnClickListener {
+            handleMultipleDelete()
+        }
+    }
+
+    private fun setupAdapter() {
+        adapter = PhotoAdapter(
+            onSelectionChanged = { count ->
+                updateDeleteButton(count)
+            }
+        )
+        binding.recyclerView.adapter = adapter
     }
 
     private fun initGalleryData() {
         viewModel.loadPhotos(args.tripId).observe(viewLifecycleOwner) { photos ->
             adapter.submitList(photos)
         }
-
     }
 
     private fun handleTakePhoto() {
@@ -154,6 +173,32 @@ class PhotoGalleryFragment: Fragment() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+    }
+
+    private fun updateDeleteButton(selectedCount: Int) {
+        Utils.SelectionHelper.updateDeleteButton(
+            button = binding.deleteSelectedPhotos,
+            selectedCount = selectedCount,
+            baseText = "Elimina"
+        )
+    }
+
+    private fun handleMultipleDelete() {
+        val selectedPhotos = adapter.getSelectedPhotos()
+
+        Utils.SelectionHelper.handleMultipleDelete(
+            context = requireContext(),
+            selectedItems = selectedPhotos,
+            itemType = "foto",
+            onDelete = { photos -> deleteSelectedPhotos(photos) },
+            onClearSelection = { adapter.clearSelection() },
+            onUpdateButton = { count -> updateDeleteButton(count) }
+        )
+    }
+
+    private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
+        val photoIds = photos.map { it.id }
+        viewModel.deletePhotos(photoIds)
     }
 
     override fun onDestroyView() {

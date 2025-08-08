@@ -17,4 +17,8 @@ class PhotoRepository @Inject constructor (
         return photoDao.getPhotosByTripId(tripId)
     }
 
+    suspend fun deletePhotos(photoIds: List<Long>) {
+        photoDao.deletePhotosByIds(photoIds)
+    }
+
 }

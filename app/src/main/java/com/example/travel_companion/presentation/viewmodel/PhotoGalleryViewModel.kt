@@ -33,4 +33,11 @@ class PhotoGalleryViewModel @Inject constructor (
             photoRepository.insert(newPhoto)
         }
     }
+
+    fun deletePhotos(photoIds: List<Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            photoRepository.deletePhotos(photoIds)
+        }
+    }
+
 }
