@@ -26,6 +26,7 @@ import com.example.travel_companion.presentation.adapter.PhotoAdapter
 import com.example.travel_companion.presentation.viewmodel.PhotoGalleryViewModel
 import com.example.travel_companion.util.Utils
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
