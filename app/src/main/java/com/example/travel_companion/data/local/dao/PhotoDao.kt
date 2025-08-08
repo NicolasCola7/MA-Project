@@ -1,5 +1,6 @@
 package com.example.travel_companion.data.local.dao
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
@@ -10,6 +11,7 @@ interface PhotoDao {
     @Insert
     suspend fun insert(photo: PhotoEntity)
 
-    @Query("SELECT * FROM trip_photos WHERE tripId = :tripId ORDER BY timestamp DESC")
-    suspend fun getPhotosByTripId(tripId: Long): List<PhotoEntity>
+    @Query("SELECT * FROM trip_photos WHERE tripId = :tripId")
+    fun getPhotosByTripId(tripId: Long): LiveData<List<PhotoEntity>>
+
 }

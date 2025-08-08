@@ -102,11 +102,10 @@ class PhotoGalleryFragment: Fragment() {
     }
 
     private fun initGalleryData() {
-        viewModel.loadPhotos(args.tripId)
-
-        viewModel.photos.observe(viewLifecycleOwner) { photos ->
+        viewModel.loadPhotos(args.tripId).observe(viewLifecycleOwner) { photos ->
             adapter.submitList(photos)
         }
+
     }
 
     private fun handleTakePhoto() {
@@ -148,9 +147,6 @@ class PhotoGalleryFragment: Fragment() {
     ) { success ->
         if (success) {
             viewModel.insert(args.tripId, currentPhotoUri.toString())
-            Toast.makeText(requireContext(), "Foto salvata", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "Scatto annullato", Toast.LENGTH_SHORT).show()
         }
     }
 

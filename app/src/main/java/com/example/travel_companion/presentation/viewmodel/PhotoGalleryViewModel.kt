@@ -4,7 +4,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,11 +19,8 @@ class PhotoGalleryViewModel @Inject constructor (
     private val _photos = MutableLiveData<List<PhotoEntity>>()
     val photos: LiveData<List<PhotoEntity>> get() = _photos
 
-    fun loadPhotos(tripId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val noteList = photoRepository.getPhotosByTripId(tripId)
-            _photos.postValue(noteList)
-        }
+    fun loadPhotos(tripId: Long): LiveData<List<PhotoEntity>> {
+        return photoRepository.getPhotosByTripId(tripId)
     }
 
     fun insert(tripId: Long, uri: String) {
