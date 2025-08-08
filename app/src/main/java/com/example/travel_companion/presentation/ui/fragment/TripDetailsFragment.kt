@@ -34,6 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -127,25 +128,15 @@ class TripDetailsFragment: Fragment() {
     private fun showFinishTripDialog() {
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.Theme_ProvaProgetto_PopupOverlay)
             .setTitle("Terminazione viaggio")
-            .setMessage("terminando il viaggio non sarai più in grado di tracciare i tuoi spostament, sei sicuro di voler continuare?")
+            .setMessage("Terminando il viaggio non sarai più in grado di tracciare i tuoi spostamenti, sei sicuro di voler continuare?")
             .setPositiveButton("Si") { _, _ ->
-                finishTrip()
+                viewModel.updateTripStatus(TripStatus.FINISHED)
             }
             .setNegativeButton("No") { dialogInterface, _ ->
                 dialogInterface.cancel()
             }
             .create()
         dialog.show()
-    }
-
-    private fun finishTrip() {
-        sendCommandToService("ACTION_STOP_SERVICE")
-        viewModel.updateTripStatus(TripStatus.FINISHED)
-
-        binding.btnFinishTrip.visibility = View.GONE
-        binding.btnToggleTracking.visibility = View.GONE
-
-        viewModel.updateTripDistance(trackedDistance.value!!)
     }
 
     private fun initTripData() {
@@ -173,7 +164,8 @@ class TripDetailsFragment: Fragment() {
 
         trackedDistance.observe(viewLifecycleOwner) {
             if(trackedDistance.value!! >= 1000.00) {
-                val distanceInKM = trackedDistance.value!! / 1000
+                val distanceInKM = "%.2f".format(trackedDistance.value!! / 1000.0)
+                    .toDouble()
                 binding.tvDistance.text = distanceInKM.toString() + " Km"
             } else {
                 binding.tvDistance.text = trackedDistance.value!!.toInt().toString() + " m"
@@ -187,10 +179,11 @@ class TripDetailsFragment: Fragment() {
         var previousCoordinate = LatLng(coordinates[0].latitude, coordinates[0].longitude)
 
         for (coordinate in coordinates) {
-            if((coordinate.timestamp - previousTimestamp) > (Utils.TRACKING_TIME * 2)) {
+            if((coordinate.timestamp - previousTimestamp) > (Utils.TRACKING_TIME * 10)) {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
+                Timber.d("new")
             }
 
             val stopTime = coordinate.timestamp - previousTimestamp
@@ -198,7 +191,9 @@ class TripDetailsFragment: Fragment() {
                 stopPoints.add(Pair(previousCoordinate, stopTime))
             }
 
+
             previousTimestamp = coordinate.timestamp
+            Timber.d(Utils.timeFormat.format(previousTimestamp).toString())
             previousCoordinate =  LatLng(coordinate.latitude, coordinate.longitude)
             currentPolyline.add(previousCoordinate)
         }
@@ -259,9 +254,9 @@ class TripDetailsFragment: Fragment() {
         binding.tvDistance.text = trip.trackedDistance.toString()
         binding.tvStatus.text = trip.status.getValue()
 
-        if(trip.startDate > System.currentTimeMillis() || trip.endDate < System.currentTimeMillis()) {
-            binding.btnToggleTracking.visibility = View.GONE
+        if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
             binding.btnFinishTrip.visibility = View.GONE
+            binding.btnToggleTracking.visibility = View.GONE
         }
     }
 
@@ -277,10 +272,10 @@ class TripDetailsFragment: Fragment() {
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if(!isTracking) {
-            binding.btnToggleTracking.text = "Start"
+            binding.btnToggleTracking.text = "Traccia"
             binding.btnFinishTrip.visibility = View.VISIBLE
         } else {
-            binding.btnToggleTracking.text = "Stop"
+            binding.btnToggleTracking.text = "Ferma"
             binding.btnFinishTrip.visibility = View.GONE
         }
     }
@@ -352,13 +347,13 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun addStopMarker(stop: Pair<LatLng, Long>) {
-       val formattedTime = Utils.timeFormat.format(Date(stop.second)).toString()
+        val timePassed = stop.second.toDurationString()
 
         map?.addMarker(
             MarkerOptions()
                 .position(stop.first)
                 .title("Fermata")
-                .snippet("Ti sei fermato qui per $formattedTime")
+                .snippet("Ti sei fermato qui per $timePassed")
         )
     }
 

@@ -13,11 +13,12 @@ import com.example.travel_companion.service.Polyline
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 object Utils {
-    const val TRACKING_TIME: Long = 3000
+    const val TRACKING_TIME: Long = 1000
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
-    val timeFormat: SimpleDateFormat = SimpleDateFormat("HH:mm", Locale.ITALY)
+    val timeFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss", Locale.ITALY)
 
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
@@ -63,6 +64,12 @@ object Utils {
                 .setPositiveButton("Elimina") { _, _ -> onConfirmed() }
                 .setNegativeButton("Annulla", null)
                 .show()
+        }
+
+        fun Long.toDurationString(): String {
+            val hours = TimeUnit.MILLISECONDS.toHours(this)
+            val minutes = TimeUnit.MILLISECONDS.toMinutes(this) % 60
+            return String.format("%02d:%02d", hours, minutes)
         }
 
         /**

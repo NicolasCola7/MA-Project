@@ -201,7 +201,7 @@
                                 <com.google.android.material.textview.MaterialTextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Distanza"
+                                    android:text="Distanza tracciata"
                                     android:textSize="11sp"
                                     android:textColor="?android:textColorSecondary" />
 
@@ -279,15 +279,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:text="Inizia" />
+                    android:text="Traccia" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnFinishTrip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Termina viaggio"
-                    android:visibility="visible" />
+                    android:text="Termina viaggio" />
 
             </LinearLayout>
 

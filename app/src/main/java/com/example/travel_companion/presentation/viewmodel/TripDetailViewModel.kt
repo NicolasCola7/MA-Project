@@ -10,6 +10,7 @@ import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.util.TripScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -53,12 +54,13 @@ class TripDetailViewModel  @Inject constructor (
 
     fun updateTripStatus(status: TripStatus) {
         val updated = _trip.value?.copy(status = status) ?: return
+        Timber.d(updated.status.toString())
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
             _trip.postValue(updated)
         }
 
-        if (status == TripStatus.FINISHED) {
+       if (status == TripStatus.FINISHED) {
             tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
         }
     }
