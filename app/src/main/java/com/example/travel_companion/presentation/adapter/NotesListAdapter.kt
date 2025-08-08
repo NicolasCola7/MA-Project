@@ -120,9 +120,6 @@ class NotesListAdapter(
             val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             binding.tvNoteDate.text = dateFormat.format(date)
 
-            // Gestisci il tag/chip (opzionale, puoi rimuoverlo se non serve)
-            // binding.chipNoteTag.visibility = if (note.hasTag()) View.VISIBLE else View.GONE
-
             // Gestione selezione visuale
             updateSelectionUI(isSelected)
         }

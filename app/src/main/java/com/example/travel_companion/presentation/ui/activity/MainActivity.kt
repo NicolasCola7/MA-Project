@@ -54,16 +54,24 @@ class MainActivity : AppCompatActivity() {
         )
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Usa automaticamente la label del fragment dal navigation graph
             binding.tvToolbarTitle.text = destination.label ?: "Travel Companion"
 
-            // Gestisci visibilità bottom navigation
+            // Gestione BottomNavigationView
             binding.bottomNavigationView.visibility = if (destination.id in fragmentsWithBottomNav) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
+
+            // Gestione AppBarLayout (Toolbar)
+            binding.appBarLayout.visibility = if (destination.id == R.id.photoFullScreenFragment) {
+                View.GONE
+            } else {
+                View.VISIBLE
+            }
         }
+
+
 
         navigateToTrackingFragmentIfNeeded(intent)
     }

@@ -89,6 +89,10 @@
         <action
             android:id="@+id/action_photoGalleryFragmentt_to_noteListFragment"
             app:destination="@id/noteListFragment" />
+
+        <action
+            android:id="@+id/action_photoGalleryFragment_to_photoFullScreenFragment"
+            app:destination="@id/photoFullScreenFragment" />
     </fragment>
 
     <fragment
@@ -145,4 +149,15 @@
             app:argType="long" />
     </fragment>
 
+    <fragment
+        android:id="@+id/photoFullScreenFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.PhotoFullScreenFragment"
+        android:label="PhotoFullScreenFragment">
+        <argument
+            android:name="photoUri"
+            app:argType="string" />
+        <argument
+            android:name="tripId"
+            app:argType="long" />
+    </fragment>
 </navigation>

@@ -113,10 +113,21 @@ class PhotoGalleryFragment: Fragment() {
         }
     }
 
+    // Modifica solo il metodo setupAdapter() nel tuo PhotoGalleryFragment:
+
     private fun setupAdapter() {
         adapter = PhotoAdapter(
             onSelectionChanged = { count ->
                 updateDeleteButton(count)
+            },
+            onPhotoClick = { photo ->
+                // Naviga al fragment a schermo intero
+                findNavController().navigate(
+                    PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
+                        photoUri = photo.uri,
+                        tripId = args.tripId
+                    )
+                )
             }
         )
         binding.recyclerView.adapter = adapter

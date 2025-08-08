@@ -20,4 +20,7 @@
     <string name="TripDetailsFragment">Dettagli viaggio</string>
     <string name="tripsFragment">Viaggi</string>
     <string name="NoteDetailsFragment">Dettaglio nota</string>
+
+    <string name="back">Indietro</string>
+    <string name="full_screen_photo">Foto a schermo intero</string>
 </resources>
