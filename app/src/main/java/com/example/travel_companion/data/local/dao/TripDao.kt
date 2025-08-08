@@ -61,4 +61,5 @@ interface TripDao {
 
     @Query("SELECT * FROM trip WHERE status = :status ORDER BY startDate ASC")
     suspend fun getTripsByStatusSync(status: TripStatus): List<TripEntity>
+
 }

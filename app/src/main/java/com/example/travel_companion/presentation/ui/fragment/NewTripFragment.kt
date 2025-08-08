@@ -39,6 +39,10 @@ class NewTripFragment : Fragment() {
     private var previousTripType: String? = null
     private lateinit var placesClient: PlacesClient
 
+    private var latitude: Double = 0.0
+    private var longitude: Double = 0.0
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -82,6 +86,9 @@ class NewTripFragment : Fragment() {
             override fun onPlaceSelected(place: Place) {
                 val placeName = place.displayName ?: ""
                 val placeAddress = place.formattedAddress ?: ""
+                latitude = place.location?.latitude!!
+                longitude = place.location?.longitude!!
+
 
                 Timber.i("Luogo selezionato: $placeName, $placeAddress")
                 viewModel.selectedDestinationName = placeName
@@ -207,7 +214,9 @@ class NewTripFragment : Fragment() {
                 destination = viewModel.selectedDestinationName,
                 startDateStr = binding.editStartDate.text.toString(),
                 endDateStr = binding.editEndDate.text.toString(),
-                type = binding.spinnerTripType.selectedItem.toString()
+                type = binding.spinnerTripType.selectedItem.toString(),
+                lat = latitude,
+                long = longitude
             )
         }
     }
