@@ -29,6 +29,12 @@ import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
@@ -97,17 +103,15 @@ class TrackingService : LifecycleService() {
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
         if (isTracking) {
-            if (Utils.hasLocationPermissions(this)) {
-                val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Utils.TRACKING_TIME)
-                    .setMinUpdateIntervalMillis(Utils.TRACKING_TIME)
-                    .build()
+            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Utils.TRACKING_TIME)
+                .setMinUpdateIntervalMillis(Utils.TRACKING_TIME)
+                .build()
 
-                fusedLocationProviderClient.requestLocationUpdates(
-                    request,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
-            }
+            fusedLocationProviderClient.requestLocationUpdates(
+                request,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         }
@@ -131,6 +135,10 @@ class TrackingService : LifecycleService() {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
             pathPoints.value?.apply {
+                if (last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
+                    return
+                }
+
                 last().add(pos) // add new coordinate to the last polyline
                 pathPoints.postValue(this)
             }
@@ -141,6 +149,23 @@ class TrackingService : LifecycleService() {
         add(mutableListOf())
         pathPoints.postValue(this)
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
+
+
+    private fun areCoordinatesSame(
+        pos1: LatLng,
+        pos2: LatLng,
+        thresholdMeters: Float = 5.0f
+    ): Boolean {
+        val result = FloatArray(1)
+        Location.distanceBetween(
+            pos1.latitude,
+            pos1.longitude,
+            pos2.latitude,
+            pos2.longitude,
+            result
+        )
+        return result[0] <= thresholdMeters
+    }
 
     private fun startForegroundService() {
         addEmptyPolyline()

@@ -13,46 +13,12 @@ import com.example.travel_companion.service.Polyline
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 object Utils {
-    const val TRACKING_TIME: Long = 3000
-
-    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ITALY)
-
-    fun hasLocationPermissions(context: Context) =
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            EasyPermissions.hasPermissions(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        } else {
-            EasyPermissions.hasPermissions(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-        }
-
-    fun calculatePolylineLength(polyline: Polyline): Float {
-        var distance = 0f
-        for(i in 0..polyline.size - 2) {
-            val pos1 = polyline[i]
-            val pos2 = polyline[i + 1]
-
-            val result = FloatArray(1)
-            Location.distanceBetween(
-                pos1.latitude,
-                pos1.longitude,
-                pos2.latitude,
-                pos2.longitude,
-                result
-            )
-            distance += result[0]
-        }
-        return distance
-    }
+    const val TRACKING_TIME: Long = 1000
+    val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
+    val timeFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss", Locale.ITALY)
 
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
@@ -103,6 +69,12 @@ object Utils {
                 .setPositiveButton("Elimina") { _, _ -> onConfirmed() }
                 .setNegativeButton("Annulla", null)
                 .show()
+        }
+
+        fun Long.toDurationString(): String {
+            val hours = TimeUnit.MILLISECONDS.toHours(this)
+            val minutes = TimeUnit.MILLISECONDS.toMinutes(this) % 60
+            return String.format("%02d:%02d", hours, minutes)
         }
 
         /**

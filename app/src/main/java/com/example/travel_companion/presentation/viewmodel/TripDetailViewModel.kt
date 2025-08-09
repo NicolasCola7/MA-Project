@@ -7,14 +7,17 @@ import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.CoordinateRepository
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.util.TripScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class TripDetailViewModel  @Inject constructor (
     private val tripRepository: TripRepository,
-    private val coordinateRepository: CoordinateRepository
+    private val coordinateRepository: CoordinateRepository,
+    private val tripScheduler: TripScheduler
 ) : ViewModel() {
 
     private val _trip = MutableLiveData<TripEntity?>()
@@ -51,6 +54,20 @@ class TripDetailViewModel  @Inject constructor (
 
     fun updateTripStatus(status: TripStatus) {
         val updated = _trip.value?.copy(status = status) ?: return
+        Timber.d(updated.status.toString())
+        viewModelScope.launch(Dispatchers.IO) {
+            tripRepository.updateTrip(updated)
+            _trip.postValue(updated)
+        }
+
+       if (status == TripStatus.FINISHED) {
+            tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
+        }
+    }
+
+    fun updateTripDistance(newDistance: Double) {
+        val updated = _trip.value?.copy(trackedDistance = newDistance) ?: return
+
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
             _trip.postValue(updated)
