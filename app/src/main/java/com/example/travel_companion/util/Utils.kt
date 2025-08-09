@@ -87,7 +87,12 @@ object Utils {
             onConfirmed: () -> Unit
         ) {
             val message = if (count == 1) {
-                "Sei sicuro di voler eliminare 1 ${itemType.dropLast(1)}?" // Rimuove la 's' finale per il singolare
+                val singularItem = when (itemType) {
+                    "note" -> "nota"
+                    "viaggi" -> "viaggio"
+                    else -> itemType
+                }
+                "Sei sicuro di voler eliminare 1 $singularItem?"
             } else {
                 "Sei sicuro di voler eliminare $count $itemType?"
             }
@@ -96,20 +101,6 @@ object Utils {
                 .setTitle("Elimina $itemType")
                 .setMessage(message)
                 .setPositiveButton("Elimina") { _, _ -> onConfirmed() }
-                .setNegativeButton("Annulla", null)
-                .show()
-        }
-
-        fun showDeleteConfirmation(
-            context: Context,
-            title: String = "Conferma eliminazione",
-            message: String = "Questa azione non può essere annullata",
-            onConfirm: () -> Unit
-        ) {
-            AlertDialog.Builder(context)
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("Elimina") { _, _ -> onConfirm() }
                 .setNegativeButton("Annulla", null)
                 .show()
         }

@@ -143,8 +143,6 @@ class NoteDetailsFragment : Fragment() {
             viewModel.updateNote(updatedNote)
             setEditMode(false)
             hideKeyboard()
-
-            Toast.makeText(requireContext(), "Nota salvata", Toast.LENGTH_SHORT).show()
         }
     }
 
