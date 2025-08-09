@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.example.travel_companion.data.local.entity.NoteEntity
 
 @Dao
@@ -19,4 +20,7 @@ interface NoteDao {
 
     @Query("SELECT * FROM note WHERE id = :id")
     fun getNoteById(id: Long): LiveData<NoteEntity>
+
+    @Update
+    suspend fun updateNote(note: NoteEntity)
 }

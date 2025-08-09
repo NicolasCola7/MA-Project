@@ -2,16 +2,13 @@ package com.example.travel_companion.presentation.adapter
 
 import android.icu.text.SimpleDateFormat
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.databinding.ItemNoteBinding
-import com.google.android.material.card.MaterialCardView
 import java.util.Date
 import java.util.Locale
 

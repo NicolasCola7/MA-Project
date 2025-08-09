@@ -8,16 +8,20 @@ import javax.inject.Inject
 class NoteRepository @Inject constructor (
     private val noteDao: NoteDao
 ) {
-    suspend fun insert(photo: NoteEntity) {
-        noteDao.insert(photo);
+    suspend fun insert(note: NoteEntity) {
+        noteDao.insert(note);
     }
 
     fun getNotesByTripId(tripId: Long): LiveData<List<NoteEntity>> {
         return noteDao.getNotesByTripId(tripId)
     }
 
-    suspend fun deleteNotes(tripIds: List<Long>) {
-        noteDao.deleteNotes(tripIds)
+    suspend fun deleteNotes(noteIds: List<Long>) {
+        noteDao.deleteNotes(noteIds)
+    }
+
+    suspend fun updateNote(note: NoteEntity){
+        noteDao.updateNote(note)
     }
 
     fun getNoteById(id: Long): LiveData<NoteEntity> {

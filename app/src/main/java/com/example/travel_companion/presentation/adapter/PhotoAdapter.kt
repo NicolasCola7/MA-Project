@@ -1,6 +1,5 @@
 package com.example.travel_companion.presentation.adapter
 
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -8,11 +7,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.travel_companion.R
-import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.ItemPhotoBinding
-import dagger.hilt.android.scopes.FragmentScoped
-import javax.inject.Inject
 
 class PhotoAdapter(
     private val onSelectionChanged: (Int) -> Unit = {},

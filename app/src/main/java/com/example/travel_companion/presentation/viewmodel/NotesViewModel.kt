@@ -43,6 +43,12 @@ class NotesViewModel @Inject constructor(
         return noteRepository.getNoteById(id)
     }
 
+    fun updateNote(note: NoteEntity) {
+        viewModelScope.launch {
+            noteRepository.updateNote(note)
+        }
+    }
+
     fun deleteNotes(noteIds: List<Long>) {
         viewModelScope.launch {
             try {

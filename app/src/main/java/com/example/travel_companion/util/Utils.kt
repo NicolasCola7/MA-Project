@@ -100,6 +100,20 @@ object Utils {
                 .show()
         }
 
+        fun showDeleteConfirmation(
+            context: Context,
+            title: String = "Conferma eliminazione",
+            message: String = "Questa azione non può essere annullata",
+            onConfirm: () -> Unit
+        ) {
+            AlertDialog.Builder(context)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Elimina") { _, _ -> onConfirm() }
+                .setNegativeButton("Annulla", null)
+                .show()
+        }
+
         /**
          * Aggiorna la visibilità e il testo di un pulsante di eliminazione
          * @param button Il pulsante da aggiornare
