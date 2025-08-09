@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.HomeFragment"
-        android:label="Home"
+        android:label="@string/HomeFragment"
         tools:layout="@layout/fragment_home">
 
         <action
@@ -19,7 +19,7 @@
     <fragment
         android:id="@+id/tripsFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.TripsFragment"
-        android:label="@string/menu_home"
+        android:label="@string/tripsFragment"
         tools:layout="@layout/fragment_trips">
 
         <action
@@ -35,16 +35,20 @@
     <fragment
         android:id="@+id/newTripFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NewTripFragment"
-        android:label="Nuovo Viaggio"
+        android:label="@string/NewTripFragment"
         tools:layout="@layout/fragment_new_trip" />
 
     <fragment
         android:id="@+id/tripDetailFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.TripDetailsFragment"
-        android:label="Dettaglio viaggio">
+        android:label="@string/TripDetailsFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
 
         <!-- Action per aprire la Galleria Foto -->
         <action
@@ -65,10 +69,14 @@
     <fragment
         android:id="@+id/photoGalleryFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.PhotoGalleryFragment"
-        android:label="Galleria">
+        android:label="@string/PhotoGalleryFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
 
         <action
             android:id="@+id/action_photoGalleryFragment_to_tripDetailsFragment"
@@ -77,12 +85,16 @@
         <action
             android:id="@+id/action_photoGalleryFragmentt_to_noteListFragment"
             app:destination="@id/noteListFragment" />
+
+        <action
+            android:id="@+id/action_photoGalleryFragment_to_photoFullScreenFragment"
+            app:destination="@id/photoFullScreenFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/createNoteFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.CreateNoteFragment"
-        android:label="Crea nota">
+        android:label="@string/CreateNoteFragment">
         <argument
             android:name="tripId"
             app:argType="long" />
@@ -91,11 +103,15 @@
     <fragment
         android:id="@+id/noteListFragment"
         android:name="com.example.travel_companion.presentation.ui.fragment.NotesListFragment"
-        android:label="Note">
+        android:label="@string/NoteListFragment">
 
         <argument
             android:name="tripId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_tripFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
 
         <action
             android:id="@+id/action_notesListFragment_to_createNoteFragment"
@@ -112,7 +128,32 @@
         <action
             android:id="@+id/action_notesListFragment_to_tripdetailsFragment"
             app:destination="@id/tripDetailFragment" />
+
+        <action
+            android:id="@+id/action_notesListFragment_to_noteDetailsFragment"
+            app:destination="@id/noteDetailsFragment" />
+
     </fragment>
 
+    <fragment
+        android:id="@+id/noteDetailsFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.NoteDetailsFragment"
+        android:label="@string/NoteDetailsFragment">
 
+        <argument
+            android:name="noteId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/photoFullScreenFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.PhotoFullScreenFragment"
+        android:label="PhotoFullScreenFragment">
+        <argument
+            android:name="photoUri"
+            app:argType="string" />
+        <argument
+            android:name="tripId"
+            app:argType="long" />
+    </fragment>
 </navigation>

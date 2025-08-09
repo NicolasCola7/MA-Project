@@ -53,7 +53,12 @@ object Utils {
             onConfirmed: () -> Unit
         ) {
             val message = if (count == 1) {
-                "Sei sicuro di voler eliminare 1 ${itemType.dropLast(1)}?" // Rimuove la 's' finale per il singolare
+                val singularItem = when (itemType) {
+                    "note" -> "nota"
+                    "viaggi" -> "viaggio"
+                    else -> itemType
+                }
+                "Sei sicuro di voler eliminare 1 $singularItem?"
             } else {
                 "Sei sicuro di voler eliminare $count $itemType?"
             }

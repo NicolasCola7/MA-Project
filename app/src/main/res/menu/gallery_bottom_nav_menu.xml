@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <item android:id="@+id/homeFragment"
+        android:title="Home"
+        android:icon="@drawable/ic_home" />
+
     <item android:id="@+id/goToTripDetails"
         android:title="Dettagli Viaggio"
+        android:icon="@drawable/ic_detail_trip_24"
         android:src="@android:drawable/ic_dialog_map" />
 
     <item android:id="@+id/goToNotes"
         android:title="Note"
-        android:icon="@drawable/ic_notes" />
+        android:icon="@drawable/ic_edit_note_24" />
 
 
 </menu>

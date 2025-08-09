@@ -1,5 +1,6 @@
 package com.example.travel_companion.data.repository
 
+import androidx.lifecycle.LiveData
 import com.example.travel_companion.data.local.dao.PhotoDao
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import javax.inject.Inject
@@ -12,8 +13,12 @@ class PhotoRepository @Inject constructor (
         photoDao.insert(photo);
     }
 
-    suspend fun getPhotosByTripId(tripId: Long): List<PhotoEntity> {
+    fun getPhotosByTripId(tripId: Long): LiveData<List<PhotoEntity>> {
         return photoDao.getPhotosByTripId(tripId)
+    }
+
+    suspend fun deletePhotos(photoIds: List<Long>) {
+        photoDao.deletePhotosByIds(photoIds)
     }
 
 }
