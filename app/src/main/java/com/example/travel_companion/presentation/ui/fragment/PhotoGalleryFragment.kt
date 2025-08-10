@@ -231,20 +231,6 @@ class PhotoGalleryFragment: Fragment() {
         }
     }
 
-    private fun createImageFileInPublicDirectory(): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-
-        // Crea directory pubblica per le foto dell'app
-        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val appDir = File(picturesDir, "TravelCompanion")
-
-        if (!appDir.exists()) {
-            appDir.mkdirs()
-        }
-
-        return File(appDir, "TravelCompanion_${timeStamp}.jpg")
-    }
-
     private fun updateDeleteButton(selectedCount: Int) {
         Utils.SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedPhotos,
