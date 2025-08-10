@@ -87,9 +87,8 @@ class TripScheduler @Inject constructor(
         }
     }
 
-
-    @SuppressLint("ScheduleExactAlarm")
-    private fun scheduleStatusUpdate(tripId: Long, triggerTime: Long, status: TripStatus) {
+    @SuppressLint("MissingPermission")
+    private  fun scheduleStatusUpdate(tripId: Long, triggerTime: Long, status: TripStatus) {
         val intent = createStatusUpdateIntent(tripId, status)
         val requestCode = when (status) {
             TripStatus.STARTED -> "start_$tripId".hashCode()

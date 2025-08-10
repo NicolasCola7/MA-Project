@@ -146,7 +146,7 @@ class TripsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiEvent.postValue(Event.ShowMessage("Errore durante la creazione del viaggio"))
-                Timber.d(e.message)
+                Timber.d(e.stackTraceToString())
             }
         }
     }
