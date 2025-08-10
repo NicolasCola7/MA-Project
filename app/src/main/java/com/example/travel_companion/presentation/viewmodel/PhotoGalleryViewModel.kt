@@ -39,13 +39,73 @@ class PhotoGalleryViewModel @Inject constructor (
         }
     }
 
-    fun deletePhotos(photoIds: List<Long>) {
+    /**
+     * Elimina le foto sia dal database dell'app che dalla galleria di sistema
+     */
+    fun deletePhotos(context: Context, photoIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                // Prima ottieni le foto dal database per avere gli URI
+                val photosToDelete = withContext(Dispatchers.IO) {
+                    photoRepository.getPhotosByIds(photoIds)
+                }
+
+                // Elimina le foto dalla galleria di sistema
+                var deletedFromSystem = 0
+                withContext(Dispatchers.IO) {
+                    photosToDelete.forEach { photo ->
+                        if (deletePhotoFromSystem(context, photo.uri)) {
+                            deletedFromSystem++
+                        }
+                    }
+                }
+
+                // Poi elimina dal database dell'app
+                withContext(Dispatchers.IO) {
+                    photoRepository.deletePhotos(photoIds)
+                }
+
+                Timber.d("Deleted ${photoIds.size} photos from app database, $deletedFromSystem from system gallery")
+
+            } catch (e: Exception) {
+                Timber.e(e, "Error deleting photos")
+            }
+        }
+    }
+
+    /**
+     * Metodo backward compatibility per eliminare solo dal database
+     */
+    fun deletePhotosFromAppOnly(photoIds: List<Long>) {
         viewModelScope.launch(Dispatchers.IO) {
             photoRepository.deletePhotos(photoIds)
         }
     }
 
-    // Aggiungi questo metodo al tuo PhotoGalleryViewModel
+    /**
+     * Elimina una singola foto dalla galleria di sistema usando MediaStore (Android 10+)
+     */
+    private fun deletePhotoFromSystem(context: Context, uriString: String): Boolean {
+        return try {
+            val uri = Uri.parse(uriString)
+            val rowsDeleted = context.contentResolver.delete(uri, null, null)
+            val success = rowsDeleted > 0
+
+            if (success) {
+                Timber.d("Photo deleted from system gallery: $uri")
+            } else {
+                Timber.w("Failed to delete from system gallery (no rows affected): $uri")
+            }
+
+            success
+        } catch (e: SecurityException) {
+            Timber.w(e, "SecurityException deleting from system gallery: $uriString")
+            false
+        } catch (e: Exception) {
+            Timber.e(e, "Error deleting from system gallery: $uriString")
+            false
+        }
+    }
 
     /**
      * Sincronizza il database con le foto realmente disponibili nel sistema

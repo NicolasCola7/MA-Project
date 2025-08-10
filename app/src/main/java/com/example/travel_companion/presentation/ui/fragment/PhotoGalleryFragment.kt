@@ -3,9 +3,7 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
-import android.media.MediaScannerConnection
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -15,26 +13,20 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.FragmentPhotoGalleryBinding
-import com.example.travel_companion.presentation.adapter.NotesListAdapter
 import com.example.travel_companion.presentation.adapter.PhotoAdapter
 import com.example.travel_companion.presentation.viewmodel.PhotoGalleryViewModel
 import com.example.travel_companion.util.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
@@ -49,7 +41,6 @@ class PhotoGalleryFragment: Fragment() {
     private val args: PhotoGalleryFragmentArgs by navArgs()
     private val viewModel: PhotoGalleryViewModel by viewModels()
     private lateinit var currentPhotoUri: Uri
-    private var currentPhotoFile: File? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -145,7 +136,7 @@ class PhotoGalleryFragment: Fragment() {
                     )
                 } else {
                     // La foto non esiste più, rimuovila dal database
-                    viewModel.deletePhotos(listOf(photo.id))
+                    viewModel.deletePhotosFromAppOnly(listOf(photo.id))
                     Toast.makeText(requireContext(), "Foto non più disponibile, rimossa dalla galleria", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -196,61 +187,25 @@ class PhotoGalleryFragment: Fragment() {
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
 
-        val hasStoragePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            true // Android 10+ non richiede WRITE_EXTERNAL_STORAGE per MediaStore
-        } else {
-            checkSelfPermission(requireContext(),
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-
-        if (!hasCamera || !hasStoragePermission) {
-            val perms = mutableListOf<String>()
-            if (!hasCamera) perms.add(Manifest.permission.CAMERA)
-            if (!hasStoragePermission && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-            permissionsLauncher.launch(perms.toTypedArray())
+        if (!hasCamera) {
+            permissionsLauncher.launch(arrayOf(Manifest.permission.CAMERA))
         } else {
             launchCamera()
         }
     }
 
     private fun launchCamera() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ - Usa MediaStore per salvare nella galleria pubblica
-            launchCameraWithMediaStore()
-        } else {
-            // Android 9 e precedenti - Usa file tradizionale + MediaScanner
-            launchCameraWithFile()
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "TravelCompanion_${timeStamp}.jpg")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/TravelCompanion")
         }
-    }
 
-    private fun launchCameraWithMediaStore() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val contentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, "TravelCompanion_${timeStamp}.jpg")
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/TravelCompanion")
-            }
+        val resolver = requireContext().contentResolver
+        currentPhotoUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            ?: throw IllegalStateException("Impossibile creare URI per la foto")
 
-            val resolver = requireContext().contentResolver
-            currentPhotoUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                ?: throw IllegalStateException("Impossibile creare URI per la foto")
-
-            takePictureLauncher.launch(currentPhotoUri)
-        }
-    }
-
-    private fun launchCameraWithFile() {
-        val photoFile = createImageFileInPublicDirectory()
-        currentPhotoFile = photoFile
-        currentPhotoUri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.fileprovider",
-            photoFile
-        )
         takePictureLauncher.launch(currentPhotoUri)
     }
 
@@ -271,28 +226,9 @@ class PhotoGalleryFragment: Fragment() {
         if (success) {
             // Salva riferimento nel database della tua app
             viewModel.insert(args.tripId, currentPhotoUri.toString())
-
-            // Per Android 9 e precedenti, notifica MediaScanner
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && currentPhotoFile != null) {
-                MediaScannerConnection.scanFile(
-                    requireContext(),
-                    arrayOf(currentPhotoFile!!.absolutePath),
-                    arrayOf("image/jpeg")
-                ) { path, uri ->
-                    Timber.d("Photo added to gallery: $path -> $uri")
-                }
-            }
-
-            Toast.makeText(requireContext(), "Foto salvata nella galleria!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(requireContext(), "Errore nel salvare la foto", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun createImageFile(): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
 
     private fun createImageFileInPublicDirectory(): File {
@@ -332,7 +268,8 @@ class PhotoGalleryFragment: Fragment() {
 
     private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
         val photoIds = photos.map { it.id }
-        viewModel.deletePhotos(photoIds)
+        // Usa il nuovo metodo che elimina anche dalla galleria di sistema
+        viewModel.deletePhotos(requireContext(), photoIds)
     }
 
     override fun onDestroyView() {

@@ -14,6 +14,9 @@ interface PhotoDao {
     @Query("SELECT * FROM trip_photos WHERE tripId = :tripId")
     fun getPhotosByTripId(tripId: Long): LiveData<List<PhotoEntity>>
 
+    @Query("SELECT * FROM trip_photos WHERE id IN (:photoIds)")
+    suspend fun getPhotosByIds(photoIds: List<Long>): List<PhotoEntity>
+
     @Query("DELETE FROM trip_photos WHERE id IN (:photoIds)")
     suspend fun deletePhotosByIds(photoIds: List<Long>)
 
