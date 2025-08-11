@@ -46,12 +46,14 @@ class TripDetailsFragment: Fragment() {
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
-    private var map: GoogleMap? = null
-    private var trackedDistance: MutableLiveData<Double> = MutableLiveData(0.0)
     private var stopPoints: MutableList<Pair<LatLng, Long>> = mutableListOf()
+    private var map: GoogleMap? = null
+    private var trackedDistance: MutableLiveData<Double?> = MutableLiveData(0.0)
 
     private var trackingObserver: Observer<Boolean>? = null
     private var pathPointsObserver: Observer<Polylines>? = null
+
+    private var isFetching: MutableLiveData<Boolean> = MutableLiveData(true)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -80,20 +82,35 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun initializeMap(targetLocation: LatLng) {
-        binding.mapView.getMapAsync {
-            map = it
-            addAllPolylines()
+        // only init map when the isFetching is turned to false
+        isFetching.observe(viewLifecycleOwner) {
+            binding.mapView.getMapAsync {
+                map = it
+                addAllPolylines()
 
-            for(point in stopPoints) {
-                addStopMarker(point)
+                for(point in stopPoints) {
+                    addStopMarker(point)
+                }
+
+                if(pathPoints.isEmpty())
+                    map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(targetLocation, 15F))
+                else
+                    zoomToSeeWholeTrack()
             }
-
-            if(pathPoints.isEmpty())
-                map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(targetLocation, 15F))
-            else
-                zoomToSeeWholeTrack()
         }
     }
+
+    private fun addStopMarker(stop: Pair<LatLng, Long>) {
+        val timePassed = stop.second.toDurationString()
+
+        map?.addMarker(
+            MarkerOptions()
+                .position(stop.first)
+                .title("Fermata")
+                .snippet("Ti sei fermato qui per $timePassed")
+        )
+    }
+
 
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
@@ -154,6 +171,8 @@ class TripDetailsFragment: Fragment() {
                 if (it.isNotEmpty()) {
                     initPathPoints(coordinates)
                 }
+
+                isFetching.postValue(false)
             }
         }
 
@@ -189,7 +208,7 @@ class TripDetailsFragment: Fragment() {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
-                Timber.d("new")
+               // Timber.d("new")
             }
 
             val stopTime = coordinate.timestamp - previousTimestamp
@@ -197,10 +216,9 @@ class TripDetailsFragment: Fragment() {
                 stopPoints.add(Pair(previousCoordinate, stopTime))
             }
 
-
             previousTimestamp = coordinate.timestamp
-            Timber.d(Utils.timeFormat.format(previousTimestamp).toString())
-            previousCoordinate =  LatLng(coordinate.latitude, coordinate.longitude)
+           // Timber.d(Utils.timeFormat.format(previousTimestamp).toString())
+            previousCoordinate = LatLng(coordinate.latitude, coordinate.longitude)
             currentPolyline.add(previousCoordinate)
         }
 
@@ -234,11 +252,20 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun refreshTrackedDistance() {
-        if (pathPoints.isNotEmpty()) {
-            var totalDistance = 0.0
-            for (polyline in pathPoints) {
-                totalDistance += calculatePolylineLength(polyline)
-            }
+        if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
+            val secondLastPos = pathPoints.last()[pathPoints.last().size - 2]
+            val lastPos = pathPoints.last().last()
+
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                secondLastPos.latitude,
+                secondLastPos.longitude,
+                lastPos.latitude,
+                lastPos.longitude,
+                result
+            )
+
+            val totalDistance = trackedDistance.value!! + result[0]
             trackedDistance.postValue(totalDistance)
         }
     }
@@ -331,36 +358,6 @@ class TripDetailsFragment: Fragment() {
                 .add(lastLatLng)
             map?.addPolyline(polylineOptions)
         }
-    }
-
-   private fun calculatePolylineLength(polyline: Polyline): Float {
-        var distance = 0f
-        for(i in 0..polyline.size - 2) {
-            val pos1 = polyline[i]
-            val pos2 = polyline[i + 1]
-
-            val result = FloatArray(1)
-            Location.distanceBetween(
-                pos1.latitude,
-                pos1.longitude,
-                pos2.latitude,
-                pos2.longitude,
-                result
-            )
-            distance += result[0]
-        }
-        return distance
-    }
-
-    private fun addStopMarker(stop: Pair<LatLng, Long>) {
-        val timePassed = stop.second.toDurationString()
-
-        map?.addMarker(
-            MarkerOptions()
-                .position(stop.first)
-                .title("Fermata")
-                .snippet("Ti sei fermato qui per $timePassed")
-        )
     }
 
     private fun sendCommandToService(action: String) =
