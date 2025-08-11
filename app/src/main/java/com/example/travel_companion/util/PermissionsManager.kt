@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
@@ -19,6 +20,7 @@ object PermissionsManager {
 
     const val CURRENT_LOCATION_PERMISSIONS_REQUEST = 99 // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     const val OLDER_LOCATION_PERMISSIONS_REQUEST = 66  //  Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+    const val POST_NOTIFICATION_PERMISSIONS_REQUEST = 77
 
     fun checkLocationPermission(context: Activity) {
         val fineLocation = checkSelfPermission(
@@ -74,7 +76,7 @@ object PermissionsManager {
         }
     }
 
-    fun requestLocationPermission(context: Activity) {
+    private fun requestLocationPermission(context: Activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             requestPermissions(
                 context,
@@ -92,6 +94,36 @@ object PermissionsManager {
                 ),
                 OLDER_LOCATION_PERMISSIONS_REQUEST
             )
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun checkNotificationsPermissions(context: Activity) {
+        if (!hasNotificationPermissions(context)) {
+            requestPermissions(
+                context,
+                arrayOf(
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ),
+                POST_NOTIFICATION_PERMISSIONS_REQUEST
+            )
+        }
+    }
+
+    fun hasNotificationPermissions(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+
+            if (permission == PackageManager.PERMISSION_GRANTED) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            return true
         }
     }
 }

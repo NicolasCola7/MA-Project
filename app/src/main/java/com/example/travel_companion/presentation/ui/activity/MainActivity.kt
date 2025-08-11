@@ -20,7 +20,9 @@ import com.example.travel_companion.R
 import com.example.travel_companion.databinding.ActivityMainBinding
 import com.example.travel_companion.util.PermissionsManager.CURRENT_LOCATION_PERMISSIONS_REQUEST
 import com.example.travel_companion.util.PermissionsManager.OLDER_LOCATION_PERMISSIONS_REQUEST
+import com.example.travel_companion.util.PermissionsManager.POST_NOTIFICATION_PERMISSIONS_REQUEST
 import com.example.travel_companion.util.PermissionsManager.checkLocationPermission
+import com.example.travel_companion.util.PermissionsManager.checkNotificationsPermissions
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setupUI()
         checkLocationPermission(this)
+        checkNotificationsPermissions(this)
     }
 
     private fun setupUI() {
