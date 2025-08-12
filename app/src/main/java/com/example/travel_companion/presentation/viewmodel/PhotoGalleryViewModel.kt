@@ -2,19 +2,30 @@ package com.example.travel_companion.presentation.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.switchMap
+import androidx.lifecycle.map
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.data.repository.PhotoRepository
+import com.example.travel_companion.domain.model.PhotoGalleryItem
+import com.example.travel_companion.domain.model.PhotoGroup
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.FileNotFoundException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,9 +36,15 @@ class PhotoGalleryViewModel @Inject constructor(
     // Trip ID corrente
     private val _currentTripId = MutableLiveData<Long>()
 
-    // LiveData delle foto che si aggiorna automaticamente quando cambia il tripId
-    val photos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
+    // LiveData delle foto grezze dal repository
+    private val rawPhotos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
         photoRepository.getPhotosByTripId(tripId)
+    }
+
+    // LiveData delle foto raggruppate per data
+    @RequiresApi(Build.VERSION_CODES.O)
+    val groupedPhotos: LiveData<List<PhotoGalleryItem>> = rawPhotos.map { photos ->
+        groupPhotosByDate(photos)
     }
 
     fun loadPhotos(tripId: Long) {
@@ -40,7 +57,8 @@ class PhotoGalleryViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     val newPhoto = PhotoEntity(
                         tripId = tripId,
-                        uri = uri
+                        uri = uri,
+                        timestamp = System.currentTimeMillis()
                     )
                     photoRepository.insert(newPhoto)
                 }
@@ -54,7 +72,7 @@ class PhotoGalleryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    deletePhotosInternal(context, photoIds, syncWithSystem = true)
+                    deletePhotosInternal(context, photoIds)
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting photos")
@@ -76,18 +94,81 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Raggruppa le foto per data e crea la lista di PhotoGalleryItem
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun groupPhotosByDate(photos: List<PhotoEntity>): List<PhotoGalleryItem> {
+        if (photos.isEmpty()) return emptyList()
+
+        val groups = photos
+            .sortedByDescending { it.timestamp } // Più recenti prima
+            .groupBy { photo ->
+                Instant.ofEpochMilli(photo.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }
+            .map { (date, photosInDate) ->
+                PhotoGroup(
+                    date = date,
+                    formattedDate = formatDate(date),
+                    photos = photosInDate
+                )
+            }
+            .sortedByDescending { it.date } // Giorni più recenti prima
+
+        // Converte in lista di PhotoGalleryItem
+        val result = mutableListOf<PhotoGalleryItem>()
+        groups.forEach { group ->
+            // Aggiungi l'intestazione della data
+            result.add(
+                PhotoGalleryItem.DateHeader(
+                    date = group.date,
+                    formattedDate = group.formattedDate,
+                    photoCount = group.photoCount
+                )
+            )
+            // Aggiungi le foto del gruppo
+            group.photos.forEach { photo ->
+                result.add(PhotoGalleryItem.Photo(photo))
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Formatta la data in modo user-friendly
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun formatDate(date: LocalDate): String {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+
+        return when (date) {
+            today -> "Oggi"
+            yesterday -> "Ieri"
+            else -> {
+                if (date.year == today.year) {
+                    // Stesso anno: "15 marzo"
+                    "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
+                } else {
+                    // Anno diverso: "15 marzo 2023"
+                    date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault()))
+                }
+            }
+        }
+    }
+
     // Private helper methods
     private suspend fun deletePhotosInternal(
         context: Context,
-        photoIds: List<Long>,
-        syncWithSystem: Boolean
+        photoIds: List<Long>
     ) {
         val photosToDelete = photoRepository.getPhotosByIds(photoIds)
 
-        if (syncWithSystem) {
-            photosToDelete.forEach { photo ->
-                deletePhotoFromSystem(context, photo.uri)
-            }
+        photosToDelete.forEach { photo ->
+            deletePhotoFromSystem(context, photo.uri)
         }
 
         photoRepository.deletePhotos(photoIds)

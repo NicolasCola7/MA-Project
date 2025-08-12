@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -12,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -53,16 +55,17 @@ class PhotoGalleryFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        setupRecyclerView()
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupAdapter()
+        setupRecyclerView()
         setupBottomNavigation()
         setupClickListeners()
-        setupAdapter()
         observeData()
     }
 
@@ -73,14 +76,18 @@ class PhotoGalleryFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        val gridLayoutManager = GridLayoutManager(requireContext(), PhotoAdapter.SPAN_COUNT)
+        gridLayoutManager.spanSizeLookup = PhotoAdapter.PhotoSpanSizeLookup(adapter)
+        binding.recyclerView.layoutManager = gridLayoutManager
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun observeData() {
         viewModel.loadPhotos(args.tripId)
 
-        viewModel.photos.observe(viewLifecycleOwner) { photos ->
-            adapter.submitList(photos) {
+        // Osserva le foto raggruppate invece delle foto raw
+        viewModel.groupedPhotos.observe(viewLifecycleOwner) { groupedItems ->
+            adapter.submitList(groupedItems) {
                 adapter.updateSelectionAfterListChange()
             }
         }
