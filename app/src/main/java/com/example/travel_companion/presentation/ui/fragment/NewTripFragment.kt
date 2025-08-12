@@ -21,6 +21,7 @@ import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
 import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
+import com.example.travel_companion.util.PermissionsManager
 import com.google.android.gms.common.api.Status
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
@@ -211,14 +212,17 @@ class NewTripFragment : Fragment() {
             }
 
         binding.btnCreateTrip.setOnClickListener {
-            viewModel.onCreateTripClicked(
-                destination = viewModel.selectedDestinationName,
-                startDateStr = binding.editStartDate.text.toString(),
-                endDateStr = binding.editEndDate.text.toString(),
-                type = binding.spinnerTripType.selectedItem.toString(),
-                lat = latitude,
-                long = longitude
-            )
+            PermissionsManager.checkExactAlarmPermissionSmart(requireActivity()) {
+                viewModel.onCreateTripClicked(
+                    destination = viewModel.selectedDestinationName,
+                    startDateStr = binding.editStartDate.text.toString(),
+                    endDateStr = binding.editEndDate.text.toString(),
+                    type = binding.spinnerTripType.selectedItem.toString(),
+                    lat = latitude,
+                    long = longitude
+                )
+            }
+
         }
     }
 
