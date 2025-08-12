@@ -2,8 +2,6 @@ package com.example.travel_companion.presentation.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,11 +18,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.FileNotFoundException
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
@@ -42,7 +38,6 @@ class PhotoGalleryViewModel @Inject constructor(
     }
 
     // LiveData delle foto raggruppate per data
-    @RequiresApi(Build.VERSION_CODES.O)
     val groupedPhotos: LiveData<List<PhotoGalleryItem>> = rawPhotos.map { photos ->
         groupPhotosByDate(photos)
     }
@@ -97,25 +92,27 @@ class PhotoGalleryViewModel @Inject constructor(
     /**
      * Raggruppa le foto per data e crea la lista di PhotoGalleryItem
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun groupPhotosByDate(photos: List<PhotoEntity>): List<PhotoGalleryItem> {
         if (photos.isEmpty()) return emptyList()
 
+        // Raggruppa per data usando Calendar
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
         val groups = photos
-            .sortedByDescending { it.timestamp } // Più recenti prima
+            .sortedByDescending { it.timestamp }
             .groupBy { photo ->
-                Instant.ofEpochMilli(photo.timestamp)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
+                dateFormat.format(Date(photo.timestamp))
             }
-            .map { (date, photosInDate) ->
+            .map { (dateKey, photosInDate) ->
+                val firstPhoto = photosInDate.first()
                 PhotoGroup(
-                    date = date,
-                    formattedDate = formatDate(date),
+                    dateKey = dateKey,
+                    timestamp = firstPhoto.timestamp,
+                    formattedDate = formatDate(firstPhoto.timestamp),
                     photos = photosInDate
                 )
             }
-            .sortedByDescending { it.date } // Giorni più recenti prima
+            .sortedByDescending { it.timestamp }
 
         // Converte in lista di PhotoGalleryItem
         val result = mutableListOf<PhotoGalleryItem>()
@@ -123,9 +120,9 @@ class PhotoGalleryViewModel @Inject constructor(
             // Aggiungi l'intestazione della data
             result.add(
                 PhotoGalleryItem.DateHeader(
-                    date = group.date,
+                    date = group.dateKey,
                     formattedDate = group.formattedDate,
-                    photoCount = group.photoCount
+                    photoCount = group.photos.size
                 )
             )
             // Aggiungi le foto del gruppo
@@ -140,24 +137,22 @@ class PhotoGalleryViewModel @Inject constructor(
     /**
      * Formatta la data in modo user-friendly
      */
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun formatDate(date: LocalDate): String {
-        val today = LocalDate.now()
-        val yesterday = today.minusDays(1)
+    // Alternativa per compatibilità
+    private fun formatDate(timestamp: Long): String {
+        val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val today = Calendar.getInstance()
+        val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
 
-        return when (date) {
-            today -> "Oggi"
-            yesterday -> "Ieri"
-            else -> {
-                if (date.year == today.year) {
-                    // Stesso anno: "15 marzo"
-                    "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
-                } else {
-                    // Anno diverso: "15 marzo 2023"
-                    date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault()))
-                }
-            }
+        return when {
+            isSameDay(calendar, today) -> "Oggi"
+            isSameDay(calendar, yesterday) -> "Ieri"
+            else -> SimpleDateFormat("d MMMM yyyy", Locale.getDefault()).format(Date(timestamp))
         }
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
     // Private helper methods
