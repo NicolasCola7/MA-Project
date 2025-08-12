@@ -12,7 +12,11 @@ import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.ItemPhotoBinding
 import com.example.travel_companion.databinding.ItemPhotoDateHeaderBinding
 import com.example.travel_companion.domain.model.PhotoGalleryItem
-
+/*
+L'adapter gestisce due tipi di elementi nella stessa RecyclerView:
+    - DateHeader: Intestazioni con data e conteggio foto
+    - Photo: Le foto vere e proprie
+ */
 class PhotoAdapter(
     private val onSelectionChanged: (Int) -> Unit = {},
     private val onPhotoClick: (PhotoEntity) -> Unit = {}
@@ -26,9 +30,11 @@ class PhotoAdapter(
         private const val VIEW_TYPE_PHOTO = 1
         private const val PAYLOAD_SELECTION_CHANGED = "selection_changed"
         private const val PAYLOAD_SELECTION_MODE_CHANGED = "selection_mode_changed"
-        const val SPAN_COUNT = 3 // Per il GridLayoutManager
+        //griglia 3x3
+        const val SPAN_COUNT = 3
     }
 
+    //decide quale layout usare per ogni posizione
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is PhotoGalleryItem.DateHeader -> VIEW_TYPE_DATE_HEADER
@@ -36,14 +42,17 @@ class PhotoAdapter(
         }
     }
 
+    //creo un viewHolder diverso in base al tipo
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             VIEW_TYPE_DATE_HEADER -> {
+                //layout per intestazioni date
                 val binding = ItemPhotoDateHeaderBinding.inflate(
                     LayoutInflater.from(parent.context), parent, false
                 )
                 DateHeaderViewHolder(binding)
             }
+            //layout per foto
             VIEW_TYPE_PHOTO -> {
                 val binding = ItemPhotoBinding.inflate(
                     LayoutInflater.from(parent.context), parent, false
@@ -54,11 +63,13 @@ class PhotoAdapter(
         }
     }
 
+    //popola i viewHolder con i dati corretti, esegue il cast del viewHolder al tipo specifico
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
             is PhotoGalleryItem.DateHeader -> {
                 (holder as DateHeaderViewHolder).bind(item)
             }
+            //passa allo stato di selezione solo alle foto
             is PhotoGalleryItem.Photo -> {
                 (holder as PhotoViewHolder).bind(
                     item.photoEntity,
@@ -69,6 +80,7 @@ class PhotoAdapter(
         }
     }
 
+    //aggiorno solo ciò che è cambiato (le foto), evitando di ricaricare tutto il viewHolder
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isNotEmpty() && holder is PhotoViewHolder) {
             val item = getItem(position) as PhotoGalleryItem.Photo
@@ -169,11 +181,14 @@ class PhotoAdapter(
         if (position == -1) return
 
         if (selectedPhotos.contains(photo)) {
+            //deseleziona
             selectedPhotos.remove(photo)
         } else {
+            //seleziona
             selectedPhotos.add(photo)
         }
 
+        //esce se non ci sono selezioni
         if (selectedPhotos.isEmpty()) {
             exitSelectionMode()
         } else {
