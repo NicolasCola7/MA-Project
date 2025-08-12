@@ -7,14 +7,21 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.switchMap
+import androidx.lifecycle.map
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.data.repository.PhotoRepository
+import com.example.travel_companion.domain.model.PhotoGalleryItem
+import com.example.travel_companion.domain.model.PhotoGroup
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,9 +32,14 @@ class PhotoGalleryViewModel @Inject constructor(
     // Trip ID corrente
     private val _currentTripId = MutableLiveData<Long>()
 
-    // LiveData delle foto che si aggiorna automaticamente quando cambia il tripId
-    val photos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
+    // LiveData delle foto grezze dal repository
+    private val rawPhotos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
         photoRepository.getPhotosByTripId(tripId)
+    }
+
+    // LiveData delle foto raggruppate per data
+    val groupedPhotos: LiveData<List<PhotoGalleryItem>> = rawPhotos.map { photos ->
+        groupPhotosByDate(photos)
     }
 
     fun loadPhotos(tripId: Long) {
@@ -40,7 +52,8 @@ class PhotoGalleryViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     val newPhoto = PhotoEntity(
                         tripId = tripId,
-                        uri = uri
+                        uri = uri,
+                        timestamp = System.currentTimeMillis()
                     )
                     photoRepository.insert(newPhoto)
                 }
@@ -54,7 +67,7 @@ class PhotoGalleryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    deletePhotosInternal(context, photoIds, syncWithSystem = true)
+                    deletePhotosInternal(context, photoIds)
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting photos")
@@ -76,18 +89,81 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Raggruppa le foto per data e crea la lista di PhotoGalleryItem
+     */
+    private fun groupPhotosByDate(photos: List<PhotoEntity>): List<PhotoGalleryItem> {
+        if (photos.isEmpty()) return emptyList()
+
+        // Raggruppa per data usando Calendar
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        val groups = photos
+            .sortedByDescending { it.timestamp }
+            .groupBy { photo ->
+                dateFormat.format(Date(photo.timestamp))
+            }
+            .map { (dateKey, photosInDate) ->
+                val firstPhoto = photosInDate.first()
+                PhotoGroup(
+                    dateKey = dateKey,
+                    timestamp = firstPhoto.timestamp,
+                    formattedDate = formatDate(firstPhoto.timestamp),
+                    photos = photosInDate
+                )
+            }
+            .sortedByDescending { it.timestamp }
+
+        // Converte in lista di PhotoGalleryItem
+        val result = mutableListOf<PhotoGalleryItem>()
+        groups.forEach { group ->
+            // Aggiungi l'intestazione della data
+            result.add(
+                PhotoGalleryItem.DateHeader(
+                    date = group.dateKey,
+                    formattedDate = group.formattedDate,
+                    photoCount = group.photos.size
+                )
+            )
+            // Aggiungi le foto del gruppo
+            group.photos.forEach { photo ->
+                result.add(PhotoGalleryItem.Photo(photo))
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Formatta la data in modo user-friendly
+     */
+    // Alternativa per compatibilità
+    private fun formatDate(timestamp: Long): String {
+        val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val today = Calendar.getInstance()
+        val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+
+        return when {
+            isSameDay(calendar, today) -> "Oggi"
+            isSameDay(calendar, yesterday) -> "Ieri"
+            else -> SimpleDateFormat("d MMMM yyyy", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+
     // Private helper methods
     private suspend fun deletePhotosInternal(
         context: Context,
-        photoIds: List<Long>,
-        syncWithSystem: Boolean
+        photoIds: List<Long>
     ) {
         val photosToDelete = photoRepository.getPhotosByIds(photoIds)
 
-        if (syncWithSystem) {
-            photosToDelete.forEach { photo ->
-                deletePhotoFromSystem(context, photo.uri)
-            }
+        photosToDelete.forEach { photo ->
+            deletePhotoFromSystem(context, photo.uri)
         }
 
         photoRepository.deletePhotos(photoIds)

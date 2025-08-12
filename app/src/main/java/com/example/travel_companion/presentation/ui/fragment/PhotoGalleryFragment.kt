@@ -53,16 +53,16 @@ class PhotoGalleryFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        setupRecyclerView()
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupAdapter()
+        setupRecyclerView()
         setupBottomNavigation()
         setupClickListeners()
-        setupAdapter()
         observeData()
     }
 
@@ -73,14 +73,17 @@ class PhotoGalleryFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        val gridLayoutManager = GridLayoutManager(requireContext(), PhotoAdapter.SPAN_COUNT)
+        gridLayoutManager.spanSizeLookup = PhotoAdapter.PhotoSpanSizeLookup(adapter)
+        binding.recyclerView.layoutManager = gridLayoutManager
     }
 
     private fun observeData() {
         viewModel.loadPhotos(args.tripId)
 
-        viewModel.photos.observe(viewLifecycleOwner) { photos ->
-            adapter.submitList(photos) {
+        // Osserva le foto raggruppate invece delle foto raw
+        viewModel.groupedPhotos.observe(viewLifecycleOwner) { groupedItems ->
+            adapter.submitList(groupedItems) {
                 adapter.updateSelectionAfterListChange()
             }
         }
