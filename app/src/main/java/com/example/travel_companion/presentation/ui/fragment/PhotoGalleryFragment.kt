@@ -245,7 +245,7 @@ class PhotoGalleryFragment : Fragment() {
                 adapter.clearSelection()
                 viewModel.clearSelection()
             },
-            onUpdateButton = { }
+            onUpdateButton = { /* Non più necessario, gestito dal ViewModel TODO: migliora negli altri fragment*/ }
         )
     }
 
