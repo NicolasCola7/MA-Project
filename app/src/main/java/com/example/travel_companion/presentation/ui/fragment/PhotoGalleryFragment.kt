@@ -26,18 +26,17 @@ import com.example.travel_companion.presentation.adapter.PhotoAdapter
 import com.example.travel_companion.presentation.viewmodel.PhotoGalleryViewModel
 import com.example.travel_companion.util.Utils
 import dagger.hilt.android.AndroidEntryPoint
-import timber.log.Timber
-import java.io.File
-import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @AndroidEntryPoint
-class PhotoGalleryFragment: Fragment() {
-    private  var _binding: FragmentPhotoGalleryBinding? = null
+class PhotoGalleryFragment : Fragment() {
+
+    private var _binding: FragmentPhotoGalleryBinding? = null
     private val binding get() = _binding!!
-    private var adapter = PhotoAdapter()
+
+    private lateinit var adapter: PhotoAdapter
     private val args: PhotoGalleryFragmentArgs by navArgs()
     private val viewModel: PhotoGalleryViewModel by viewModels()
     private lateinit var currentPhotoUri: Uri
@@ -47,41 +46,60 @@ class PhotoGalleryFragment: Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         _binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_photo_gallery, container, false
         )
 
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
-        binding.recyclerView.adapter = adapter
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
 
+        setupRecyclerView()
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         setupBottomNavigation()
         setupClickListeners()
-        initGalleryData()
         setupAdapter()
-        observeData()
+        observeViewModel()
+
+        // Carica le foto per questo viaggio
+        viewModel.loadPhotos(args.tripId)
     }
 
     override fun onResume() {
         super.onResume()
-        // Verifica e sincronizza la galleria quando si torna al fragment
-        syncGalleryWithSystem()
+        // Sincronizza automaticamente quando si torna al fragment
+        viewModel.syncWithSystemGallery(requireContext())
     }
 
-    private fun observeData() {
-        viewModel.loadPhotos(args.tripId)
+    private fun setupRecyclerView() {
+        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+    }
 
-        viewModel.photos.observe(viewLifecycleOwner) { photoList ->
-            adapter.submitList(photoList) {
+    private fun observeViewModel() {
+        // Osserva le foto
+        viewModel.photos.observe(viewLifecycleOwner) { photos ->
+            adapter.submitList(photos) {
                 adapter.updateSelectionAfterListChange()
             }
+        }
+
+        // Osserva il testo del bottone delete
+        viewModel.deleteButtonText.observe(viewLifecycleOwner) { text ->
+            binding.deleteSelectedPhotos.text = text
+        }
+
+        // Osserva la visibilità del bottone delete
+        viewModel.isDeleteButtonVisible.observe(viewLifecycleOwner) { isVisible ->
+            binding.deleteSelectedPhotos.visibility = if (isVisible) View.VISIBLE else View.GONE
+        }
+
+        // Osserva se il bottone delete è abilitato
+        viewModel.isDeleteButtonEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.deleteSelectedPhotos.isEnabled = enabled
         }
     }
 
@@ -115,6 +133,7 @@ class PhotoGalleryFragment: Fragment() {
         binding.takePicture.setOnClickListener {
             handleTakePhoto()
         }
+
         binding.deleteSelectedPhotos.setOnClickListener {
             handleMultipleDelete()
         }
@@ -123,67 +142,38 @@ class PhotoGalleryFragment: Fragment() {
     private fun setupAdapter() {
         adapter = PhotoAdapter(
             onSelectionChanged = { count ->
-                updateDeleteButton(count)
+                viewModel.updateSelectedCount(count)
             },
             onPhotoClick = { photo ->
-                // Verifica se la foto esiste prima di navigare
-                if (isPhotoAccessible(photo.uri)) {
-                    findNavController().navigate(
-                        PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
-                            photoUri = photo.uri,
-                            tripId = args.tripId
-                        )
-                    )
-                } else {
-                    // La foto non esiste più, rimuovila dal database
-                    viewModel.deletePhotosFromAppOnly(listOf(photo.id))
-                    Toast.makeText(requireContext(), "Foto non più disponibile, rimossa dalla galleria", Toast.LENGTH_SHORT).show()
-                }
+                handlePhotoClick(photo)
             }
         )
         binding.recyclerView.adapter = adapter
     }
 
-    private fun initGalleryData() {
-        viewModel.loadPhotos(args.tripId).observe(viewLifecycleOwner) { photos ->
-            adapter.submitList(photos)
-        }
-    }
-
-    /**
-     * Sincronizza la galleria dell'app con il sistema:
-     * rimuove i riferimenti alle foto che non esistono più
-     */
-    private fun syncGalleryWithSystem() {
-        viewModel.syncPhotosWithSystem(requireContext(), args.tripId)
-    }
-
-    /**
-     * Verifica se una foto è ancora accessibile nel sistema
-     */
-    private fun isPhotoAccessible(uriString: String): Boolean {
-        return try {
-            val uri = Uri.parse(uriString)
-            val inputStream = requireContext().contentResolver.openInputStream(uri)
-            inputStream?.use { true } ?: false
-        } catch (e: Exception) {
-            when (e) {
-                is SecurityException,
-                is FileNotFoundException,
-                is IllegalArgumentException -> {
-                    Timber.d("Photo not accessible: $uriString - ${e.message}")
-                    false
-                }
-                else -> {
-                    Timber.e(e, "Unexpected error checking photo accessibility")
-                    true // In caso di errore sconosciuto, assumiamo che sia accessibile
-                }
-            }
+    private fun handlePhotoClick(photo: PhotoEntity) {
+        // Verifica accessibilità tramite ViewModel
+        if (viewModel.isPhotoAccessible(requireContext(), photo.uri)) {
+            findNavController().navigate(
+                PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
+                    photoUri = photo.uri,
+                    tripId = args.tripId
+                )
+            )
+        } else {
+            // Rimuovi la foto non più accessibile
+            viewModel.deletePhotosFromAppOnly(listOf(photo.id))
+            Toast.makeText(
+                requireContext(),
+                "Foto non più disponibile, rimossa dalla galleria",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun handleTakePhoto() {
-        val hasCamera = checkSelfPermission(requireContext(),
+        val hasCamera = checkSelfPermission(
+            requireContext(),
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
 
@@ -216,7 +206,11 @@ class PhotoGalleryFragment: Fragment() {
         if (allGranted) {
             launchCamera()
         } else {
-            Toast.makeText(requireContext(), "Permessi fotocamera e storage richiesti", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Permessi fotocamera e storage richiesti",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -224,38 +218,35 @@ class PhotoGalleryFragment: Fragment() {
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            // Salva riferimento nel database della tua app
-            viewModel.insert(args.tripId, currentPhotoUri.toString())
+            viewModel.insertPhoto(args.tripId, currentPhotoUri.toString())
         } else {
-            Toast.makeText(requireContext(), "Errore nel salvare la foto", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Errore nel salvare la foto",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-    }
-
-    private fun updateDeleteButton(selectedCount: Int) {
-        Utils.SelectionHelper.updateDeleteButton(
-            button = binding.deleteSelectedPhotos,
-            selectedCount = selectedCount,
-            baseText = "Elimina"
-        )
     }
 
     private fun handleMultipleDelete() {
         val selectedPhotos = adapter.getSelectedPhotos()
 
+        if (selectedPhotos.isEmpty()) return
+
         Utils.SelectionHelper.handleMultipleDelete(
             context = requireContext(),
             selectedItems = selectedPhotos,
             itemType = "foto",
-            onDelete = { photos -> deleteSelectedPhotos(photos) },
-            onClearSelection = { adapter.clearSelection() },
-            onUpdateButton = { count -> updateDeleteButton(count) }
+            onDelete = { photos ->
+                val photoIds = photos.map { it.id }
+                viewModel.deletePhotosWithSystemSync(requireContext(), photoIds)
+            },
+            onClearSelection = {
+                adapter.clearSelection()
+                viewModel.clearSelection()
+            },
+            onUpdateButton = { }
         )
-    }
-
-    private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
-        val photoIds = photos.map { it.id }
-        // Usa il nuovo metodo che elimina anche dalla galleria di sistema
-        viewModel.deletePhotos(requireContext(), photoIds)
     }
 
     override fun onDestroyView() {
