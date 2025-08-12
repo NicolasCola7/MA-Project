@@ -52,7 +52,7 @@ class TrackingService : LifecycleService() {
 
         const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
         const val NOTIFICATION_CHANNEL_NAME = "Tracking"
-        const val NOTIFICATION_ID = 1
+        const val NOTIFICATION_ID = 1000
     }
 
     override fun onCreate() {
@@ -71,7 +71,7 @@ class TrackingService : LifecycleService() {
 
     private fun killService() {
         isTracking.postValue(false)
-        stopForeground(STOP_FOREGROUND_REMOVE )
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -174,7 +174,7 @@ class TrackingService : LifecycleService() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel(notificationManager, NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME)
-
+        
         startForeground(NOTIFICATION_ID, getBaseNotification().build())
     }
 
@@ -184,16 +184,7 @@ class TrackingService : LifecycleService() {
         .setSmallIcon(R.drawable.ic_directions_run_black_24dp)
         .setContentTitle("Tracciamento")
         .setContentText("Tracciando la tua posizione")
-        .setContentIntent(getMainActivityPendingIntent())
-
-    private fun getMainActivityPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, MainActivity::class.java).also {
-            it.action = "ACTION_SHOW_TRACKING_FRAGMENT"
-        },
-        FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE
-    )
+        .setDeleteIntent(null)
 
     private fun updateNotificationTrackingState(isTracking: Boolean) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -206,6 +197,13 @@ class TrackingService : LifecycleService() {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 }
 

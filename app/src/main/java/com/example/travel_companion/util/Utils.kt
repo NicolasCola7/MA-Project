@@ -6,15 +6,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Bitmap
-import android.location.Location
 import android.os.Build
 import android.view.View
 import android.widget.TextView
 import androidx.core.view.isVisible
-import com.example.travel_companion.receiver.TripStatusReceiver.Companion.CHANNEL_ID
-import com.example.travel_companion.receiver.TripStatusReceiver.Companion.CHANNEL_NAME
-import com.example.travel_companion.service.Polyline
-import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
