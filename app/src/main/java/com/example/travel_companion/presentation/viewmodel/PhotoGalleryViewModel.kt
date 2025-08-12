@@ -44,7 +44,6 @@ class PhotoGalleryViewModel @Inject constructor(
                     )
                     photoRepository.insert(newPhoto)
                 }
-                Timber.d("Photo inserted successfully")
             } catch (e: Exception) {
                 Timber.e(e, "Error inserting photo")
             }
@@ -63,66 +62,18 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
-    private fun deletePhotosFromAppOnly(photoIds: List<Long>) {
-        viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    photoRepository.deletePhotos(photoIds)
-                }
-                Timber.d("Deleted ${photoIds.size} photos from app database only")
-            } catch (e: Exception) {
-                Timber.e(e, "Error deleting photos from app")
-            }
-        }
-    }
-
     fun syncWithSystemGallery(context: Context) {
         val tripId = _currentTripId.value ?: return
 
         viewModelScope.launch {
             try {
-                val orphanedCount = withContext(Dispatchers.IO) {
+                withContext(Dispatchers.IO) {
                     syncPhotosWithSystemInternal(context, tripId)
-                }
-
-                if (orphanedCount > 0) {
-                    Timber.d("Removed $orphanedCount orphaned photo references during sync")
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error syncing with system gallery")
             }
         }
-    }
-
-    /**
-     * Controlla se una foto è accessibile e la rimuove automaticamente se non lo è.
-     * Usato principalmente per il click sulle foto come fallback di sicurezza.
-     */
-    fun checkPhotoAccessibilityAndCleanup(context: Context, photo: PhotoEntity): Boolean {
-        val isAccessible = try {
-            val uri = Uri.parse(photo.uri)
-            context.contentResolver.openInputStream(uri)?.use { true } ?: false
-        } catch (e: Exception) {
-            when (e) {
-                is SecurityException,
-                is FileNotFoundException,
-                is IllegalArgumentException -> {
-                    Timber.d("Photo not accessible: ${photo.uri} - ${e.message}")
-                    false
-                }
-                else -> {
-                    Timber.e(e, "Unexpected error checking photo accessibility")
-                    true // In caso di errore sconosciuto, assumiamo sia accessibile
-                }
-            }
-        }
-
-        // Se non è accessibile, rimuovila automaticamente
-        if (!isAccessible) {
-            deletePhotosFromAppOnly(listOf(photo.id))
-        }
-
-        return isAccessible
     }
 
     // Private helper methods
@@ -132,18 +83,14 @@ class PhotoGalleryViewModel @Inject constructor(
         syncWithSystem: Boolean
     ) {
         val photosToDelete = photoRepository.getPhotosByIds(photoIds)
-        var deletedFromSystem = 0
 
         if (syncWithSystem) {
             photosToDelete.forEach { photo ->
-                if (deletePhotoFromSystem(context, photo.uri)) {
-                    deletedFromSystem++
-                }
+                deletePhotoFromSystem(context, photo.uri)
             }
         }
 
         photoRepository.deletePhotos(photoIds)
-        Timber.d("Deleted ${photoIds.size} photos from app database, $deletedFromSystem from system gallery")
     }
 
     private fun deletePhotoFromSystem(context: Context, uriString: String): Boolean {
@@ -151,12 +98,6 @@ class PhotoGalleryViewModel @Inject constructor(
             val uri = Uri.parse(uriString)
             val rowsDeleted = context.contentResolver.delete(uri, null, null)
             val success = rowsDeleted > 0
-
-            if (success) {
-                Timber.d("Photo deleted from system gallery: $uri")
-            } else {
-                Timber.w("Failed to delete from system gallery (no rows affected): $uri")
-            }
 
             success
         } catch (e: SecurityException) {
@@ -173,31 +114,30 @@ class PhotoGalleryViewModel @Inject constructor(
         val orphanedPhotoIds = mutableListOf<Long>()
 
         currentPhotos.forEach { photo ->
-            if (!isPhotoAccessibleInternal(context, photo.uri)) {
+            //controllo se la foto è presente nella galleria di sistema
+            val isAccessible = try {
+                val uri = Uri.parse(photo.uri)
+                context.contentResolver.openInputStream(uri)?.use { true } ?: false
+            } catch (e: Exception) {
+                when (e) {
+                    is SecurityException,
+                    is FileNotFoundException,
+                    is IllegalArgumentException -> false
+                    else -> true
+                }
+            }
+
+            //se non è accessibile, aggiungo alle foto alla lista di foto "orfane"
+            if (!isAccessible) {
                 orphanedPhotoIds.add(photo.id)
             }
         }
 
+        //elimino le foto orfane: quindi quelle foto che sono state cancellate dalla galleria di sistema
         if (orphanedPhotoIds.isNotEmpty()) {
             photoRepository.deletePhotos(orphanedPhotoIds)
-            Timber.d("Removed ${orphanedPhotoIds.size} orphaned photo references")
         }
 
         return orphanedPhotoIds.size
-    }
-
-    // Metodo interno per la sincronizzazione (senza side effects)
-    private fun isPhotoAccessibleInternal(context: Context, uriString: String): Boolean {
-        return try {
-            val uri = Uri.parse(uriString)
-            context.contentResolver.openInputStream(uri)?.use { true } ?: false
-        } catch (e: Exception) {
-            when (e) {
-                is SecurityException,
-                is FileNotFoundException,
-                is IllegalArgumentException -> false
-                else -> true
-            }
-        }
     }
 }

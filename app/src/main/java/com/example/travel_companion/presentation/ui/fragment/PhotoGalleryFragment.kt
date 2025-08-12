@@ -135,22 +135,12 @@ class PhotoGalleryFragment : Fragment() {
     }
 
     private fun handlePhotoClick(photo: PhotoEntity) {
-        // Controlla accessibilità con cleanup automatico
-        if (viewModel.checkPhotoAccessibilityAndCleanup(requireContext(), photo)) {
-            findNavController().navigate(
-                PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
-                    photoUri = photo.uri,
-                    tripId = args.tripId
-                )
+        findNavController().navigate(
+            PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
+                photoUri = photo.uri,
+                tripId = args.tripId
             )
-        } else {
-            // Mostra toast solo quando necessario (foto non accessibile)
-            Toast.makeText(
-                requireContext(),
-                "Foto non più disponibile, rimossa dalla galleria",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        )
     }
 
     private fun handleTakePhoto() {
