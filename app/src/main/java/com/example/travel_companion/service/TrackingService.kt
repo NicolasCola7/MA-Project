@@ -3,6 +3,7 @@ package com.example.travel_companion.service
 import android.annotation.SuppressLint
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -11,9 +12,13 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.example.travel_companion.R
+import com.example.travel_companion.receiver.GeofenceBroadcastReceiver
 import com.example.travel_companion.util.Utils
 import com.example.travel_companion.util.Utils.createNotificationChannel
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -33,9 +38,13 @@ class TrackingService : LifecycleService() {
     @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
+    lateinit var geofencingClient: GeofencingClient
+
+
     companion object {
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
+        val geofenceList = MutableLiveData<List<Geofence>>()
 
         const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
         const val NOTIFICATION_CHANNEL_NAME = "Tracking"
@@ -49,6 +58,7 @@ class TrackingService : LifecycleService() {
         pathPoints.postValue(mutableListOf())
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        geofencingClient = LocationServices.getGeofencingClient(this)
 
         isTracking.observe(this) { // observes for changes in the tracking state
             updateLocationTracking(it)
@@ -184,6 +194,43 @@ class TrackingService : LifecycleService() {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun getGeofencingRequest(): GeofencingRequest {
+        return GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(geofenceList.value!!)
+        }.build()
+    }
+
+    private val geofencePendingIntent: PendingIntent by lazy {
+        val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // addGeofences() and removeGeofences().
+        PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startGeofencing() {
+        geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent).run {
+            addOnSuccessListener {
+                Timber.d("Geofencing started")
+            }
+            addOnFailureListener {
+                Timber.d("Geofencing start failed")
+            }
+        }
+    }
+
+    private fun stopGeofencing() {
+        geofencingClient.removeGeofences(geofencePendingIntent).run {
+            addOnSuccessListener {
+                Timber.d("Geofencing stopped")
+            }
+            addOnFailureListener {
+                Timber.d("Geofencing stop failed")
+            }
+        }
     }
 
     override fun onDestroy() {

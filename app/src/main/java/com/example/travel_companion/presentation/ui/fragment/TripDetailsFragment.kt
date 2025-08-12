@@ -36,6 +36,7 @@ import timber.log.Timber
 import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
+import com.google.android.gms.location.Geofence
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -47,7 +48,7 @@ class TripDetailsFragment: Fragment() {
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
-    private var stopPoints: MutableList<Pair<LatLng, Long>> = mutableListOf()
+    private var stopPoints = mutableListOf<Pair<LatLng, Long>>()
     private var map: GoogleMap? = null
     private var trackedDistance: MutableLiveData<Double?> = MutableLiveData(0.0)
 
@@ -374,6 +375,33 @@ class TripDetailsFragment: Fragment() {
             it.action = action
             requireContext().startService(it)
         }
+
+    /*
+    private fun addGeofence(geofence: GeofenceEntity) {
+        TrackingService.geofenceList.postValue(Geofence.Builder()
+        // Set the request ID of the geofence. This is a string to identify this
+        // geofence.
+        .setRequestId(entry.key)
+
+        // Set the circular region of this geofence.
+        .setCircularRegion(
+                entry.value.latitude,
+                entry.value.longitude,
+                Constants.GEOFENCE_RADIUS_IN_METERS
+        )
+
+        // Set the expiration duration of the geofence. This geofence gets automatically
+        // removed after this period of time.
+        .setExpirationDuration(Constants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+
+        // Set the transition types of interest. Alerts are only generated for these
+        // transition. We track entry and exit transitions in this sample.
+        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+
+        // Create the geofence.
+        .build())
+    }
+     */
 
     override fun onResume() {
         super.onResume()
