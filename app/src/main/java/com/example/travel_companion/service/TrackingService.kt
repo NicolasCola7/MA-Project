@@ -1,24 +1,18 @@
 package com.example.travel_companion.service
 
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
+
 import android.app.NotificationManager
-import android.app.NotificationManager.IMPORTANCE_LOW
-import android.app.PendingIntent
-import android.app.PendingIntent.FLAG_IMMUTABLE
-import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.location.Location
-import android.os.Build
 import android.os.Looper
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.example.travel_companion.R
 import com.example.travel_companion.util.Utils
-import com.example.travel_companion.presentation.ui.activity.MainActivity
+import com.example.travel_companion.util.Utils.createNotificationChannel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -29,12 +23,6 @@ import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
@@ -51,7 +39,7 @@ class TrackingService : LifecycleService() {
 
         const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
         const val NOTIFICATION_CHANNEL_NAME = "Tracking"
-        const val NOTIFICATION_ID = 1
+        const val NOTIFICATION_ID = 1000
     }
 
     override fun onCreate() {
@@ -70,7 +58,7 @@ class TrackingService : LifecycleService() {
 
     private fun killService() {
         isTracking.postValue(false)
-        stopForeground(STOP_FOREGROUND_REMOVE )
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -172,52 +160,37 @@ class TrackingService : LifecycleService() {
         isTracking.postValue(true)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(notificationManager)
-        }
+        createNotificationChannel(notificationManager, NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME)
 
         startForeground(NOTIFICATION_ID, getBaseNotification().build())
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun createNotificationChannel(notificationManager: NotificationManager) {
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            NOTIFICATION_CHANNEL_NAME,
-            IMPORTANCE_LOW
-        )
-        notificationManager.createNotificationChannel(channel)
     }
 
     private fun getBaseNotification() = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
         .setAutoCancel(false)
         .setOngoing(true)
         .setSmallIcon(R.drawable.ic_directions_run_black_24dp)
-        .setContentTitle("Trip Tracking")
-        .setContentText("Tracking your trip location")
-        .setContentIntent(getMainActivityPendingIntent())
-
-    private fun getMainActivityPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, MainActivity::class.java).also {
-            it.action = "ACTION_SHOW_TRACKING_FRAGMENT"
-        },
-        FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE
-    )
+        .setContentTitle("Tracciamento")
+        .setContentText("Tracciando la tua posizione")
+        .setDeleteIntent(null)
 
     private fun updateNotificationTrackingState(isTracking: Boolean) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val notification = getBaseNotification()
             .setContentText(
-                if (isTracking) "Tracking your trip location"
-                else "Trip tracking paused"
+                if (isTracking) "Tracciando la tua posizione"
+                else "Tracciamento in pausa"
             )
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 }
 

@@ -3,6 +3,7 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -288,4 +289,5 @@ class NewTripFragment : Fragment() {
         viewModel.resetData()
         _binding = null
     }
+
 }
