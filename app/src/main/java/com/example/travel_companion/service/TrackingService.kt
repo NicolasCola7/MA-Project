@@ -19,6 +19,7 @@ import androidx.lifecycle.MutableLiveData
 import com.example.travel_companion.R
 import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.ui.activity.MainActivity
+import com.example.travel_companion.util.Utils.createNotificationChannel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -172,30 +173,17 @@ class TrackingService : LifecycleService() {
         isTracking.postValue(true)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(notificationManager)
-        }
+        createNotificationChannel(notificationManager, NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME)
 
         startForeground(NOTIFICATION_ID, getBaseNotification().build())
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun createNotificationChannel(notificationManager: NotificationManager) {
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            NOTIFICATION_CHANNEL_NAME,
-            IMPORTANCE_LOW
-        )
-        notificationManager.createNotificationChannel(channel)
     }
 
     private fun getBaseNotification() = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
         .setAutoCancel(false)
         .setOngoing(true)
         .setSmallIcon(R.drawable.ic_directions_run_black_24dp)
-        .setContentTitle("Trip Tracking")
-        .setContentText("Tracking your trip location")
+        .setContentTitle("Tracciamento")
+        .setContentText("Tracciando la tua posizione")
         .setContentIntent(getMainActivityPendingIntent())
 
     private fun getMainActivityPendingIntent() = PendingIntent.getActivity(
@@ -212,8 +200,8 @@ class TrackingService : LifecycleService() {
 
         val notification = getBaseNotification()
             .setContentText(
-                if (isTracking) "Tracking your trip location"
-                else "Trip tracking paused"
+                if (isTracking) "Tracciando la tua posizione"
+                else "Tracciamento in pausa"
             )
             .build()
 

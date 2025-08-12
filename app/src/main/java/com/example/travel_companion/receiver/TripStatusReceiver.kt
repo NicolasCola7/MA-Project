@@ -14,6 +14,7 @@ import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.ui.activity.MainActivity
 import com.example.travel_companion.util.PermissionsManager.hasNotificationPermissions
 import com.example.travel_companion.util.TripScheduler
+import com.example.travel_companion.util.Utils.createNotificationChannel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +67,7 @@ class TripStatusReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        createNotificationChannel(notificationManager)
+        createNotificationChannel(notificationManager, CHANNEL_ID, CHANNEL_NAME)
 
         // Create intent to open app when notification is tapped
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -92,19 +93,5 @@ class TripStatusReceiver : BroadcastReceiver() {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
-    }
-
-    private fun createNotificationChannel(notificationManager: NotificationManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                enableLights(true)
-                enableVibration(true)
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
     }
 }

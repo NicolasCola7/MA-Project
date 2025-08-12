@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.places)
     implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.work.runtime.ktx)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.compiler)
 

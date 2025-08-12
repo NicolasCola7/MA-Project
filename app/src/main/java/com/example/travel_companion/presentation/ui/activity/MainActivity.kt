@@ -1,6 +1,7 @@
 package com.example.travel_companion.presentation.ui.activity
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -137,4 +138,5 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         checkLocationPermission(this)
     }
+
 }

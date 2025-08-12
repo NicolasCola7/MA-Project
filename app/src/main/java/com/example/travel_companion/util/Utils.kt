@@ -2,6 +2,8 @@ package com.example.travel_companion.util
 
 import android.Manifest
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.location.Location
@@ -9,6 +11,8 @@ import android.os.Build
 import android.view.View
 import android.widget.TextView
 import androidx.core.view.isVisible
+import com.example.travel_companion.receiver.TripStatusReceiver.Companion.CHANNEL_ID
+import com.example.travel_companion.receiver.TripStatusReceiver.Companion.CHANNEL_NAME
 import com.example.travel_companion.service.Polyline
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
@@ -32,6 +36,20 @@ object Utils {
         val newHeight = (originalHeight * scaleFactor).toInt()
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
+    fun createNotificationChannel(notificationManager: NotificationManager, channelId: String, channelName: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                enableLights(true)
+                enableVibration(true)
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
     /**
@@ -126,4 +144,5 @@ object Utils {
             )
         }
     }
+
 }

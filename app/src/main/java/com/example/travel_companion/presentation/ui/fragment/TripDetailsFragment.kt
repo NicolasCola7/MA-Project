@@ -1,6 +1,7 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.Bundle
@@ -310,6 +311,7 @@ class TripDetailsFragment: Fragment() {
         } else {
             binding.btnToggleTracking.text = "Ferma"
             binding.btnFinishTrip.visibility = View.GONE
+            updateLastTrackingTime()
         }
     }
 
@@ -358,6 +360,13 @@ class TripDetailsFragment: Fragment() {
                 .add(lastLatLng)
             map?.addPolyline(polylineOptions)
         }
+    }
+
+    private fun updateLastTrackingTime() {
+        val sharedPrefs = requireContext().getSharedPreferences("app_tracking", Context.MODE_PRIVATE)
+        sharedPrefs.edit()
+            .putLong("last_tracking_time", System.currentTimeMillis())
+            .apply()
     }
 
     private fun sendCommandToService(action: String) =
