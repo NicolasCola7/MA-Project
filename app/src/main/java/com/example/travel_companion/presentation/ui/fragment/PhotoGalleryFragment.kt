@@ -63,10 +63,7 @@ class PhotoGalleryFragment : Fragment() {
         setupBottomNavigation()
         setupClickListeners()
         setupAdapter()
-        observeViewModel()
-
-        // Carica le foto per questo viaggio
-        viewModel.loadPhotos(args.tripId)
+        observeData()
     }
 
     override fun onResume() {
@@ -79,27 +76,13 @@ class PhotoGalleryFragment : Fragment() {
         binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
     }
 
-    private fun observeViewModel() {
-        // Osserva le foto
+    private fun observeData() {
+        viewModel.loadPhotos(args.tripId)
+
         viewModel.photos.observe(viewLifecycleOwner) { photos ->
             adapter.submitList(photos) {
                 adapter.updateSelectionAfterListChange()
             }
-        }
-
-        // Osserva il testo del bottone delete
-        viewModel.deleteButtonText.observe(viewLifecycleOwner) { text ->
-            binding.deleteSelectedPhotos.text = text
-        }
-
-        // Osserva la visibilità del bottone delete
-        viewModel.isDeleteButtonVisible.observe(viewLifecycleOwner) { isVisible ->
-            binding.deleteSelectedPhotos.visibility = if (isVisible) View.VISIBLE else View.GONE
-        }
-
-        // Osserva se il bottone delete è abilitato
-        viewModel.isDeleteButtonEnabled.observe(viewLifecycleOwner) { enabled ->
-            binding.deleteSelectedPhotos.isEnabled = enabled
         }
     }
 
@@ -142,7 +125,7 @@ class PhotoGalleryFragment : Fragment() {
     private fun setupAdapter() {
         adapter = PhotoAdapter(
             onSelectionChanged = { count ->
-                viewModel.updateSelectedCount(count)
+                updateDeleteButton(count)
             },
             onPhotoClick = { photo ->
                 handlePhotoClick(photo)
@@ -152,8 +135,8 @@ class PhotoGalleryFragment : Fragment() {
     }
 
     private fun handlePhotoClick(photo: PhotoEntity) {
-        // Verifica accessibilità tramite ViewModel
-        if (viewModel.isPhotoAccessible(requireContext(), photo.uri)) {
+        // Controlla accessibilità con cleanup automatico
+        if (viewModel.checkPhotoAccessibilityAndCleanup(requireContext(), photo)) {
             findNavController().navigate(
                 PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
                     photoUri = photo.uri,
@@ -161,8 +144,7 @@ class PhotoGalleryFragment : Fragment() {
                 )
             )
         } else {
-            // Rimuovi la foto non più accessibile
-            viewModel.deletePhotosFromAppOnly(listOf(photo.id))
+            // Mostra toast solo quando necessario (foto non accessibile)
             Toast.makeText(
                 requireContext(),
                 "Foto non più disponibile, rimossa dalla galleria",
@@ -228,6 +210,14 @@ class PhotoGalleryFragment : Fragment() {
         }
     }
 
+    private fun updateDeleteButton(selectedCount: Int) {
+        Utils.SelectionHelper.updateDeleteButton(
+            button = binding.deleteSelectedPhotos,
+            selectedCount = selectedCount,
+            baseText = "Elimina"
+        )
+    }
+
     private fun handleMultipleDelete() {
         val selectedPhotos = adapter.getSelectedPhotos()
 
@@ -237,16 +227,15 @@ class PhotoGalleryFragment : Fragment() {
             context = requireContext(),
             selectedItems = selectedPhotos,
             itemType = "foto",
-            onDelete = { photos ->
-                val photoIds = photos.map { it.id }
-                viewModel.deletePhotosWithSystemSync(requireContext(), photoIds)
-            },
-            onClearSelection = {
-                adapter.clearSelection()
-                viewModel.clearSelection()
-            },
-            onUpdateButton = { /* Non più necessario, gestito dal ViewModel TODO: migliora negli altri fragment*/ }
+            onDelete = { photos -> deleteSelectedPhotos(photos) },
+            onClearSelection = { adapter.clearSelection() },
+            onUpdateButton = { count -> updateDeleteButton(count) }
         )
+    }
+
+    private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
+        val photoIds = photos.map { it.id }
+        viewModel.deletePhotosWithSystemSync(requireContext(), photoIds)
     }
 
     override fun onDestroyView() {

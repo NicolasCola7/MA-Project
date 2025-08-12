@@ -2,7 +2,11 @@ package com.example.travel_companion.presentation.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.switchMap
 import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,102 +25,107 @@ class PhotoGalleryViewModel @Inject constructor(
     // Trip ID corrente
     private val _currentTripId = MutableLiveData<Long>()
 
-    // LiveData foto in base al tripId
+    // LiveData delle foto che si aggiorna automaticamente quando cambia il tripId
     val photos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
         photoRepository.getPhotosByTripId(tripId)
     }
-
-    // Gestione selezione foto
-    private val _selectedPhotosCount = MutableLiveData(0)
-    val selectedPhotosCount: LiveData<Int> get() = _selectedPhotosCount
-
-    // Computed properties
-    val deleteButtonText: LiveData<String> = selectedPhotosCount.map { count ->
-        if (count > 0) "Elimina ($count)" else "Elimina"
-    }
-    val isDeleteButtonVisible: LiveData<Boolean> = selectedPhotosCount.map { it > 0 }
-    val isDeleteButtonEnabled: LiveData<Boolean> = selectedPhotosCount.map { it > 0 }
 
     fun loadPhotos(tripId: Long) {
         _currentTripId.value = tripId
     }
 
     fun insertPhoto(tripId: Long, uri: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                val newPhoto = PhotoEntity(tripId = tripId, uri = uri)
-                photoRepository.insert(newPhoto)
-                Timber.d("Foto salvata: $uri")
+                withContext(Dispatchers.IO) {
+                    val newPhoto = PhotoEntity(
+                        tripId = tripId,
+                        uri = uri
+                    )
+                    photoRepository.insert(newPhoto)
+                }
+                Timber.d("Photo inserted successfully")
             } catch (e: Exception) {
-                Timber.e(e, "Errore nel salvataggio della foto")
+                Timber.e(e, "Error inserting photo")
             }
         }
     }
 
     fun deletePhotosWithSystemSync(context: Context, photoIds: List<Long>) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                deletePhotosInternal(context, photoIds, syncWithSystem = true)
-                clearSelection()
+                withContext(Dispatchers.IO) {
+                    deletePhotosInternal(context, photoIds, syncWithSystem = true)
+                }
             } catch (e: Exception) {
-                Timber.e(e, "Errore durante l'eliminazione delle foto")
+                Timber.e(e, "Error deleting photos")
             }
         }
     }
 
-    fun deletePhotosFromAppOnly(photoIds: List<Long>) {
-        viewModelScope.launch(Dispatchers.IO) {
+    private fun deletePhotosFromAppOnly(photoIds: List<Long>) {
+        viewModelScope.launch {
             try {
-                photoRepository.deletePhotos(photoIds)
-                Timber.d("Eliminate ${photoIds.size} foto dal database interno")
+                withContext(Dispatchers.IO) {
+                    photoRepository.deletePhotos(photoIds)
+                }
+                Timber.d("Deleted ${photoIds.size} photos from app database only")
             } catch (e: Exception) {
-                Timber.e(e, "Errore durante l'eliminazione delle foto dall'app")
+                Timber.e(e, "Error deleting photos from app")
             }
         }
     }
 
     fun syncWithSystemGallery(context: Context) {
         val tripId = _currentTripId.value ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+
+        viewModelScope.launch {
             try {
-                val orphanedCount = syncPhotosWithSystemInternal(context, tripId)
+                val orphanedCount = withContext(Dispatchers.IO) {
+                    syncPhotosWithSystemInternal(context, tripId)
+                }
+
                 if (orphanedCount > 0) {
-                    Timber.d("Rimossi $orphanedCount riferimenti a foto non disponibili")
+                    Timber.d("Removed $orphanedCount orphaned photo references during sync")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Errore durante la sincronizzazione")
+                Timber.e(e, "Error syncing with system gallery")
             }
         }
     }
 
-    fun updateSelectedCount(count: Int) {
-        _selectedPhotosCount.postValue(count)
-    }
-
-    fun clearSelection() {
-        _selectedPhotosCount.postValue(0)
-    }
-
-    fun isPhotoAccessible(context: Context, uriString: String): Boolean {
-        return try {
-            val uri = Uri.parse(uriString)
+    /**
+     * Controlla se una foto è accessibile e la rimuove automaticamente se non lo è.
+     * Usato principalmente per il click sulle foto come fallback di sicurezza.
+     */
+    fun checkPhotoAccessibilityAndCleanup(context: Context, photo: PhotoEntity): Boolean {
+        val isAccessible = try {
+            val uri = Uri.parse(photo.uri)
             context.contentResolver.openInputStream(uri)?.use { true } ?: false
         } catch (e: Exception) {
             when (e) {
                 is SecurityException,
                 is FileNotFoundException,
                 is IllegalArgumentException -> {
-                    Timber.d("Foto non accessibile: $uriString - ${e.message}")
+                    Timber.d("Photo not accessible: ${photo.uri} - ${e.message}")
                     false
                 }
                 else -> {
-                    Timber.e(e, "Errore inaspettato controllando accessibilità foto")
-                    true
+                    Timber.e(e, "Unexpected error checking photo accessibility")
+                    true // In caso di errore sconosciuto, assumiamo sia accessibile
                 }
             }
         }
+
+        // Se non è accessibile, rimuovila automaticamente
+        if (!isAccessible) {
+            deletePhotosFromAppOnly(listOf(photo.id))
+        }
+
+        return isAccessible
     }
 
+    // Private helper methods
     private suspend fun deletePhotosInternal(
         context: Context,
         photoIds: List<Long>,
@@ -134,22 +143,27 @@ class PhotoGalleryViewModel @Inject constructor(
         }
 
         photoRepository.deletePhotos(photoIds)
-        Timber.d("Eliminate ${photoIds.size} foto (di cui $deletedFromSystem anche dalla galleria di sistema)")
+        Timber.d("Deleted ${photoIds.size} photos from app database, $deletedFromSystem from system gallery")
     }
 
-    /**
-     * Elimina una singola foto dalla galleria di sistema usando MediaStore (Android 10+)
-     */
     private fun deletePhotoFromSystem(context: Context, uriString: String): Boolean {
         return try {
             val uri = Uri.parse(uriString)
             val rowsDeleted = context.contentResolver.delete(uri, null, null)
-            rowsDeleted > 0
+            val success = rowsDeleted > 0
+
+            if (success) {
+                Timber.d("Photo deleted from system gallery: $uri")
+            } else {
+                Timber.w("Failed to delete from system gallery (no rows affected): $uri")
+            }
+
+            success
         } catch (e: SecurityException) {
-            Timber.w(e, "SecurityException eliminando dalla galleria di sistema: $uriString")
+            Timber.w(e, "SecurityException deleting from system gallery: $uriString")
             false
         } catch (e: Exception) {
-            Timber.e(e, "Errore eliminando dalla galleria di sistema: $uriString")
+            Timber.e(e, "Error deleting from system gallery: $uriString")
             false
         }
     }
@@ -159,16 +173,31 @@ class PhotoGalleryViewModel @Inject constructor(
         val orphanedPhotoIds = mutableListOf<Long>()
 
         currentPhotos.forEach { photo ->
-            if (!isPhotoAccessible(context, photo.uri)) {
+            if (!isPhotoAccessibleInternal(context, photo.uri)) {
                 orphanedPhotoIds.add(photo.id)
             }
         }
 
         if (orphanedPhotoIds.isNotEmpty()) {
             photoRepository.deletePhotos(orphanedPhotoIds)
-            Timber.d("Rimossi ${orphanedPhotoIds.size} riferimenti a foto orfane")
+            Timber.d("Removed ${orphanedPhotoIds.size} orphaned photo references")
         }
 
         return orphanedPhotoIds.size
+    }
+
+    // Metodo interno per la sincronizzazione (senza side effects)
+    private fun isPhotoAccessibleInternal(context: Context, uriString: String): Boolean {
+        return try {
+            val uri = Uri.parse(uriString)
+            context.contentResolver.openInputStream(uri)?.use { true } ?: false
+        } catch (e: Exception) {
+            when (e) {
+                is SecurityException,
+                is FileNotFoundException,
+                is IllegalArgumentException -> false
+                else -> true
+            }
+        }
     }
 }
