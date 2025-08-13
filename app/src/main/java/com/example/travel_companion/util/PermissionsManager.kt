@@ -21,7 +21,11 @@ object PermissionsManager {
     const val CURRENT_LOCATION_PERMISSIONS_REQUEST = 99 // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     const val OLDER_LOCATION_PERMISSIONS_REQUEST = 66  //  Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
     const val POST_NOTIFICATION_PERMISSIONS_REQUEST = 77
+    const val CAMERA_PERMISSIONS_REQUEST = 88
 
+    /**
+     * Controlla e richiede i permessi di localizzazione
+     */
     fun checkLocationPermission(context: Activity) {
         val fineLocation = checkSelfPermission(
             context,
@@ -34,46 +38,113 @@ object PermissionsManager {
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
-            manageLocationPermission(context,fineLocation && backgroundLocation)
+            if (!fineLocation || !backgroundLocation) {
+                requestLocationPermissionWithCheck(context)
+            }
         } else {
-            manageLocationPermission(context, fineLocation)
+            if (!fineLocation) {
+                requestLocationPermissionWithCheck(context)
+            }
         }
     }
 
-    private fun manageLocationPermission(context: Activity, permissionsGranted: Boolean) {
-        if(permissionsGranted)
-            return
+    /**
+     * Controlla se dobbiamo mostrare la spiegazione prima di richiedere i permessi
+     */
+    private fun requestLocationPermissionWithCheck(context: Activity) {
+        val fineLocationRationale = shouldShowRequestPermissionRationale(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
 
-        val dialog =  AlertDialog.Builder(context)
-            .setTitle("Permessi Localizzazione Richiesti")
-            .setMessage("Questa app richiede tutti i permessi di localizzazione per funzionare correttamente, accettali per poterla usare.")
-            .setPositiveButton(
-                "OK"
-            ) { _, _ ->
-                //Prompt the user once explanation has been shown
-                requestLocationPermission(context)
-            }
-            .create()
+        val backgroundLocationRationale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            shouldShowRequestPermissionRationale(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
+        } else false
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (shouldShowRequestPermissionRationale(
-                    context,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-            ) {
-                dialog.show()
-            } else {
-                requestLocationPermission(context)
-            }
+        if (fineLocationRationale || backgroundLocationRationale) {
+            // L'utente ha negato il permesso in precedenza, mostra spiegazione
+            showLocationPermissionExplanationDialog(context)
         } else {
-            if (shouldShowRequestPermissionRationale(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION)
-            ) {
-                dialog.show()
-            } else {
+            // Prima richiesta o "Non chiedere più" - richiedi direttamente
+            requestLocationPermission(context)
+        }
+    }
+
+    /**
+     * Mostra dialog di spiegazione per i permessi di localizzazione
+     */
+    private fun showLocationPermissionExplanationDialog(context: Activity) {
+        AlertDialog.Builder(context)
+            .setTitle("Permessi Localizzazione Richiesti")
+            .setMessage("Questa app richiede tutti i permessi di localizzazione per funzionare correttamente. Senza questi permessi non potrai utilizzare l'app.")
+            .setPositiveButton("Concedi") { _, _ ->
                 requestLocationPermission(context)
             }
+            .setNegativeButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Controlla e richiede il permesso camera
+     */
+    fun checkCameraPermission(context: Activity) {
+        val cameraPermission = checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!cameraPermission) {
+            requestCameraPermissionWithCheck(context)
         }
+    }
+
+    /**
+     * Controlla se dobbiamo mostrare la spiegazione per la camera
+     */
+    private fun requestCameraPermissionWithCheck(context: Activity) {
+        val cameraRationale = shouldShowRequestPermissionRationale(
+            context,
+            Manifest.permission.CAMERA
+        )
+
+        if (cameraRationale) {
+            // L'utente ha negato il permesso in precedenza, mostra spiegazione
+            showCameraPermissionExplanationDialog(context)
+        } else {
+            // Prima richiesta o "Non chiedere più" - richiedi direttamente
+            requestPermissions(
+                context,
+                arrayOf(Manifest.permission.CAMERA),
+                CAMERA_PERMISSIONS_REQUEST
+            )
+        }
+    }
+
+    /**
+     * Mostra dialog di spiegazione per il permesso camera
+     */
+    private fun showCameraPermissionExplanationDialog(context: Activity) {
+        AlertDialog.Builder(context)
+            .setTitle("Permesso Camera Richiesto")
+            .setMessage("Questa app richiede il permesso camera per scattare foto durante i viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
+            .setPositiveButton("Concedi") { _, _ ->
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.CAMERA),
+                    CAMERA_PERMISSIONS_REQUEST
+                )
+            }
+            .setNegativeButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun requestLocationPermission(context: Activity) {
@@ -100,14 +171,53 @@ object PermissionsManager {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun checkNotificationsPermissions(context: Activity) {
         if (!hasNotificationPermissions(context)) {
+            requestNotificationPermissionWithCheck(context)
+        }
+    }
+
+    /**
+     * Controlla se dobbiamo mostrare la spiegazione per le notifiche
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun requestNotificationPermissionWithCheck(context: Activity) {
+        val notificationRationale = shouldShowRequestPermissionRationale(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        )
+
+        if (notificationRationale) {
+            // L'utente ha negato il permesso in precedenza, mostra spiegazione
+            showNotificationPermissionExplanationDialog(context)
+        } else {
+            // Prima richiesta o "Non chiedere più" - richiedi direttamente
             requestPermissions(
                 context,
-                arrayOf(
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ),
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                 POST_NOTIFICATION_PERMISSIONS_REQUEST
             )
         }
+    }
+
+    /**
+     * Mostra dialog di spiegazione per il permesso notifiche
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun showNotificationPermissionExplanationDialog(context: Activity) {
+        AlertDialog.Builder(context)
+            .setTitle("Permesso Notifiche Richiesto")
+            .setMessage("Questa app richiede il permesso per inviare notifiche per tenerti aggiornato sui tuoi viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
+            .setPositiveButton("Concedi") { _, _ ->
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    POST_NOTIFICATION_PERMISSIONS_REQUEST
+                )
+            }
+            .setNegativeButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setCancelable(false)
+            .show()
     }
 
     fun hasNotificationPermissions(context: Context): Boolean {
@@ -128,9 +238,142 @@ object PermissionsManager {
     }
 
     /**
+     * Verifica se tutti i permessi essenziali sono stati concessi
+     */
+    fun areAllEssentialPermissionsGranted(context: Context): Boolean {
+        // Controlla localizzazione
+        val fineLocation = checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val backgroundLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        // Controlla camera
+        val camera = checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        // Controlla notifiche (opzionale per Android 13+, ma richiesto per il funzionamento completo)
+        val notifications = hasNotificationPermissions(context)
+
+        return fineLocation && backgroundLocation && camera && notifications
+    }
+
+    /**
+     * Gestisce il risultato delle richieste di permessi
+     */
+    fun handlePermissionResult(
+        context: Activity,
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+        onAllPermissionsGranted: () -> Unit = {},
+        onPermissionDenied: (Int) -> Unit = {}
+    ) {
+        when (requestCode) {
+            CURRENT_LOCATION_PERMISSIONS_REQUEST,
+            OLDER_LOCATION_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    // Permessi di localizzazione concessi, controlla se tutti i permessi sono concessi
+                    if (areAllEssentialPermissionsGranted(context)) {
+                        onAllPermissionsGranted()
+                    }
+                } else {
+                    // Permesso negato, mostra dialog per aprire impostazioni
+                    showPermissionDeniedDialog(
+                        context,
+                        "Permessi Localizzazione Negati",
+                        "L'app non può funzionare senza i permessi di localizzazione. Aprire le impostazioni per concederli manualmente?"
+                    )
+                    onPermissionDenied(requestCode)
+                }
+            }
+
+            CAMERA_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permesso camera concesso, controlla se tutti i permessi sono concessi
+                    if (areAllEssentialPermissionsGranted(context)) {
+                        onAllPermissionsGranted()
+                    }
+                } else {
+                    // Permesso negato, mostra dialog per aprire impostazioni
+                    showPermissionDeniedDialog(
+                        context,
+                        "Permesso Camera Negato",
+                        "L'app non può funzionare senza il permesso camera. Aprire le impostazioni per concederlo manualmente?"
+                    )
+                    onPermissionDenied(requestCode)
+                }
+            }
+
+            POST_NOTIFICATION_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permesso notifiche concesso, controlla se tutti i permessi sono concessi
+                    if (areAllEssentialPermissionsGranted(context)) {
+                        onAllPermissionsGranted()
+                    }
+                } else {
+                    // Permesso negato, mostra dialog per aprire impostazioni
+                    showPermissionDeniedDialog(
+                        context,
+                        "Permesso Notifiche Negato",
+                        "L'app non può funzionare completamente senza il permesso notifiche. Aprire le impostazioni per concederlo manualmente?"
+                    )
+                    onPermissionDenied(requestCode)
+                }
+            }
+        }
+    }
+
+    /**
+     * Mostra un dialog quando un permesso viene negato definitivamente
+     */
+    private fun showPermissionDeniedDialog(
+        context: Activity,
+        title: String,
+        message: String
+    ) {
+        AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setNegativeButton("Esci dall'App") { _, _ ->
+                context.finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Apre le impostazioni dell'app
+     */
+    private fun openAppSettings(context: Context) {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(
+                context,
+                "Impossibile aprire le impostazioni",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    /**
      * Verifica se l'app può schedulare allarmi esatti usando il metodo più appropriato
-     * Prova prima USE_EXACT_ALARM (non richiede consenso utente),
-     * poi fallback su SCHEDULE_EXACT_ALARM se necessario
      */
     fun canScheduleExactAlarmsUniversal(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
@@ -138,8 +381,6 @@ object PermissionsManager {
         }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        // Controlla se possiamo schedulare allarmi esatti (copre entrambi i permessi)
         return alarmManager.canScheduleExactAlarms()
     }
 
@@ -152,13 +393,11 @@ object PermissionsManager {
             return
         }
 
-        // Prova prima a vedere se gli allarmi esatti sono già disponibili
         if (canScheduleExactAlarmsUniversal(context)) {
             onPermissionGranted()
             return
         }
 
-        // Se non sono disponibili, chiedi all'utente di abilitare SCHEDULE_EXACT_ALARM
         showExactAlarmPermissionDialog(context, onPermissionGranted)
     }
 
@@ -205,7 +444,6 @@ object PermissionsManager {
             }
             context.startActivity(intent)
         } catch (e: Exception) {
-            // Fallback se l'intent specifico non funziona
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:${context.packageName}")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
