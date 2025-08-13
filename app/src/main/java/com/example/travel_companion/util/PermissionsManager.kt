@@ -18,8 +18,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 
 object PermissionsManager {
 
-    const val CURRENT_LOCATION_PERMISSIONS_REQUEST = 99 // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-    const val OLDER_LOCATION_PERMISSIONS_REQUEST = 66  //  Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+    const val LOCATION_PERMISSIONS_REQUEST = 99 // Per tutti i permessi di localizzazione base
     const val BACKGROUND_LOCATION_PERMISSIONS_REQUEST = 98 // Per Android 10+ background location separato
     const val POST_NOTIFICATION_PERMISSIONS_REQUEST = 77
     const val CAMERA_PERMISSIONS_REQUEST = 88
@@ -138,27 +137,15 @@ object PermissionsManager {
      * Richiede i permessi di localizzazione base (coarse e fine)
      */
     private fun requestLocationPermission(context: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Per Android 10+, richiedi prima i permessi di base (coarse e fine)
-            // Il background location deve essere richiesto separatamente
-            requestPermissions(
-                context,
-                arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ),
-                CURRENT_LOCATION_PERMISSIONS_REQUEST
-            )
-        } else {
-            requestPermissions(
-                context,
-                arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ),
-                OLDER_LOCATION_PERMISSIONS_REQUEST
-            )
-        }
+        // Richiedi sempre i permessi base con lo stesso request code
+        requestPermissions(
+            context,
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
+            LOCATION_PERMISSIONS_REQUEST
+        )
     }
 
     /**
@@ -451,8 +438,7 @@ object PermissionsManager {
         onPermissionDenied: (Int) -> Unit = {}
     ) {
         when (requestCode) {
-            CURRENT_LOCATION_PERMISSIONS_REQUEST,
-            OLDER_LOCATION_PERMISSIONS_REQUEST -> {
+            LOCATION_PERMISSIONS_REQUEST -> {
                 if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                     // Permessi di localizzazione base concessi
                     // Per Android 10+, ora richiedi il background location separatamente
@@ -476,6 +462,12 @@ object PermissionsManager {
                 } else {
                     // Permesso negato
                     onPermissionDenied(requestCode)
+                    // Mostra dialog per spiegare l'importanza del permesso
+                    showPermissionDeniedFinalDialog(
+                        context,
+                        "Permessi Localizzazione Negati",
+                        "I permessi di localizzazione sono essenziali per il funzionamento dell'app. Senza questi permessi non puoi utilizzare l'app."
+                    )
                 }
             }
 
@@ -488,6 +480,12 @@ object PermissionsManager {
                 } else {
                     // Background location negato
                     onPermissionDenied(requestCode)
+                    // Mostra dialog per spiegare l'importanza del permesso
+                    showPermissionDeniedFinalDialog(
+                        context,
+                        "Permesso Background Location Negato",
+                        "Il permesso per accedere alla posizione in background è essenziale per tracciare i tuoi viaggi. Senza questo permesso non puoi utilizzare l'app."
+                    )
                 }
             }
 
@@ -500,6 +498,12 @@ object PermissionsManager {
                 } else {
                     // Permesso negato
                     onPermissionDenied(requestCode)
+                    // Mostra dialog per spiegare l'importanza del permesso
+                    showPermissionDeniedFinalDialog(
+                        context,
+                        "Permesso Camera Negato",
+                        "Il permesso camera è essenziale per scattare foto durante i tuoi viaggi. Senza questo permesso non puoi utilizzare tutte le funzionalità dell'app."
+                    )
                 }
             }
 
@@ -512,9 +516,36 @@ object PermissionsManager {
                 } else {
                     // Permesso negato
                     onPermissionDenied(requestCode)
+                    // Mostra dialog per spiegare l'importanza del permesso
+                    showPermissionDeniedFinalDialog(
+                        context,
+                        "Permesso Notifiche Negato",
+                        "Il permesso notifiche è importante per ricevere aggiornamenti sui tuoi viaggi. Senza questo permesso non potrai ricevere notifiche importanti."
+                    )
                 }
             }
         }
+    }
+
+    /**
+     * Mostra un dialog quando un permesso viene negato (sia temporaneamente che definitivamente)
+     */
+    private fun showPermissionDeniedFinalDialog(
+        context: Activity,
+        title: String,
+        message: String
+    ) {
+        AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setNegativeButton("Esci dall'App") { _, _ ->
+                context.finish()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     /**
