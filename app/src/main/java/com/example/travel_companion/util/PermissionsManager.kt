@@ -20,13 +20,25 @@ object PermissionsManager {
 
     const val CURRENT_LOCATION_PERMISSIONS_REQUEST = 99 // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     const val OLDER_LOCATION_PERMISSIONS_REQUEST = 66  //  Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+    const val BACKGROUND_LOCATION_PERMISSIONS_REQUEST = 98 // Per Android 10+ background location separato
     const val POST_NOTIFICATION_PERMISSIONS_REQUEST = 77
     const val CAMERA_PERMISSIONS_REQUEST = 88
+
+    private const val PREFS_NAME = "permissions_prefs"
+    private const val KEY_LOCATION_REQUESTED = "location_requested"
+    private const val KEY_BACKGROUND_LOCATION_REQUESTED = "background_location_requested"
+    private const val KEY_CAMERA_REQUESTED = "camera_requested"
+    private const val KEY_NOTIFICATION_REQUESTED = "notification_requested"
 
     /**
      * Controlla e richiede i permessi di localizzazione
      */
     fun checkLocationPermission(context: Activity) {
+        val coarseLocation = checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
         val fineLocation = checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -38,50 +50,186 @@ object PermissionsManager {
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
-            if (!fineLocation || !backgroundLocation) {
+            // Debug: Log dello stato attuale
+            android.util.Log.d("PermissionsManager", "Coarse Location: $coarseLocation, Fine Location: $fineLocation, Background Location: $backgroundLocation")
+
+            // Prima controlla i permessi base (coarse e fine)
+            if (!coarseLocation || !fineLocation) {
                 requestLocationPermissionWithCheck(context)
+            } else if (!backgroundLocation) {
+                // Se i permessi base sono concessi ma non il background, richiedilo separatamente
+                checkBackgroundLocationPermission(context)
             }
         } else {
-            if (!fineLocation) {
+            // Debug: Log dello stato attuale
+            android.util.Log.d("PermissionsManager", "Coarse Location: $coarseLocation, Fine Location: $fineLocation (Android < Q)")
+
+            if (!coarseLocation || !fineLocation) {
                 requestLocationPermissionWithCheck(context)
             }
         }
     }
 
     /**
-     * Controlla se dobbiamo mostrare la spiegazione prima di richiedere i permessi
+     * Controlla se dobbiamo mostrare la spiegazione prima di richiedere i permessi base
      */
     private fun requestLocationPermissionWithCheck(context: Activity) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val hasBeenRequested = prefs.getBoolean(KEY_LOCATION_REQUESTED, false)
+
+        val coarseLocationRationale = shouldShowRequestPermissionRationale(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
         val fineLocationRationale = shouldShowRequestPermissionRationale(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
         )
 
-        val backgroundLocationRationale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            shouldShowRequestPermissionRationale(
-                context,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-        } else false
+        // Debug: Log dello stato delle richieste
+        android.util.Log.d("PermissionsManager", "Location - HasBeenRequested: $hasBeenRequested, CoarseRationale: $coarseLocationRationale, FineRationale: $fineLocationRationale")
 
-        if (fineLocationRationale || backgroundLocationRationale) {
-            // L'utente ha negato il permesso in precedenza, mostra spiegazione
-            showLocationPermissionExplanationDialog(context)
-        } else {
-            // Prima richiesta o "Non chiedere più" - richiedi direttamente
-            requestLocationPermission(context)
+        when {
+            // Prima richiesta - mostra direttamente il dialog nativo
+            !hasBeenRequested -> {
+                android.util.Log.d("PermissionsManager", "Prima richiesta localizzazione - mostro dialog nativo")
+                requestLocationPermission(context)
+                // Segna che abbiamo richiesto il permesso
+                prefs.edit().putBoolean(KEY_LOCATION_REQUESTED, true).apply()
+            }
+
+            // L'utente ha negato ma non ha selezionato "Non chiedere più" - mostra spiegazione
+            coarseLocationRationale || fineLocationRationale -> {
+                android.util.Log.d("PermissionsManager", "Localizzazione negata una volta - mostro spiegazione")
+                showLocationPermissionExplanationDialog(context)
+            }
+
+            // L'utente ha selezionato "Non chiedere più" - vai direttamente alle impostazioni
+            else -> {
+                android.util.Log.d("PermissionsManager", "Localizzazione negata definitivamente - vado alle impostazioni")
+                showPermissionPermanentlyDeniedDialog(
+                    context,
+                    "Permessi Localizzazione",
+                    "I permessi di localizzazione sono stati negati permanentemente. Devi concederli manualmente dalle impostazioni per utilizzare l'app."
+                )
+            }
         }
     }
 
     /**
-     * Mostra dialog di spiegazione per i permessi di localizzazione
+     * Mostra dialog di spiegazione per i permessi di localizzazione base
      */
     private fun showLocationPermissionExplanationDialog(context: Activity) {
         AlertDialog.Builder(context)
             .setTitle("Permessi Localizzazione Richiesti")
-            .setMessage("Questa app richiede tutti i permessi di localizzazione per funzionare correttamente. Senza questi permessi non potrai utilizzare l'app.")
-            .setPositiveButton("Concedi") { _, _ ->
+            .setMessage("Questa app richiede i permessi di localizzazione per funzionare correttamente. Senza questi permessi non potrai utilizzare l'app.")
+            .setPositiveButton("Riprova") { _, _ ->
                 requestLocationPermission(context)
+            }
+            .setNegativeButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Richiede i permessi di localizzazione base (coarse e fine)
+     */
+    private fun requestLocationPermission(context: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Per Android 10+, richiedi prima i permessi di base (coarse e fine)
+            // Il background location deve essere richiesto separatamente
+            requestPermissions(
+                context,
+                arrayOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                CURRENT_LOCATION_PERMISSIONS_REQUEST
+            )
+        } else {
+            requestPermissions(
+                context,
+                arrayOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                OLDER_LOCATION_PERMISSIONS_REQUEST
+            )
+        }
+    }
+
+    /**
+     * Richiede il permesso background location separatamente (Android 10+)
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun checkBackgroundLocationPermission(context: Activity) {
+        val backgroundLocation = checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!backgroundLocation) {
+            requestBackgroundLocationPermissionWithCheck(context)
+        }
+    }
+
+    /**
+     * Controlla se dobbiamo mostrare la spiegazione per il background location
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun requestBackgroundLocationPermissionWithCheck(context: Activity) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val hasBeenRequested = prefs.getBoolean(KEY_BACKGROUND_LOCATION_REQUESTED, false)
+
+        val backgroundLocationRationale = shouldShowRequestPermissionRationale(
+            context,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        )
+
+        android.util.Log.d("PermissionsManager", "Background Location - HasBeenRequested: $hasBeenRequested, BackgroundRationale: $backgroundLocationRationale")
+
+        when {
+            !hasBeenRequested -> {
+                android.util.Log.d("PermissionsManager", "Prima richiesta background location - mostro dialog nativo")
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    BACKGROUND_LOCATION_PERMISSIONS_REQUEST
+                )
+                prefs.edit().putBoolean(KEY_BACKGROUND_LOCATION_REQUESTED, true).apply()
+            }
+
+            backgroundLocationRationale -> {
+                showBackgroundLocationPermissionExplanationDialog(context)
+            }
+
+            else -> {
+                showPermissionPermanentlyDeniedDialog(
+                    context,
+                    "Permesso Background Location",
+                    "Il permesso per accedere alla posizione in background è stato negato permanentemente."
+                )
+            }
+        }
+    }
+
+    /**
+     * Mostra dialog di spiegazione per il background location
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun showBackgroundLocationPermissionExplanationDialog(context: Activity) {
+        AlertDialog.Builder(context)
+            .setTitle("Permesso Background Location")
+            .setMessage("Per tracciare i tuoi viaggi anche quando l'app è in background, abbiamo bisogno del permesso di localizzazione sempre attivo.")
+            .setPositiveButton("Riprova") { _, _ ->
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                    BACKGROUND_LOCATION_PERMISSIONS_REQUEST
+                )
             }
             .setNegativeButton("Apri Impostazioni") { _, _ ->
                 openAppSettings(context)
@@ -108,21 +256,44 @@ object PermissionsManager {
      * Controlla se dobbiamo mostrare la spiegazione per la camera
      */
     private fun requestCameraPermissionWithCheck(context: Activity) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val hasBeenRequested = prefs.getBoolean(KEY_CAMERA_REQUESTED, false)
+
         val cameraRationale = shouldShowRequestPermissionRationale(
             context,
             Manifest.permission.CAMERA
         )
 
-        if (cameraRationale) {
-            // L'utente ha negato il permesso in precedenza, mostra spiegazione
-            showCameraPermissionExplanationDialog(context)
-        } else {
-            // Prima richiesta o "Non chiedere più" - richiedi direttamente
-            requestPermissions(
-                context,
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSIONS_REQUEST
-            )
+        android.util.Log.d("PermissionsManager", "Camera - HasBeenRequested: $hasBeenRequested, CameraRationale: $cameraRationale")
+
+        when {
+            // Prima richiesta - mostra direttamente il dialog nativo
+            !hasBeenRequested -> {
+                android.util.Log.d("PermissionsManager", "Prima richiesta camera - mostro dialog nativo")
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.CAMERA),
+                    CAMERA_PERMISSIONS_REQUEST
+                )
+                // Segna che abbiamo richiesto il permesso
+                prefs.edit().putBoolean(KEY_CAMERA_REQUESTED, true).apply()
+            }
+
+            // L'utente ha negato ma non ha selezionato "Non chiedere più" - mostra spiegazione
+            cameraRationale -> {
+                android.util.Log.d("PermissionsManager", "Camera negata una volta - mostro spiegazione")
+                showCameraPermissionExplanationDialog(context)
+            }
+
+            // L'utente ha selezionato "Non chiedere più" - vai direttamente alle impostazioni
+            else -> {
+                android.util.Log.d("PermissionsManager", "Camera negata definitivamente - vado alle impostazioni")
+                showPermissionPermanentlyDeniedDialog(
+                    context,
+                    "Permesso Camera",
+                    "Il permesso camera è stato negato permanentemente. Devi concederlo manualmente dalle impostazioni per utilizzare tutte le funzionalità dell'app."
+                )
+            }
         }
     }
 
@@ -133,7 +304,7 @@ object PermissionsManager {
         AlertDialog.Builder(context)
             .setTitle("Permesso Camera Richiesto")
             .setMessage("Questa app richiede il permesso camera per scattare foto durante i viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
-            .setPositiveButton("Concedi") { _, _ ->
+            .setPositiveButton("Riprova") { _, _ ->
                 requestPermissions(
                     context,
                     arrayOf(Manifest.permission.CAMERA),
@@ -145,27 +316,6 @@ object PermissionsManager {
             }
             .setCancelable(false)
             .show()
-    }
-
-    private fun requestLocationPermission(context: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            requestPermissions(
-                context,
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                ),
-                CURRENT_LOCATION_PERMISSIONS_REQUEST
-            )
-        } else {
-            requestPermissions(
-                context,
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                ),
-                OLDER_LOCATION_PERMISSIONS_REQUEST
-            )
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -180,21 +330,44 @@ object PermissionsManager {
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermissionWithCheck(context: Activity) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val hasBeenRequested = prefs.getBoolean(KEY_NOTIFICATION_REQUESTED, false)
+
         val notificationRationale = shouldShowRequestPermissionRationale(
             context,
             Manifest.permission.POST_NOTIFICATIONS
         )
 
-        if (notificationRationale) {
-            // L'utente ha negato il permesso in precedenza, mostra spiegazione
-            showNotificationPermissionExplanationDialog(context)
-        } else {
-            // Prima richiesta o "Non chiedere più" - richiedi direttamente
-            requestPermissions(
-                context,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                POST_NOTIFICATION_PERMISSIONS_REQUEST
-            )
+        android.util.Log.d("PermissionsManager", "Notifications - HasBeenRequested: $hasBeenRequested, NotificationRationale: $notificationRationale")
+
+        when {
+            // Prima richiesta - mostra direttamente il dialog nativo
+            !hasBeenRequested -> {
+                android.util.Log.d("PermissionsManager", "Prima richiesta notifiche - mostro dialog nativo")
+                requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    POST_NOTIFICATION_PERMISSIONS_REQUEST
+                )
+                // Segna che abbiamo richiesto il permesso
+                prefs.edit().putBoolean(KEY_NOTIFICATION_REQUESTED, true).apply()
+            }
+
+            // L'utente ha negato ma non ha selezionato "Non chiedere più" - mostra spiegazione
+            notificationRationale -> {
+                android.util.Log.d("PermissionsManager", "Notifiche negate una volta - mostro spiegazione")
+                showNotificationPermissionExplanationDialog(context)
+            }
+
+            // L'utente ha selezionato "Non chiedere più" - vai direttamente alle impostazioni
+            else -> {
+                android.util.Log.d("PermissionsManager", "Notifiche negate definitivamente - vado alle impostazioni")
+                showPermissionPermanentlyDeniedDialog(
+                    context,
+                    "Permesso Notifiche",
+                    "Il permesso notifiche è stato negato permanentemente. Devi concederlo manualmente dalle impostazioni per ricevere aggiornamenti importanti."
+                )
+            }
         }
     }
 
@@ -206,7 +379,7 @@ object PermissionsManager {
         AlertDialog.Builder(context)
             .setTitle("Permesso Notifiche Richiesto")
             .setMessage("Questa app richiede il permesso per inviare notifiche per tenerti aggiornato sui tuoi viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
-            .setPositiveButton("Concedi") { _, _ ->
+            .setPositiveButton("Riprova") { _, _ ->
                 requestPermissions(
                     context,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -226,12 +399,7 @@ object PermissionsManager {
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             )
-
-            if (permission == PackageManager.PERMISSION_GRANTED) {
-                return true
-            } else {
-                return false
-            }
+            return permission == PackageManager.PERMISSION_GRANTED
         } else {
             return true
         }
@@ -242,6 +410,11 @@ object PermissionsManager {
      */
     fun areAllEssentialPermissionsGranted(context: Context): Boolean {
         // Controlla localizzazione
+        val coarseLocation = checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
         val fineLocation = checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -263,7 +436,7 @@ object PermissionsManager {
         // Controlla notifiche (opzionale per Android 13+, ma richiesto per il funzionamento completo)
         val notifications = hasNotificationPermissions(context)
 
-        return fineLocation && backgroundLocation && camera && notifications
+        return coarseLocation && fineLocation && backgroundLocation && camera && notifications
     }
 
     /**
@@ -281,17 +454,39 @@ object PermissionsManager {
             CURRENT_LOCATION_PERMISSIONS_REQUEST,
             OLDER_LOCATION_PERMISSIONS_REQUEST -> {
                 if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                    // Permessi di localizzazione concessi, controlla se tutti i permessi sono concessi
+                    // Permessi di localizzazione base concessi
+                    // Per Android 10+, ora richiedi il background location separatamente
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val backgroundLocation = checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (!backgroundLocation) {
+                            // Richiedi background location separatamente
+                            checkBackgroundLocationPermission(context)
+                            return
+                        }
+                    }
+
+                    // Tutti i permessi di localizzazione concessi, controlla se tutti i permessi sono concessi
                     if (areAllEssentialPermissionsGranted(context)) {
                         onAllPermissionsGranted()
                     }
                 } else {
-                    // Permesso negato, mostra dialog per aprire impostazioni
-                    showPermissionDeniedDialog(
-                        context,
-                        "Permessi Localizzazione Negati",
-                        "L'app non può funzionare senza i permessi di localizzazione. Aprire le impostazioni per concederli manualmente?"
-                    )
+                    // Permesso negato
+                    onPermissionDenied(requestCode)
+                }
+            }
+
+            BACKGROUND_LOCATION_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Background location concesso, controlla se tutti i permessi sono concessi
+                    if (areAllEssentialPermissionsGranted(context)) {
+                        onAllPermissionsGranted()
+                    }
+                } else {
+                    // Background location negato
                     onPermissionDenied(requestCode)
                 }
             }
@@ -303,12 +498,7 @@ object PermissionsManager {
                         onAllPermissionsGranted()
                     }
                 } else {
-                    // Permesso negato, mostra dialog per aprire impostazioni
-                    showPermissionDeniedDialog(
-                        context,
-                        "Permesso Camera Negato",
-                        "L'app non può funzionare senza il permesso camera. Aprire le impostazioni per concederlo manualmente?"
-                    )
+                    // Permesso negato
                     onPermissionDenied(requestCode)
                 }
             }
@@ -320,12 +510,7 @@ object PermissionsManager {
                         onAllPermissionsGranted()
                     }
                 } else {
-                    // Permesso negato, mostra dialog per aprire impostazioni
-                    showPermissionDeniedDialog(
-                        context,
-                        "Permesso Notifiche Negato",
-                        "L'app non può funzionare completamente senza il permesso notifiche. Aprire le impostazioni per concederlo manualmente?"
-                    )
+                    // Permesso negato
                     onPermissionDenied(requestCode)
                 }
             }
@@ -335,7 +520,7 @@ object PermissionsManager {
     /**
      * Mostra un dialog quando un permesso viene negato definitivamente
      */
-    private fun showPermissionDeniedDialog(
+    private fun showPermissionPermanentlyDeniedDialog(
         context: Activity,
         title: String,
         message: String
@@ -351,6 +536,32 @@ object PermissionsManager {
             }
             .setCancelable(false)
             .show()
+    }
+
+    /**
+     * Mostra dialog generico quando tutti i permessi non sono stati concessi
+     */
+    fun showAllPermissionsDeniedDialog(context: Activity) {
+        AlertDialog.Builder(context)
+            .setTitle("Permessi Richiesti")
+            .setMessage("L'app richiede tutti i permessi per funzionare correttamente. Puoi concederli dalle impostazioni dell'app.")
+            .setPositiveButton("Apri Impostazioni") { _, _ ->
+                openAppSettings(context)
+            }
+            .setNegativeButton("Esci dall'App") { _, _ ->
+                context.finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Reset dello stato dei permessi richiesti (utile per test o reset completo)
+     */
+    fun resetPermissionRequestState(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
+        android.util.Log.d("PermissionsManager", "Stato dei permessi resettato")
     }
 
     /**
@@ -433,7 +644,7 @@ object PermissionsManager {
     }
 
     /**
-     * Apre le impostazioni per permettere all'utente di concedere il permesso
+     * Apre le impostazioni per permettere all'utente di concedere il permesso degli allarmi esatti
      */
     @RequiresApi(Build.VERSION_CODES.S)
     fun openExactAlarmSettings(context: Context) {

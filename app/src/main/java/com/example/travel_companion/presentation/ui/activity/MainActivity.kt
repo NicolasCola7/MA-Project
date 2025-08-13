@@ -58,12 +58,16 @@ class MainActivity : AppCompatActivity() {
         // Mostra una schermata di loading o placeholder mentre richiedi i permessi
         setContentView(R.layout.activity_permissions) // Crea questo layout se non esiste
 
+        // DEBUG: Resetta lo stato dei permessi per test (rimuovi questa riga in produzione)
+        PermissionsManager.resetPermissionRequestState(this)
+
         // Avvia la richiesta sequenziale dei permessi
         requestAllPermissionsSequentially()
     }
 
     private fun requestAllPermissionsSequentially() {
-        // Richiedi prima i permessi di localizzazione
+        // Richiedi SOLO i permessi di localizzazione per iniziare
+        // Gli altri verranno richiesti in sequenza dopo la risposta
         PermissionsManager.checkLocationPermission(this)
     }
 
@@ -149,7 +153,19 @@ class MainActivity : AppCompatActivity() {
 
         // Dopo aver gestito un permesso, richiedi il prossimo se necessario
         if (!PermissionsManager.areAllEssentialPermissionsGranted(this)) {
-            requestNextPermission(requestCode)
+            // Aspetta un momento prima di richiedere il prossimo permesso
+            // per evitare conflitti con il dialog appena chiuso
+            if (::binding.isInitialized) {
+                // Se il binding è inizializzato, usa quello
+                binding.root.postDelayed({
+                    requestNextPermission(requestCode)
+                }, 500)
+            } else {
+                // Se il binding non è inizializzato (schermata permessi), usa Handler
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    requestNextPermission(requestCode)
+                }, 500)
+            }
         }
     }
 
@@ -160,16 +176,33 @@ class MainActivity : AppCompatActivity() {
         when (completedRequestCode) {
             PermissionsManager.CURRENT_LOCATION_PERMISSIONS_REQUEST,
             PermissionsManager.OLDER_LOCATION_PERMISSIONS_REQUEST -> {
-                // Localizzazione completata (concessa o negata), richiedi camera
-                val cameraGranted = ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED
+                // Localizzazione base completata
+                // Il PermissionsManager gestirà automaticamente la richiesta del background location per Android 10+
+                // Se tutti i permessi di localizzazione sono concessi, passa alla camera
+                val coarseGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                val fineGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                val backgroundGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+                } else true
 
+                if (coarseGranted && fineGranted && backgroundGranted) {
+                    // Tutti i permessi di localizzazione concessi, passa alla camera
+                    val cameraGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                    if (!cameraGranted) {
+                        PermissionsManager.checkCameraPermission(this)
+                    } else {
+                        requestNotificationPermissionIfNeeded()
+                    }
+                }
+                // Altrimenti il PermissionsManager gestirà la richiesta del background location
+            }
+
+            PermissionsManager.BACKGROUND_LOCATION_PERMISSIONS_REQUEST -> {
+                // Background location completato, passa alla camera
+                val cameraGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                 if (!cameraGranted) {
                     PermissionsManager.checkCameraPermission(this)
                 } else {
-                    // Camera già concessa, vai alle notifiche
                     requestNotificationPermissionIfNeeded()
                 }
             }
@@ -181,9 +214,25 @@ class MainActivity : AppCompatActivity() {
 
             PermissionsManager.POST_NOTIFICATION_PERMISSIONS_REQUEST -> {
                 // Tutte le richieste completate
-                // Se arriviamo qui e non tutti i permessi sono concessi,
-                // significa che l'utente ne ha negato almeno uno
+                // Controlla se tutti i permessi sono stati concessi
+                checkAllPermissionsAndProceed()
             }
+        }
+    }
+
+    /**
+     * Controlla se tutti i permessi sono stati concessi e procede di conseguenza
+     */
+    private fun checkAllPermissionsAndProceed() {
+        if (PermissionsManager.areAllEssentialPermissionsGranted(this)) {
+            // Tutti i permessi concessi, inizializza l'app
+            if (!isAppReady) {
+                initializeApp()
+            }
+        } else {
+            // Non tutti i permessi sono stati concessi
+            // Mostra un dialog finale che spiega la situazione
+            PermissionsManager.showAllPermissionsDeniedDialog(this)
         }
     }
 
