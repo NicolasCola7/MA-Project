@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -41,6 +43,7 @@ import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.Marker
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -432,22 +435,43 @@ class TripDetailsFragment: Fragment() {
                     viewModel.insertPOI(args.tripId, poi.latLng, poi.name, poi.placeId)
                     addGeofence(poi.latLng, poi.name)
                     addPOIMarker(poi.name, poi.latLng)
+                    TrackingService.geofenceList.postValue(geofenceList) // post values to trigger update geofencing if active
                 }
                 .setNegativeButton("Annulla", null)
                 .show()
         }
 
+        map!!.setOnInfoWindowClickListener { marker ->
+            AlertDialog.Builder(context)
+                .setMessage("Vuoi eliminare questo punto?")
+                .setPositiveButton("Elimina") { _, _ ->
+                    marker.remove()
+                    viewModel.deletePOI(marker.snippet!!, args.tripId)
+                    deleteGeofence(marker.snippet!!)
+                }
+                .setNegativeButton("Annulla", null)
+                .show()
+        }
     }
 
     private fun addPOIMarker(poiName: String, poiPosition: LatLng) {
-        map?.addMarker(
+        map!!.addMarker(
             MarkerOptions()
                 .position(poiPosition)
                 .title("Punto di Interesse")
                 .snippet(poiName)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                .draggable(false)
         )
+    }
+
+    private fun deleteGeofence(poiName: String) {
+        for(geofence in geofenceList) {
+            if(geofence.requestId == poiName) {
+                geofenceList.remove(geofence)
+                TrackingService.geofenceList.postValue(geofenceList) //update geofencing if active
+                break
+            }
+
+        }
     }
 
     override fun onResume() {

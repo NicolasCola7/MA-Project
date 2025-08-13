@@ -64,6 +64,14 @@ class TrackingService : LifecycleService() {
             updateLocationTracking(it)
             updateNotificationTrackingState(it)
         }
+
+        // to update geofencing if the user adds/removes points when tracking is active
+        geofenceList.observe(this) {
+            if(isTracking.value == true) { //restart geofencing with updated geofences
+                stopGeofencing()
+                startGeofencing()
+            }
+        }
     }
 
     private fun killService() {
