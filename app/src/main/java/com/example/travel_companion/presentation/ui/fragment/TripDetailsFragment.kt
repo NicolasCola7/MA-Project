@@ -9,8 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -41,9 +39,6 @@ import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
 import com.google.android.gms.location.Geofence
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.Marker
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -55,7 +50,6 @@ class TripDetailsFragment: Fragment() {
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
-    private var stopPoints = mutableListOf<Pair<LatLng, Long>>()
     private var poiPoints = mutableListOf<POIEntity>()
     private var geofenceList = mutableListOf<Geofence>()
     private var map: GoogleMap? = null
@@ -99,10 +93,6 @@ class TripDetailsFragment: Fragment() {
                 map = it
                 addAllPolylines()
 
-                for(point in stopPoints) {
-                    addStopMarker(point)
-                }
-
                 for(poi in poiPoints) {
                     addPOIMarker(poi.name, LatLng(poi.latitude, poi.longitude))
                 }
@@ -116,19 +106,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
     }
-
-    private fun addStopMarker(stop: Pair<LatLng, Long>) {
-        val timePassed = stop.second.toDurationString()
-
-        map?.addMarker(
-            MarkerOptions()
-                .position(stop.first)
-                .title("Fermata")
-                .snippet("Ti sei fermato qui per $timePassed")
-        )
-    }
-
-
+    
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -236,11 +214,6 @@ class TripDetailsFragment: Fragment() {
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
                // Timber.d("new")
-            }
-
-            val stopTime = coordinate.timestamp - previousTimestamp
-            if(stopTime > 1000000) {
-                stopPoints.add(Pair(previousCoordinate, stopTime))
             }
 
             previousTimestamp = coordinate.timestamp
