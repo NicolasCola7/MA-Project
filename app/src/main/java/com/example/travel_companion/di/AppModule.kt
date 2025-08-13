@@ -41,4 +41,8 @@ object AppModule {
     @Provides
     fun provideNoteDao(db: AppDatabase) = db.noteDao()
 
+    @Singleton
+    @Provides
+    fun providePOIDao(db: AppDatabase) = db.poiDao()
+
 }

@@ -69,6 +69,7 @@ class TrackingService : LifecycleService() {
     private fun killService() {
         isTracking.postValue(false)
         stopForeground(STOP_FOREGROUND_REMOVE)
+        stopGeofencing()
         stopSelf()
     }
 
@@ -110,8 +111,11 @@ class TrackingService : LifecycleService() {
                 locationCallback,
                 Looper.getMainLooper()
             )
+
+            startGeofencing()
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+            stopGeofencing()
         }
     }
 
@@ -196,29 +200,32 @@ class TrackingService : LifecycleService() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun getGeofencingRequest(): GeofencingRequest {
+    private fun getGeofencingRequest(): GeofencingRequest? {
+        val geofences = geofenceList.value
+        if (geofences.isNullOrEmpty()) return null
+
         return GeofencingRequest.Builder().apply {
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            addGeofences(geofenceList.value!!)
+            addGeofences(geofences)
         }.build()
     }
 
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
-        // addGeofences() and removeGeofences().
-        PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        intent.action = "com.google.android.gms.location.Geofence"
+        PendingIntent.getBroadcast(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
     }
 
     @SuppressLint("MissingPermission")
     private fun startGeofencing() {
-        geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent).run {
-            addOnSuccessListener {
-                Timber.d("Geofencing started")
-            }
-            addOnFailureListener {
-                Timber.d("Geofencing start failed")
-            }
+        val request = getGeofencingRequest() ?: return
+
+        geofencingClient.addGeofences(request, geofencePendingIntent).run {
+            addOnSuccessListener { Timber.d("Geofencing started") }
+            addOnFailureListener { Timber.d("Geofencing failed: ${it.message}") }
         }
     }
 
@@ -228,7 +235,7 @@ class TrackingService : LifecycleService() {
                 Timber.d("Geofencing stopped")
             }
             addOnFailureListener {
-                Timber.d("Geofencing stop failed")
+                Timber.d("Geofencing stop failed ${it.message}")
             }
         }
     }

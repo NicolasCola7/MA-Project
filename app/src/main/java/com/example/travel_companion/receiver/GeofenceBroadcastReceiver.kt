@@ -24,12 +24,20 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Geofence"
     }
 
-    override fun onReceive(context: Context?, intent: Intent?) {
-        val geofencingEvent = GeofencingEvent.fromIntent(intent!!)
-        if (geofencingEvent!!.hasError()) {
-            val errorMessage = GeofenceStatusCodes
-                .getStatusCodeString(geofencingEvent.errorCode)
-            Timber.d("gefencing error: $errorMessage")
+    override fun onReceive(context: Context, intent: Intent) {
+        Timber.d("GEO - Intent received: ${intent.action}")
+        val geofencingEvent = GeofencingEvent.fromIntent(intent)
+
+        if (geofencingEvent == null) {
+            Timber.e("GeofencingEvent is null")
+            return
+        }
+
+        Timber.d("GeofencingEvent created successfully")
+
+        if (geofencingEvent.hasError()) {
+            val errorMessage = GeofenceStatusCodes.getStatusCodeString(geofencingEvent.errorCode)
+            Timber.e("Geofencing error: $errorMessage")
             return
         }
 
@@ -38,15 +46,18 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
             geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
 
-            // Get the geofences that were triggered. A single event can trigger
-            // multiple geofences.
             val triggeringGeofences = geofencingEvent.triggeringGeofences
 
-            sendNotification(context!!, geofenceTransition)
+            if (triggeringGeofences != null) {
+                for (geofence in triggeringGeofences) {
+                    sendNotification(context, geofenceTransition, geofence)
+                    Timber.d("Geofence triggered: $geofenceTransition")
+                }
+            }
         }
     }
 
-    private fun sendNotification(context: Context, geofenceTransition: Int) {
+    private fun sendNotification(context: Context, geofenceTransition: Int, geofence: Geofence) {
         if (!hasNotificationPermissions(context)) {
             return
         }
@@ -59,8 +70,8 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Geofencing")
-            .setContentText("Stai $transition una zona di interesse!")
-            .setSmallIcon(R.drawable.ic_notification)
+            .setContentText("Stai $transition ${geofence.requestId}")
+            .setSmallIcon(R.drawable.ic_geofencing)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_EVENT)

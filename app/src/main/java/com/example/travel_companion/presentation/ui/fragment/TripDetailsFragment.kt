@@ -1,6 +1,7 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -17,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.CoordinateEntity
+import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripDetailBinding
 import com.example.travel_companion.util.Utils
@@ -37,6 +39,8 @@ import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
 import com.google.android.gms.location.Geofence
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -49,6 +53,8 @@ class TripDetailsFragment: Fragment() {
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
     private var stopPoints = mutableListOf<Pair<LatLng, Long>>()
+    private var poiPoints = mutableListOf<POIEntity>()
+    private var geofenceList = mutableListOf<Geofence>()
     private var map: GoogleMap? = null
     private var trackedDistance: MutableLiveData<Double?> = MutableLiveData(0.0)
 
@@ -94,10 +100,16 @@ class TripDetailsFragment: Fragment() {
                     addStopMarker(point)
                 }
 
+                for(poi in poiPoints) {
+                    addPOIMarker(poi.name, LatLng(poi.latitude, poi.longitude))
+                }
+
                 if(pathPoints.isEmpty())
                     map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(targetLocation, 15F))
                 else
                     zoomToSeeWholeTrack()
+
+                setMapClickListeners()
             }
         }
     }
@@ -165,8 +177,9 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun initTripData() {
-        viewModel.loadTrip(args.tripId)
         viewModel.loadCoordinates(args.tripId)
+        viewModel.loadPOIs(args.tripId)
+        viewModel.loadTrip(args.tripId)
 
         viewModel.coordinates.observe(viewLifecycleOwner) { coordinates ->
             coordinates.let {
@@ -175,6 +188,15 @@ class TripDetailsFragment: Fragment() {
                 }
 
                 isFetching.postValue(false)
+            }
+        }
+
+        viewModel.poi.observe(viewLifecycleOwner) { pois ->
+            pois.let {
+                if(it.isNotEmpty()) {
+                    poiPoints = it.toMutableList()
+                    populateGeofenceList(it)
+                }
             }
         }
 
@@ -298,6 +320,7 @@ class TripDetailsFragment: Fragment() {
     private fun toggleTracking() {
         if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
+            TrackingService.geofenceList.postValue(geofenceList)
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
             viewModel.updateTripDistance(trackedDistance.value!!)
@@ -376,32 +399,56 @@ class TripDetailsFragment: Fragment() {
             requireContext().startService(it)
         }
 
-    /*
-    private fun addGeofence(geofence: GeofenceEntity) {
-        TrackingService.geofenceList.postValue(Geofence.Builder()
-        // Set the request ID of the geofence. This is a string to identify this
-        // geofence.
-        .setRequestId(entry.key)
 
-        // Set the circular region of this geofence.
-        .setCircularRegion(
-                entry.value.latitude,
-                entry.value.longitude,
-                Constants.GEOFENCE_RADIUS_IN_METERS
-        )
+    private fun addGeofence(pos: LatLng, placeName: String) {
+        val geofence = Geofence.Builder()
+            .setRequestId(placeName)
+            .setCircularRegion(
+                pos.latitude,
+                pos.longitude,
+                100F //100 meters
+            )
+            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+            .build()
 
-        // Set the expiration duration of the geofence. This geofence gets automatically
-        // removed after this period of time.
-        .setExpirationDuration(Constants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
-
-        // Set the transition types of interest. Alerts are only generated for these
-        // transition. We track entry and exit transitions in this sample.
-        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
-
-        // Create the geofence.
-        .build())
+        geofenceList.add(geofence)
     }
-     */
+
+    private fun populateGeofenceList(pois: List<POIEntity>) {
+        geofenceList.clear()
+
+        for(poi in pois) {
+            val pos = LatLng(poi.latitude, poi.longitude)
+            addGeofence(pos, poi.name)
+        }
+    }
+
+    private fun setMapClickListeners() {
+        map!!.setOnPoiClickListener { poi ->
+            AlertDialog.Builder(requireContext())
+                .setTitle("Salva Punto di Interesse")
+                .setMessage("Vuoi salvare il punto '${poi.name}'?")
+                .setPositiveButton("Salva") { _, _ ->
+                    viewModel.insertPOI(args.tripId, poi.latLng, poi.name, poi.placeId)
+                    addGeofence(poi.latLng, poi.name)
+                    addPOIMarker(poi.name, poi.latLng)
+                }
+                .setNegativeButton("Annulla", null)
+                .show()
+        }
+
+    }
+
+    private fun addPOIMarker(poiName: String, poiPosition: LatLng) {
+        map?.addMarker(
+            MarkerOptions()
+                .position(poiPosition)
+                .title("Punto di Interesse")
+                .snippet(poiName)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                .draggable(false)
+        )
+    }
 
     override fun onResume() {
         super.onResume()
