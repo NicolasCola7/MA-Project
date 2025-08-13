@@ -37,8 +37,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.util.Utils.SelectionHelper.toDurationString
 import com.google.android.gms.location.Geofence
+import com.google.android.gms.maps.model.Marker
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -106,7 +106,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
     }
-    
+
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -414,16 +414,9 @@ class TripDetailsFragment: Fragment() {
                 .show()
         }
 
-        map!!.setOnInfoWindowClickListener { marker ->
-            AlertDialog.Builder(context)
-                .setMessage("Vuoi eliminare questo punto?")
-                .setPositiveButton("Elimina") { _, _ ->
-                    marker.remove()
-                    viewModel.deletePOI(marker.snippet!!, args.tripId)
-                    deleteGeofence(marker.snippet!!)
-                }
-                .setNegativeButton("Annulla", null)
-                .show()
+        map!!.setOnMarkerClickListener { marker ->
+            showMarkerDialog(marker)
+            true // Consume the event
         }
     }
 
@@ -434,6 +427,20 @@ class TripDetailsFragment: Fragment() {
                 .title("Punto di Interesse")
                 .snippet(poiName)
         )
+    }
+
+    private fun showMarkerDialog(marker: Marker) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Punto di Interesse")
+            .setMessage(marker.snippet)
+            .setPositiveButton("Elimina") { _, _ ->
+                marker.remove()
+                viewModel.deletePOI(marker.snippet!!, args.tripId)
+                deleteGeofence(marker.snippet!!)
+            }
+            .setNegativeButton("Chiudi", null) 
+            .create()
+            .show()
     }
 
     private fun deleteGeofence(poiName: String) {
