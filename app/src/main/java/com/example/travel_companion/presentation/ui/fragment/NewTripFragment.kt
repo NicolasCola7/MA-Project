@@ -3,7 +3,6 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -21,7 +20,6 @@ import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
 import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
-import com.example.travel_companion.util.PermissionsManager
 import com.google.android.gms.common.api.Status
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
@@ -212,17 +210,14 @@ class NewTripFragment : Fragment() {
             }
 
         binding.btnCreateTrip.setOnClickListener {
-            PermissionsManager.checkExactAlarmPermissionSmart(requireActivity()) {
-                viewModel.onCreateTripClicked(
-                    destination = viewModel.selectedDestinationName,
-                    startDateStr = binding.editStartDate.text.toString(),
-                    endDateStr = binding.editEndDate.text.toString(),
-                    type = binding.spinnerTripType.selectedItem.toString(),
-                    lat = latitude,
-                    long = longitude
-                )
-            }
-
+            viewModel.onCreateTripClicked(
+                destination = viewModel.selectedDestinationName,
+                startDateStr = binding.editStartDate.text.toString(),
+                endDateStr = binding.editEndDate.text.toString(),
+                type = binding.spinnerTripType.selectedItem.toString(),
+                lat = latitude,
+                long = longitude
+            )
         }
     }
 

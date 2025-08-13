@@ -32,11 +32,6 @@ class MainActivity : AppCompatActivity() {
     private fun initializeApp() {
         isAppReady = true
         setupUI()
-
-        // Controlla permesso allarmi (opzionale, non blocca l'app)
-        PermissionsManager.checkExactAlarmPermissionSmart(this) {
-            // Callback quando il permesso è concesso o non necessario
-        }
     }
 
     private fun showPermissionsScreen() {
@@ -97,10 +92,6 @@ class MainActivity : AppCompatActivity() {
                 if (!isAppReady) {
                     initializeApp()
                 }
-            },
-            onPermissionDenied = { code ->
-                // Log per debugging
-                android.util.Log.d("MainActivity", "Permesso negato: $code")
             }
         )
     }

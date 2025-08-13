@@ -235,8 +235,7 @@ object PermissionsManager {
         context: Activity,
         requestCode: Int,
         grantResults: IntArray,
-        onAllPermissionsGranted: () -> Unit = {},
-        onPermissionDenied: (Int) -> Unit = {}
+        onAllPermissionsGranted: () -> Unit = {}
     ) {
         val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
 
@@ -246,7 +245,6 @@ object PermissionsManager {
         } else {
             // Permesso negato, segna il flag e mostra dialog per andare alle impostazioni
             markPermissionDenied(context)
-            onPermissionDenied(requestCode)
 
             val message = when (requestCode) {
                 LOCATION_PERMISSIONS_REQUEST -> "I permessi di localizzazione sono essenziali per il funzionamento dell'app."
@@ -337,78 +335,6 @@ object PermissionsManager {
             context.startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(context, "Impossibile aprire le impostazioni", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    // === EXACT ALARM PERMISSION (unchanged) ===
-
-    fun canScheduleExactAlarmsUniversal(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return true
-        }
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        return alarmManager.canScheduleExactAlarms()
-    }
-
-    fun checkExactAlarmPermissionSmart(context: Activity, onPermissionGranted: () -> Unit = {}) {
-        if (!isExactAlarmPermissionRequired()) {
-            onPermissionGranted()
-            return
-        }
-
-        if (canScheduleExactAlarmsUniversal(context)) {
-            onPermissionGranted()
-            return
-        }
-
-        showExactAlarmPermissionDialog(context, onPermissionGranted)
-    }
-
-    fun isExactAlarmPermissionRequired(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun showExactAlarmPermissionDialog(context: Activity, onPermissionGranted: () -> Unit) {
-        AlertDialog.Builder(context)
-            .setTitle("Permesso Allarmi Richiesto")
-            .setMessage("Per schedulare correttamente i viaggi e inviarti notifiche puntuali, l'app ha bisogno del permesso per impostare allarmi precisi. Vuoi concedere questo permesso?")
-            .setPositiveButton("Concedi") { _, _ ->
-                openExactAlarmSettings(context)
-            }
-            .setNegativeButton("Continua senza") { _, _ ->
-                Toast.makeText(
-                    context,
-                    "I viaggi verranno schedulati con allarmi meno precisi",
-                    Toast.LENGTH_LONG
-                ).show()
-                onPermissionGranted()
-            }
-            .setNeutralButton("Annulla", null)
-            .setCancelable(false)
-            .show()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun openExactAlarmSettings(context: Context) {
-        try {
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                data = Uri.parse("package:${context.packageName}")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-
-            Toast.makeText(
-                context,
-                "Cerca 'Allarmi e promemoria' nelle impostazioni dell'app",
-                Toast.LENGTH_LONG
-            ).show()
         }
     }
 }
