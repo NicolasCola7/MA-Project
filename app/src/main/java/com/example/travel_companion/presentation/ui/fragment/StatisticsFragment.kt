@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -20,8 +21,6 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
@@ -29,21 +28,25 @@ import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
 @AndroidEntryPoint
-class StatisticsFragment : Fragment(), OnMapReadyCallback {
+class StatisticsFragment : Fragment() {
 
     private var _binding: FragmentStatisticsBinding? = null
     private val binding get() = _binding!!
 
     private val viewModel: StatisticsViewModel by viewModels()
 
-    private var mapView: MapView? = null
     private var googleMap: GoogleMap? = null
     private var heatmapTileOverlay: TileOverlay? = null
+
+    // Variabile per tracciare la vista corrente
+    private var isMapViewVisible = true
+
+    // Cache dei dati per ripristinare la heatmap
+    private var cachedTrips: List<com.example.travel_companion.data.local.entity.TripEntity> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,6 +54,7 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentStatisticsBinding.inflate(inflater, container, false)
+        binding.mapView.onCreate(savedInstanceState)
         return binding.root
     }
 
@@ -58,75 +62,111 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         super.onViewCreated(view, savedInstanceState)
 
         setupMapView(savedInstanceState)
+        setupToggleButtons()
         setupObservers()
         setupBarChart()
+
+        // Inizializza con la vista mappa
+        showMapView()
 
         viewModel.loadStatistics()
     }
 
-    private fun setupMapView(savedInstanceState: Bundle?) {
-        try {
-            mapView = binding.mapView
-
-            mapView?.let { mv ->
-                mv.onCreate(savedInstanceState)
-                mv.getMapAsync { map ->
-                    onMapReady(map)
-                }
+    private fun setupToggleButtons() {
+        binding.btnMap.setOnClickListener {
+            if (!isMapViewVisible) {
+                showMapView()
             }
+        }
 
-        } catch (e: Exception) {
-            Timber.tag("StatisticsFragment").e(e, "Errore nell'inizializzazione MapView")
+        binding.btnStats.setOnClickListener {
+            if (isMapViewVisible) {
+                showStatsView()
+            }
+        }
+    }
+
+    private fun showMapView() {
+        isMapViewVisible = true
+
+        // Mostra mappa, nascondi statistiche
+        binding.mapView.visibility = View.VISIBLE
+        binding.statsContainer.visibility = View.GONE
+
+        // Aggiorna stili dei pulsanti
+        updateButtonStyles(true)
+    }
+
+    private fun showStatsView() {
+        isMapViewVisible = false
+
+        // Nascondi mappa, mostra statistiche
+        binding.mapView.visibility = View.GONE
+        binding.statsContainer.visibility = View.VISIBLE
+
+        // Aggiorna stili dei pulsanti
+        updateButtonStyles(false)
+    }
+
+    private fun updateButtonStyles(mapSelected: Boolean) {
+        if (mapSelected) {
+            // Pulsante mappa selezionato
+            binding.btnMap.setBackgroundResource(R.drawable.toggle_button_selected)
+            binding.btnMap.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+
+            // Pulsante statistiche non selezionato
+            binding.btnStats.setBackgroundResource(R.drawable.toggle_button_unselected)
+            binding.btnStats.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+        } else {
+            // Pulsante mappa non selezionato
+            binding.btnMap.setBackgroundResource(R.drawable.toggle_button_unselected)
+            binding.btnMap.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+
+            // Pulsante statistiche selezionato
+            binding.btnStats.setBackgroundResource(R.drawable.toggle_button_selected)
+            binding.btnStats.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+        }
+    }
+
+    private fun setupMapView(savedInstanceState: Bundle?) {
+        binding.mapView.getMapAsync { map ->
+            googleMap = map
+            // Riapplica la heatmap se abbiamo dati cached
+            if (cachedTrips.isNotEmpty()) {
+                updateHeatmap(cachedTrips)
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        try {
-            mapView?.onResume()
-        } catch (e: Exception) {
-            Timber.tag("StatisticsFragment").e(e, "Errore in onResume MapView")
-        }
+        _binding?.mapView?.onResume()
         // Ricarica i dati quando il fragment torna visibile
         viewModel.loadStatistics()
     }
 
     override fun onPause() {
         super.onPause()
-        try {
-            mapView?.onPause()
-        } catch (e: Exception) {
-            Timber.tag("StatisticsFragment").e(e, "Errore in onPause MapView")
-        }
+        _binding?.mapView?.onPause()
     }
 
     override fun onStart() {
         super.onStart()
-        try {
-            mapView?.onStart()
-        } catch (e: Exception) {
-            Timber.tag("StatisticsFragment").e(e, "Errore in onStart MapView")
-        }
+        _binding?.mapView?.onStart()
     }
 
     override fun onStop() {
         super.onStop()
-        try {
-            mapView?.onStop()
-        } catch (e: Exception) {
-            Timber.tag("StatisticsFragment").e(e, "Errore in onStop MapView")
-        }
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView?.onLowMemory()
+        _binding?.mapView?.onStop()
     }
 
     private fun setupObservers() {
         // Osserva StateFlow dal ViewModel
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.completedTrips.collect { trips ->
+                // Salva i dati nella cache
+                cachedTrips = trips
+
                 updateHeatmap(trips)
                 updateMonthlyChart(trips)
                 updateStatisticsCards(trips)
@@ -161,33 +201,8 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    override fun onMapReady(map: GoogleMap) {
-        googleMap = map
-
-        googleMap?.apply {
-            uiSettings.isZoomControlsEnabled = false 
-            uiSettings.isMapToolbarEnabled = false
-            uiSettings.isMyLocationButtonEnabled = false
-
-            // Abilita tutti i gesti per una navigazione fluida
-            uiSettings.isZoomGesturesEnabled = true
-            uiSettings.isScrollGesturesEnabled = true
-            uiSettings.isRotateGesturesEnabled = true
-            uiSettings.isTiltGesturesEnabled = true
-
-            // Centra la mappa sull'Italia come posizione iniziale
-            val italyCenter = LatLng(41.8719, 12.5674)
-            moveCamera(CameraUpdateFactory.newLatLngZoom(italyCenter, 5f))
-        }
-
-        // Ricarica i dati quando la mappa è pronta
-        val currentTrips = viewModel.completedTrips.value
-        if (currentTrips.isNotEmpty()) {
-            updateHeatmap(currentTrips)
-        }
-    }
-
     private fun updateHeatmap(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
+
         googleMap?.let { map ->
             // Rimuovi tutti i marker esistenti e la heatmap
             map.clear()
@@ -312,7 +327,24 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mapView?.onSaveInstanceState(outState)
+        _binding?.mapView?.onSaveInstanceState(outState)
+
+        // Salva lo stato corrente della vista
+        outState.putBoolean("is_map_view_visible", isMapViewVisible)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+
+        // Ripristina lo stato della vista se disponibile
+        savedInstanceState?.let { bundle ->
+            isMapViewVisible = bundle.getBoolean("is_map_view_visible", true)
+            if (isMapViewVisible) {
+                showMapView()
+            } else {
+                showStatsView()
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -321,8 +353,7 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         heatmapTileOverlay?.remove()
         heatmapTileOverlay = null
         googleMap = null
-        mapView?.onDestroy()
-        mapView = null
+        _binding?.mapView?.onDestroy()
         _binding = null
     }
 }
