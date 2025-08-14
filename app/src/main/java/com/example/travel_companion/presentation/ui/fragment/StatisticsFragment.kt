@@ -19,6 +19,7 @@ import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
@@ -194,6 +195,17 @@ class StatisticsFragment : Fragment() {
             axisLeft.apply {
                 setDrawGridLines(true)
                 axisMinimum = 0f
+                // Formatter per mostrare solo valori interi sull'asse Y
+                valueFormatter = object : ValueFormatter() {
+                    override fun getAxisLabel(value: Float, axis: com.github.mikephil.charting.components.AxisBase?): String {
+                        return if (value > 0f) {
+                            value.toInt().toString()
+                        } else {
+                            ""
+                        }
+                    }
+                }
+                granularity = 1f // Forza intervalli di 1
             }
 
             axisRight.isEnabled = false
@@ -262,6 +274,16 @@ class StatisticsFragment : Fragment() {
             color = Color.parseColor("#2196F3")
             valueTextColor = Color.BLACK
             valueTextSize = 12f
+            // Formatter personalizzato per mostrare solo valori > 0 sulle barre
+            valueFormatter = object : ValueFormatter() {
+                override fun getBarLabel(barEntry: BarEntry?): String {
+                    return if (barEntry != null && barEntry.y > 0f) {
+                        barEntry.y.toInt().toString()
+                    } else {
+                        ""
+                    }
+                }
+            }
         }
 
         val barData = BarData(dataSet)
@@ -269,7 +291,17 @@ class StatisticsFragment : Fragment() {
 
         binding.monthlyChart.apply {
             data = barData
-            xAxis.valueFormatter = IndexAxisValueFormatter(getMonthLabels())
+            // Formatter personalizzato per l'asse X per mostrare solo le etichette dei mesi con dati
+            xAxis.valueFormatter = object : IndexAxisValueFormatter(getMonthLabels()) {
+                override fun getAxisLabel(value: Float, axis: com.github.mikephil.charting.components.AxisBase?): String {
+                    val index = value.toInt()
+                    return if (index >= 0 && index < monthlyData.size && monthlyData[index] > 0) {
+                        getMonthLabels()[index]
+                    } else {
+                        ""
+                    }
+                }
+            }
             animateY(1000)
             invalidate()
         }
