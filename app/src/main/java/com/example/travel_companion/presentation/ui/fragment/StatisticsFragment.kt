@@ -165,8 +165,15 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
 
         googleMap?.apply {
-            uiSettings.isZoomControlsEnabled = true
+            uiSettings.isZoomControlsEnabled = false 
             uiSettings.isMapToolbarEnabled = false
+            uiSettings.isMyLocationButtonEnabled = false
+
+            // Abilita tutti i gesti per una navigazione fluida
+            uiSettings.isZoomGesturesEnabled = true
+            uiSettings.isScrollGesturesEnabled = true
+            uiSettings.isRotateGesturesEnabled = true
+            uiSettings.isTiltGesturesEnabled = true
 
             // Centra la mappa sull'Italia come posizione iniziale
             val italyCenter = LatLng(41.8719, 12.5674)
@@ -174,7 +181,6 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         }
 
         // Ricarica i dati quando la mappa è pronta
-        // Se il ViewModel ha già dei dati, li applica subito
         val currentTrips = viewModel.completedTrips.value
         if (currentTrips.isNotEmpty()) {
             updateHeatmap(currentTrips)

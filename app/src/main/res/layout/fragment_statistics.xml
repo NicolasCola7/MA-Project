@@ -12,16 +12,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Statistiche Viaggi"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary"
-            android:layout_marginBottom="16dp" />
-
         <!-- Statistics Cards -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -185,37 +175,24 @@
 
         </LinearLayout>
 
-        <!-- Heatmap Section -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
+        <!-- Map Section Title -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="6dp">
+            android:text="Mappa dei Viaggi"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="8dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mappa dei Viaggi"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginBottom="16dp" />
-
-                <com.google.android.gms.maps.MapView
-                    android:id="@+id/map_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="300dp" />
-
-            </LinearLayout>
-
-        </androidx.cardview.widget.CardView>
+        <!-- Full-width Map (no padding, no card wrapper) -->
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/map_view"
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:layout_marginStart="-16dp"
+            android:layout_marginEnd="-16dp"
+            android:layout_marginBottom="24dp" />
 
         <!-- Monthly Chart Section -->
         <androidx.cardview.widget.CardView
