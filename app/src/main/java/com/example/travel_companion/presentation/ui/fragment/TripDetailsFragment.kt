@@ -6,9 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -39,6 +43,7 @@ import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.PointOfInterest
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -400,24 +405,74 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun setMapClickListeners() {
+        map!!.setOnMapLongClickListener { latlng ->
+            showPOIInputDialog(latlng)
+        }
+
         map!!.setOnPoiClickListener { poi ->
-            AlertDialog.Builder(requireContext())
-                .setTitle("Salva Punto di Interesse")
-                .setMessage("Vuoi salvare il punto '${poi.name}'?")
-                .setPositiveButton("Salva") { _, _ ->
-                    viewModel.insertPOI(args.tripId, poi.latLng, poi.name, poi.placeId)
-                    addGeofence(poi.latLng, poi.name)
-                    addPOIMarker(poi.name, poi.latLng)
-                    TrackingService.geofenceList.postValue(geofenceList) // post values to trigger update geofencing if active
-                }
-                .setNegativeButton("Annulla", null)
-                .show()
+            showAddPOIDialog(poi)
         }
 
         map!!.setOnMarkerClickListener { marker ->
             showMarkerDialog(marker)
             true // Consume the event
         }
+    }
+
+    private fun showAddPOIDialog(poi: PointOfInterest) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Salva Punto di Interesse")
+            .setMessage("Vuoi salvare il punto '${poi.name}'?")
+            .setPositiveButton("Salva") { _, _ ->
+                viewModel.insertPOI(args.tripId, poi.latLng, poi.name, poi.placeId)
+                addGeofence(poi.latLng, poi.name)
+                addPOIMarker(poi.name, poi.latLng)
+                TrackingService.geofenceList.postValue(geofenceList) // post values to trigger update geofencing if active
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun showPOIInputDialog(latlng: LatLng) {
+        val layout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 10)
+        }
+
+        val nameInput = EditText(requireContext()).apply {
+            hint = "Nome"
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+
+        layout.addView(nameInput)
+
+        val dialog = AlertDialog.Builder(requireContext()).setView(layout)
+            .setTitle("User Information")
+            .setPositiveButton("OK",null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.setOnClickListener {
+                val name = nameInput.text.toString().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Devi inserire un nome valido",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    viewModel.insertPOI(args.tripId, latlng, name, name)
+                    addGeofence(latlng, name)
+                    addPOIMarker(name, latlng)
+                    TrackingService.geofenceList.postValue(geofenceList) // post values to trigger update geofencing if active
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        dialog.show()
     }
 
     private fun addPOIMarker(poiName: String, poiPosition: LatLng) {
@@ -438,7 +493,7 @@ class TripDetailsFragment: Fragment() {
                 viewModel.deletePOI(marker.snippet!!, args.tripId)
                 deleteGeofence(marker.snippet!!)
             }
-            .setNegativeButton("Chiudi", null) 
+            .setNegativeButton("Chiudi", null)
             .create()
             .show()
     }
@@ -450,7 +505,6 @@ class TripDetailsFragment: Fragment() {
                 TrackingService.geofenceList.postValue(geofenceList) //update geofencing if active
                 break
             }
-
         }
     }
 
