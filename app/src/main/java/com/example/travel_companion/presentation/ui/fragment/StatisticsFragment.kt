@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentStatisticsBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.viewmodel.StatisticsViewModel
@@ -27,8 +28,10 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
 import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
+import com.google.maps.android.heatmaps.Gradient
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -47,7 +50,11 @@ class StatisticsFragment : Fragment() {
     private var isMapViewVisible = true
 
     // Cache dei dati per ripristinare la heatmap
-    private var cachedTrips: List<com.example.travel_companion.data.local.entity.TripEntity> = emptyList()
+    private var cachedTrips: List<TripEntity> = emptyList()
+
+    companion object {
+        private const val TAG = "StatisticsFragment"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,7 +69,7 @@ class StatisticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupMapView(savedInstanceState)
+        setupMapView()
         setupToggleButtons()
         setupObservers()
         setupBarChart()
@@ -129,9 +136,17 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    private fun setupMapView(savedInstanceState: Bundle?) {
+    private fun setupMapView() {
         binding.mapView.getMapAsync { map ->
             googleMap = map
+
+            // Configura la mappa
+            map.uiSettings.apply {
+                isZoomControlsEnabled = true
+                isCompassEnabled = true
+                isMyLocationButtonEnabled = false
+            }
+
             // Riapplica la heatmap se abbiamo dati cached
             if (cachedTrips.isNotEmpty()) {
                 updateHeatmap(cachedTrips)
@@ -213,8 +228,7 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    private fun updateHeatmap(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
-
+    private fun updateHeatmap(trips: List<TripEntity>) {
         googleMap?.let { map ->
             // Rimuovi tutti i marker esistenti e la heatmap
             map.clear()
@@ -222,49 +236,89 @@ class StatisticsFragment : Fragment() {
             heatmapTileOverlay = null
 
             if (trips.isNotEmpty()) {
-                val heatmapData = trips.map { trip ->
-                    LatLng(trip.destinationLatitude, trip.destinationLongitude)
-                }
-
-                // Crea il provider della heatmap
-                val heatmapProvider = HeatmapTileProvider.Builder()
-                    .data(heatmapData)
-                    .radius(50)
-                    .opacity(0.7)
-                    .build()
-
-                // Aggiungi la heatmap alla mappa
-                heatmapTileOverlay = map.addTileOverlay(
-                    TileOverlayOptions().tileProvider(heatmapProvider)
-                )
-
-                // Aggiungi anche dei marker per i singoli viaggi
-                trips.forEach { trip ->
-                    val position = LatLng(trip.destinationLatitude, trip.destinationLongitude)
-                    map.addMarker(
-                        MarkerOptions()
-                            .position(position)
-                            .title(trip.destination)
-                            .snippet("${trip.type} - ${formatDate(trip.startDate)}")
-                    )
-                }
-
-                // Centra la mappa sui viaggi se ne abbiamo almeno uno
-                if (heatmapData.isNotEmpty()) {
-                    val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
-                    heatmapData.forEach { bounds.include(it) }
+                // Usa coroutine per recuperare tutte le coordinate in background
+                viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100))
+                        // Recupera tutte le coordinate per i viaggi completati
+                        val allCoordinates = viewModel.getAllCoordinatesForCompletedTrips()
+
+                        if (allCoordinates.isNotEmpty()) {
+                            // Campiona le coordinate se ce ne sono troppe per migliorare le performance
+                            val sampledCoordinates = viewModel.sampleCoordinates(allCoordinates, 3)
+
+                            // Converti le coordinate in LatLng per la heatmap
+                            val heatmapData = sampledCoordinates.map { coordinate ->
+                                LatLng(coordinate.latitude, coordinate.longitude)
+                            }
+
+                            // Crea il provider della heatmap con tutte le coordinate
+                            val heatmapProvider = HeatmapTileProvider.Builder()
+                                .data(heatmapData)
+                                .radius(if (heatmapData.size > 500) 25 else 35) // Radius dinamico
+                                .opacity(0.8)
+                                .gradient(createCustomGradient()) // Gradiente personalizzato
+                                .build()
+
+                            // Aggiungi la heatmap alla mappa
+                            heatmapTileOverlay = map.addTileOverlay(
+                                TileOverlayOptions().tileProvider(heatmapProvider)
+                            )
+
+                            // Aggiungi marker solo per le destinazioni dei viaggi (opzionale)
+                            trips.forEach { trip ->
+                                val position = LatLng(trip.destinationLatitude, trip.destinationLongitude)
+                                map.addMarker(
+                                    MarkerOptions()
+                                        .position(position)
+                                        .title(trip.destination)
+                                        .snippet("${trip.type} - ${formatDate(trip.startDate)}")
+                                )
+                            }
+
+                            // Centra la mappa su tutte le coordinate
+                            centerMapOnCoordinates(map, heatmapData)
+                        }
                     } catch (e: Exception) {
-                        // Se ci sono problemi con i bounds, centra sul primo punto
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(heatmapData.first(), 10f))
+                        Timber.tag(TAG).e(e, "Errore nel recupero coordinate: ${e.message}")
                     }
                 }
             }
         }
     }
 
-    private fun updateMonthlyChart(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
+    // Metodo helper per centrare la mappa
+    private fun centerMapOnCoordinates(map: GoogleMap, coordinates: List<LatLng>) {
+        if (coordinates.isNotEmpty()) {
+            val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
+            coordinates.forEach { bounds.include(it) }
+
+            try {
+                // Usa un padding maggiore per mostrare meglio la heatmap
+                map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 150))
+            } catch (e: Exception) {
+                Timber.tag(TAG).w("Errore nel centrare la mappa con bounds: ${e.message}")
+                // Se ci sono problemi con i bounds, centra sul punto centrale
+                val centerLat = coordinates.map { it.latitude }.average()
+                val centerLng = coordinates.map { it.longitude }.average()
+                map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), 12f))
+            }
+        }
+    }
+
+    // Crea un gradiente personalizzato per la heatmap
+    private fun createCustomGradient(): Gradient {
+        val colors = intArrayOf(
+            Color.rgb(102, 225, 0), // Verde
+            Color.rgb(255, 255, 0), // Giallo
+            Color.rgb(255, 165, 0), // Arancione
+            Color.rgb(255, 0, 0)    // Rosso
+        )
+        val startPoints = floatArrayOf(0.1f, 0.4f, 0.7f, 1.0f)
+
+        return Gradient(colors, startPoints)
+    }
+
+    private fun updateMonthlyChart(trips: List<TripEntity>) {
         val monthlyData = calculateMonthlyTrips(trips)
         val entries = monthlyData.mapIndexed { index, count ->
             BarEntry(index.toFloat(), count.toFloat())
@@ -308,7 +362,7 @@ class StatisticsFragment : Fragment() {
     }
 
     @SuppressLint("SetTextI18n", "DefaultLocale")
-    private fun updateStatisticsCards(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
+    private fun updateStatisticsCards(trips: List<TripEntity>) {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
         val totalDistanceInMeters = completedTrips.sumOf { it.trackedDistance }
         val totalDistanceInKm = totalDistanceInMeters / 1000.0
@@ -332,7 +386,7 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    private fun calculateMonthlyTrips(trips: List<com.example.travel_companion.data.local.entity.TripEntity>): IntArray {
+    private fun calculateMonthlyTrips(trips: List<TripEntity>): IntArray {
         val monthlyCount = IntArray(12)
         val calendar = Calendar.getInstance()
 
@@ -363,20 +417,6 @@ class StatisticsFragment : Fragment() {
 
         // Salva lo stato corrente della vista
         outState.putBoolean("is_map_view_visible", isMapViewVisible)
-    }
-
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-
-        // Ripristina lo stato della vista se disponibile
-        savedInstanceState?.let { bundle ->
-            isMapViewVisible = bundle.getBoolean("is_map_view_visible", true)
-            if (isMapViewVisible) {
-                showMapView()
-            } else {
-                showStatsView()
-            }
-        }
     }
 
     override fun onDestroyView() {
