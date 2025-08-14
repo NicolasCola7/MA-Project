@@ -156,4 +156,10 @@
             android:name="tripId"
             app:argType="long" />
     </fragment>
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.StatisticsFragment"
+        android:label="@string/StatisticsFragment">
+    </fragment>
 </navigation>
