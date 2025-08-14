@@ -106,6 +106,15 @@ dependencies {
 
     implementation(libs.photoview)
 
+    // MPAndroidChart per i grafici
+    implementation(libs.mpandroidchart)
+
+    // Google Maps per la heatmap
+    implementation(libs.play.services.maps)
+    implementation(libs.android.maps.utils)
+
+    implementation(libs.androidx.cardview)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

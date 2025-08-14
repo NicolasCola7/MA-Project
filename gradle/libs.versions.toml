@@ -1,6 +1,8 @@
 [versions]
 agp = "8.8.2"
+androidMapsUtils = "3.8.2"
 appcompat = "1.7.1"
+cardview = "1.0.0"
 converterGson = "2.9.0"
 datastorePreferences = "1.1.7"
 easypermissions = "3.0.0"
@@ -18,6 +20,7 @@ activityCompose = "1.8.0"
 composeBom = "2024.04.01"
 datastoreCoreAndroid = "1.1.7"
 datastorePreferencesCoreJvm = "1.1.7"
+mpandroidchart = "v3.1.0"
 photoview = "2.3.0"
 retrofit = "2.10.0"
 roomCommonJvm = "2.7.2"
@@ -40,6 +43,8 @@ places = "4.4.1"
 workRuntimeKtx = "2.10.3"
 
 [libraries]
+android-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "androidMapsUtils" }
+androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
@@ -48,6 +53,7 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hiltCompiler" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 photoview = { module = "com.github.chrisbanes:PhotoView", version.ref = "photoview" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
