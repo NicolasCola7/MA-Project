@@ -1,5 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,7 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentStatisticsBinding
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.statistics.StatisticsViewModel
+import com.example.travel_companion.presentation.viewmodel.StatisticsViewModel
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
@@ -61,6 +62,12 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         viewModel.loadStatistics()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Ricarica i dati quando il fragment torna visibile
+        viewModel.loadStatistics()
+    }
+
     private fun setupMapFragment() {
         val mapFragment = childFragmentManager
             .findFragmentById(R.id.map_fragment) as? SupportMapFragment
@@ -68,7 +75,8 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun setupObservers() {
-        lifecycleScope.launch {
+        // Osserva StateFlow dal ViewModel
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.completedTrips.collect { trips ->
                 updateHeatmap(trips)
                 updateMonthlyChart(trips)
@@ -115,12 +123,21 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
             val italyCenter = LatLng(41.8719, 12.5674)
             moveCamera(CameraUpdateFactory.newLatLngZoom(italyCenter, 5f))
         }
+
+        // Ricarica i dati quando la mappa è pronta
+        // Se il ViewModel ha già dei dati, li applica subito
+        val currentTrips = viewModel.completedTrips.value
+        if (currentTrips.isNotEmpty()) {
+            updateHeatmap(currentTrips)
+        }
     }
 
     private fun updateHeatmap(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
         googleMap?.let { map ->
-            // Rimuovi la precedente heatmap se esiste
+            // Rimuovi tutti i marker esistenti e la heatmap
+            map.clear()
             heatmapTileOverlay?.remove()
+            heatmapTileOverlay = null
 
             if (trips.isNotEmpty()) {
                 val heatmapData = trips.map { trip ->
@@ -154,7 +171,12 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
                 if (heatmapData.isNotEmpty()) {
                     val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
                     heatmapData.forEach { bounds.include(it) }
-                    map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100))
+                    try {
+                        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100))
+                    } catch (e: Exception) {
+                        // Se ci sono problemi con i bounds, centra sul primo punto
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(heatmapData.first(), 10f))
+                    }
                 }
             }
         }
@@ -183,14 +205,23 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
+    @SuppressLint("DefaultLocale", "SetTextI18n")
     private fun updateStatisticsCards(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
-        val totalDistance = completedTrips.sumOf { it.trackedDistance }
+        val totalDistanceInMeters = completedTrips.sumOf { it.trackedDistance }
+        val totalDistanceInKm = totalDistanceInMeters / 1000.0
         val uniqueDestinations = completedTrips.map { it.destination }.distinct().size
 
         binding.apply {
             totalTripsText.text = completedTrips.size.toString()
-            totalDistanceText.text = String.format("%.1f km", totalDistance)
+
+            // Mostra in metri se < 1000m, altrimenti in km
+            totalDistanceText.text = if (totalDistanceInMeters < 1000) {
+                String.format("%.0f m", totalDistanceInMeters)
+            } else {
+                String.format("%.1f km", totalDistanceInKm)
+            }
+
             uniqueDestinationsText.text = uniqueDestinations.toString()
 
             // Calcola il viaggio più lungo
@@ -226,6 +257,10 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Pulisci le risorse della mappa
+        heatmapTileOverlay?.remove()
+        heatmapTileOverlay = null
+        googleMap = null
         _binding = null
     }
 }

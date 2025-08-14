@@ -1,7 +1,6 @@
-package com.example.travel_companion.presentation.statistics
+package com.example.travel_companion.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.Observer
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.domain.model.TripStatus
@@ -10,7 +9,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,7 +20,6 @@ class StatisticsViewModel @Inject constructor(
     val completedTrips: StateFlow<List<TripEntity>> = _completedTrips.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private var tripsObserver: Observer<List<TripEntity>>? = null
 
