@@ -20,8 +20,8 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
@@ -29,6 +29,7 @@ import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,6 +41,7 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
 
     private val viewModel: StatisticsViewModel by viewModels()
 
+    private var mapView: MapView? = null
     private var googleMap: GoogleMap? = null
     private var heatmapTileOverlay: TileOverlay? = null
 
@@ -55,23 +57,70 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupMapFragment()
+        setupMapView(savedInstanceState)
         setupObservers()
         setupBarChart()
 
         viewModel.loadStatistics()
     }
 
+    private fun setupMapView(savedInstanceState: Bundle?) {
+        try {
+            mapView = binding.mapView
+
+            mapView?.let { mv ->
+                mv.onCreate(savedInstanceState)
+                mv.getMapAsync { map ->
+                    onMapReady(map)
+                }
+            }
+
+        } catch (e: Exception) {
+            Timber.tag("StatisticsFragment").e(e, "Errore nell'inizializzazione MapView")
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        try {
+            mapView?.onResume()
+        } catch (e: Exception) {
+            Timber.tag("StatisticsFragment").e(e, "Errore in onResume MapView")
+        }
         // Ricarica i dati quando il fragment torna visibile
         viewModel.loadStatistics()
     }
 
-    private fun setupMapFragment() {
-        val mapFragment = childFragmentManager
-            .findFragmentById(R.id.map_fragment) as? SupportMapFragment
-        mapFragment?.getMapAsync(this)
+    override fun onPause() {
+        super.onPause()
+        try {
+            mapView?.onPause()
+        } catch (e: Exception) {
+            Timber.tag("StatisticsFragment").e(e, "Errore in onPause MapView")
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        try {
+            mapView?.onStart()
+        } catch (e: Exception) {
+            Timber.tag("StatisticsFragment").e(e, "Errore in onStart MapView")
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        try {
+            mapView?.onStop()
+        } catch (e: Exception) {
+            Timber.tag("StatisticsFragment").e(e, "Errore in onStop MapView")
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView?.onLowMemory()
     }
 
     private fun setupObservers() {
@@ -205,7 +254,7 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    @SuppressLint("DefaultLocale", "SetTextI18n")
+    @SuppressLint("SetTextI18n", "DefaultLocale")
     private fun updateStatisticsCards(trips: List<com.example.travel_companion.data.local.entity.TripEntity>) {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
         val totalDistanceInMeters = completedTrips.sumOf { it.trackedDistance }
@@ -255,12 +304,19 @@ class StatisticsFragment : Fragment(), OnMapReadyCallback {
         return sdf.format(Date(timestamp))
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        mapView?.onSaveInstanceState(outState)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         // Pulisci le risorse della mappa
         heatmapTileOverlay?.remove()
         heatmapTileOverlay = null
         googleMap = null
+        mapView?.onDestroy()
+        mapView = null
         _binding = null
     }
 }
