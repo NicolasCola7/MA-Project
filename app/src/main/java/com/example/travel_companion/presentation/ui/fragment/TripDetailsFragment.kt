@@ -153,8 +153,7 @@ class TripDetailsFragment: Fragment() {
             .setTitle("Terminazione viaggio")
             .setMessage("Terminando il viaggio non sarai più in grado di tracciare i tuoi spostamenti, sei sicuro di voler continuare?")
             .setPositiveButton("Si") { _, _ ->
-                viewModel.updateTripStatus(TripStatus.FINISHED)
-                viewModel.updateTripEndDate(System.currentTimeMillis())
+                viewModel.finishTrip()
             }
             .setNegativeButton("No") { dialogInterface, _ ->
                 dialogInterface.cancel()
@@ -448,9 +447,9 @@ class TripDetailsFragment: Fragment() {
         layout.addView(nameInput)
 
         val dialog = AlertDialog.Builder(requireContext()).setView(layout)
-            .setTitle("User Information")
-            .setPositiveButton("OK",null)
-            .setNegativeButton("Cancel", null)
+            .setTitle("Salva Punto di Interesse")
+            .setPositiveButton("Salva",null)
+            .setNegativeButton("Annulla", null)
             .create()
 
         dialog.setOnShowListener {
@@ -513,7 +512,6 @@ class TripDetailsFragment: Fragment() {
         super.onResume()
         _binding?.mapView?.onResume()
 
-        updateTracking(isTracking)
         addAllPolylines()
     }
 

@@ -89,14 +89,9 @@ class TripDetailViewModel  @Inject constructor (
 
     fun updateTripStatus(status: TripStatus) {
         val updated = _trip.value?.copy(status = status) ?: return
-        Timber.d(updated.status.toString())
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
             _trip.postValue(updated)
-        }
-
-       if (status == TripStatus.FINISHED) {
-            tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
         }
     }
 
@@ -109,13 +104,13 @@ class TripDetailViewModel  @Inject constructor (
         }
     }
 
-    fun updateTripEndDate(newTimestamp: Long) {
-        val updated = _trip.value?.copy(endDate = newTimestamp) ?: return
-
+    fun finishTrip() {
+        val updated = _trip.value?.copy(status = TripStatus.FINISHED, endDate = System.currentTimeMillis()) ?: return
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
             _trip.postValue(updated)
         }
-    }
 
+        tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
+    }
 }
