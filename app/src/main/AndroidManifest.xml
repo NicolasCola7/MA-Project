@@ -96,5 +96,11 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".receiver.GeofenceBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.location.Geofence" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

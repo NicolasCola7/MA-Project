@@ -12,7 +12,8 @@ import com.example.travel_companion.data.local.entity.*
         TripEntity::class,
         CoordinateEntity::class,
         PhotoEntity::class,
-        NoteEntity::class
+        NoteEntity::class,
+        POIEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -24,4 +25,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun coordinateDao(): CoordinateDao
     abstract fun photoDao(): PhotoDao
     abstract fun noteDao(): NoteDao
+    abstract fun poiDao(): POIDao
 }

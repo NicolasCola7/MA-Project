@@ -3,11 +3,14 @@ package com.example.travel_companion.presentation.viewmodel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.CoordinateEntity
+import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.CoordinateRepository
+import com.example.travel_companion.data.repository.POIRepository
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.util.TripScheduler
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -17,6 +20,7 @@ import javax.inject.Inject
 class TripDetailViewModel  @Inject constructor (
     private val tripRepository: TripRepository,
     private val coordinateRepository: CoordinateRepository,
+    private val poiRepository: POIRepository,
     private val tripScheduler: TripScheduler
 ) : ViewModel() {
 
@@ -25,6 +29,9 @@ class TripDetailViewModel  @Inject constructor (
 
     private val _coordinates = MutableLiveData<List<CoordinateEntity>>()
     val coordinates: LiveData<List<CoordinateEntity>> get() = _coordinates
+
+    private val _pois = MutableLiveData<List<POIEntity>>()
+    val poi: LiveData<List<POIEntity>> get() = _pois
 
     fun loadTrip(tripId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -49,6 +56,33 @@ class TripDetailViewModel  @Inject constructor (
         viewModelScope.launch(Dispatchers.IO) {
             val loadedTripCoordinates = coordinateRepository.getCoordinatesForTrip(tripId)
             _coordinates.postValue(loadedTripCoordinates)
+        }
+    }
+
+    fun loadPOIs(tripId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val loadedPOIs = poiRepository.getPOIs(tripId)
+            _pois.postValue(loadedPOIs)
+        }
+    }
+
+    fun insertPOI(tripId: Long, pos: LatLng, name: String, placeId: String) {
+        val newPOI = POIEntity(
+            tripId = tripId,
+            latitude = pos.latitude,
+            longitude = pos.longitude,
+            name = name,
+            placeId = placeId
+        )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            poiRepository.insertPOI(newPOI)
+        }
+    }
+
+    fun deletePOI(poiName: String, tripId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            poiRepository.deletePOI(poiName, tripId)
         }
     }
 
