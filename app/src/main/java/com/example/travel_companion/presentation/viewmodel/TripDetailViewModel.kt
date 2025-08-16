@@ -2,6 +2,7 @@ package com.example.travel_companion.presentation.viewmodel
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.*
+import androidx.room.util.newStringBuilder
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.data.local.entity.TripEntity
@@ -101,6 +102,15 @@ class TripDetailViewModel  @Inject constructor (
 
     fun updateTripDistance(newDistance: Double) {
         val updated = _trip.value?.copy(trackedDistance = newDistance) ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            tripRepository.updateTrip(updated)
+            _trip.postValue(updated)
+        }
+    }
+
+    fun updateTripEndDate(newTimestamp: Long) {
+        val updated = _trip.value?.copy(endDate = newTimestamp) ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)

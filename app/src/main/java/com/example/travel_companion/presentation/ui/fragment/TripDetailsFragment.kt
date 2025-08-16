@@ -154,6 +154,7 @@ class TripDetailsFragment: Fragment() {
             .setMessage("Terminando il viaggio non sarai più in grado di tracciare i tuoi spostamenti, sei sicuro di voler continuare?")
             .setPositiveButton("Si") { _, _ ->
                 viewModel.updateTripStatus(TripStatus.FINISHED)
+                viewModel.updateTripEndDate(System.currentTimeMillis())
             }
             .setNegativeButton("No") { dialogInterface, _ ->
                 dialogInterface.cancel()
