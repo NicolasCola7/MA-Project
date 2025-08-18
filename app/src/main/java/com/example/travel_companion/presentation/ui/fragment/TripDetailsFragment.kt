@@ -53,7 +53,7 @@ class TripDetailsFragment: Fragment() {
     private val viewModel: TripDetailViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
 
-    private var isTracking = false
+    private var isTracking = TrackingService.isTracking.value ?: false
     private var pathPoints = mutableListOf<Polyline>()
     private var poiPoints = mutableListOf<POIEntity>()
     private var geofenceList = mutableListOf<Geofence>()
@@ -177,7 +177,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
-        viewModel.poi.observe(viewLifecycleOwner) { pois ->
+        viewModel.pois.observe(viewLifecycleOwner) { pois ->
             pois.let {
                 if(it.isNotEmpty()) {
                     poiPoints = it.toMutableList()
@@ -295,6 +295,11 @@ class TripDetailsFragment: Fragment() {
         if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
             binding.btnFinishTrip.visibility = View.GONE
             binding.btnToggleTracking.visibility = View.GONE
+        }
+
+        if(isTracking) {
+            binding.btnToggleTracking.visibility = View.VISIBLE
+            binding.btnToggleTracking.text = "Ferma"
         }
     }
 
@@ -536,15 +541,17 @@ class TripDetailsFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        //remove observers
-        trackingObserver?.let {
-            TrackingService.isTracking.removeObserver(it)
-        }
-        pathPointsObserver?.let {
-            TrackingService.pathPoints.removeObserver(it)
+        if (requireActivity().isFinishing) {
+            trackingObserver?.let {
+                TrackingService.isTracking.removeObserver(it)
+            }
+            pathPointsObserver?.let {
+                TrackingService.pathPoints.removeObserver(it)
+            }
+            sendCommandToService("ACTION_STOP_SERVICE")
+            viewModel.updateTripDistance(trackedDistance.value!!)
         }
 
-        sendCommandToService("ACTION_STOP_SERVICE")
         viewModel.updateTripDistance(trackedDistance.value!!)
         super.onDestroyView()
         _binding = null

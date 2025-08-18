@@ -2,7 +2,6 @@ package com.example.travel_companion.presentation.viewmodel
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.*
-import androidx.room.util.newStringBuilder
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.data.local.entity.TripEntity
@@ -14,7 +13,6 @@ import com.example.travel_companion.util.TripScheduler
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,7 +30,7 @@ class TripDetailViewModel  @Inject constructor (
     val coordinates: LiveData<List<CoordinateEntity>> get() = _coordinates
 
     private val _pois = MutableLiveData<List<POIEntity>>()
-    val poi: LiveData<List<POIEntity>> get() = _pois
+    val pois: LiveData<List<POIEntity>> get() = _pois
 
     fun loadTrip(tripId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -84,14 +82,6 @@ class TripDetailViewModel  @Inject constructor (
     fun deletePOI(poiName: String, tripId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             poiRepository.deletePOI(poiName, tripId)
-        }
-    }
-
-    fun updateTripStatus(status: TripStatus) {
-        val updated = _trip.value?.copy(status = status) ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            tripRepository.updateTrip(updated)
-            _trip.postValue(updated)
         }
     }
 
