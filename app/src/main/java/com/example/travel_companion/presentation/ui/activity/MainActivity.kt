@@ -55,7 +55,8 @@ class MainActivity : AppCompatActivity() {
         val fragmentsWithBottomNav = setOf(
             R.id.homeFragment,
             R.id.tripsFragment,
-            R.id.statisticsFragment
+            R.id.statisticsFragment,
+            R.id.predictionFragment
         )
 
         navController.addOnDestinationChangedListener { _, destination, _ ->

@@ -29,6 +29,7 @@ roomCompiler = "2.7.2"
 hiltCompiler = "2.56.2"
 ksp = "2.1.0-1.0.29"
 roomCompilerProcessingTesting = "2.7.2"
+swiperefreshlayout = "1.1.0"
 timber = "5.0.1"
 viewbinding = "8.11.1"
 roomRuntimeAndroid = "2.7.2"
@@ -47,6 +48,7 @@ android-maps-utils = { module = "com.google.maps.android:android-maps-utils", ve
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 easypermissions = { module = "pub.devrel:easypermissions", version.ref = "easypermissions" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }

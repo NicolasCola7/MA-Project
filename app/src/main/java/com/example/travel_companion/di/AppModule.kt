@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 
 import com.example.travel_companion.data.local.database.AppDatabase
+import com.example.travel_companion.util.TravelPredictionEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,4 +46,9 @@ object AppModule {
     @Provides
     fun providePOIDao(db: AppDatabase) = db.poiDao()
 
+    @Provides
+    @Singleton
+    fun provideTravelPredictionEngine(): TravelPredictionEngine {
+        return TravelPredictionEngine()
+    }
 }

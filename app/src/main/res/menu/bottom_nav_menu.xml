@@ -13,4 +13,9 @@
     <item android:id="@+id/statisticsFragment"
         android:title="Statistiche"
         android:icon="@drawable/ic_graph" />
+
+    <item
+        android:id="@+id/predictionFragment"
+        android:icon="@drawable/ic_analytics"
+        android:title="Previsioni" />
 </menu>
