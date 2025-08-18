@@ -2,6 +2,7 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentPredictionBinding
 import com.example.travel_companion.presentation.adapter.TripPredictionAdapter
@@ -21,6 +23,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -54,6 +57,25 @@ class PredictionFragment : Fragment() {
     }
 
     private fun setupRecyclerViews() {
+        tripPredictionAdapter = TripPredictionAdapter { prediction ->
+            Timber.tag("PredictionFragment")
+                .d("Click su predizione: ${prediction.suggestedDestination}")
+            showTripPredictionDialog(prediction)
+        }
+
+        // Aggiungi un listener per verificare quando l'adapter riceve i dati
+        tripPredictionAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onChanged() {
+                Timber.tag("PredictionFragment")
+                    .d("Adapter dati cambiati - item count: ${tripPredictionAdapter.itemCount}")
+            }
+
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                Timber.tag("PredictionFragment")
+                    .d("Items inseriti: $itemCount dalla posizione $positionStart")
+            }
+        })
+
         tripPredictionAdapter = TripPredictionAdapter { prediction ->
             showTripPredictionDialog(prediction)
         }
@@ -149,8 +171,33 @@ class PredictionFragment : Fragment() {
     }
 
     private fun updatePredictions(analysis: com.example.travel_companion.domain.model.TravelAnalysis) {
+        Timber.tag("PredictionFragment").d("=== UPDATE PREDICTIONS ===")
+        Timber.tag("PredictionFragment")
+            .d("Numero previsioni ricevute: ${analysis.tripPredictions.size}")
+
+        analysis.tripPredictions.forEachIndexed { index, prediction ->
+            Timber.tag("PredictionFragment").d("UI Predizione $index:")
+            Timber.tag("PredictionFragment")
+                .d("  - Destinazione: ${prediction.suggestedDestination}")
+            Timber.tag("PredictionFragment")
+                .d("  - Confidenza: ${(prediction.confidence * 100).toInt()}%")
+            Timber.tag("PredictionFragment").d("  - Tipo: ${prediction.predictedType}")
+        }
+
         tripPredictionAdapter.submitList(analysis.tripPredictions)
+
+        // AGGIUNGI QUESTO per forzare il layout:
+        binding.recyclerViewTripPredictions.post {
+            binding.recyclerViewTripPredictions.requestLayout()
+            Timber.tag("PredictionFragment")
+                .d("Layout forzato - altezza RecyclerView: ${binding.recyclerViewTripPredictions.height}")
+        }
+
         binding.textNoPredictions.isVisible = analysis.tripPredictions.isEmpty()
+
+        Timber.tag("PredictionFragment").d("Lista sottomessa all'adapter")
+        Timber.tag("PredictionFragment")
+            .d("textNoPredictions visibility: ${binding.textNoPredictions.isVisible}")
     }
 
     private fun updatePOISuggestions(analysis: com.example.travel_companion.domain.model.TravelAnalysis) {

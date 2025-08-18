@@ -1,5 +1,6 @@
 package com.example.travel_companion.util
 
+import android.util.Log
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.domain.model.TripStatus
@@ -8,25 +9,74 @@ import com.example.travel_companion.domain.model.TripPrediction
 import com.example.travel_companion.domain.model.POISuggestion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.*
 import kotlin.math.*
 
 class TravelPredictionEngine {
+
+    companion object {
+        private const val TAG = "TravelPredictionEngine"
+    }
 
     suspend fun analyzeAndPredict(
         trips: List<TripEntity>,
         pois: List<POIEntity>
     ): TravelAnalysis = withContext(Dispatchers.Default) {
 
+        Timber.tag(TAG).d("=== INIZIO ANALISI PREDITTIVA ===")
+        Timber.tag(TAG).d("Viaggi totali ricevuti: ${trips.size}")
+        Timber.tag(TAG).d("POI totali ricevuti: ${pois.size}")
+
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
+        Timber.tag(TAG).d("Viaggi completati: ${completedTrips.size}")
 
         if (completedTrips.isEmpty()) {
+            Timber.tag(TAG).w("Nessun viaggio completato trovato - ritorno analisi vuota")
             return@withContext createEmptyAnalysis()
         }
 
+        // Log dettagli viaggi
+        completedTrips.forEachIndexed { index, trip ->
+            Timber.tag(TAG).d(
+                "Viaggio $index: ${trip.destination}, tipo: ${trip.type}, " +
+                        "coordinate: (${trip.destinationLatitude}, ${trip.destinationLongitude})"
+            )
+        }
+
+        // Log dettagli POI
+        pois.forEachIndexed { index, poi ->
+            Timber.tag(TAG).d(
+                "POI $index: ${poi.name}, " +
+                        "coordinate: (${poi.latitude}, ${poi.longitude})"
+            )
+        }
+
         val statistics = calculateStatistics(completedTrips)
+        Timber.tag(TAG).d("Statistiche calcolate:")
+        Timber.tag(TAG).d("  - Tipo preferito: ${statistics.favoriteType}")
+        Timber.tag(TAG).d("  - Viaggi/mese: ${statistics.avgTripsPerMonth}")
+        Timber.tag(TAG).d("  - Cluster destinazioni: ${statistics.destinationClusters.size}")
+
         val tripPredictions = predictFutureTrips(completedTrips, statistics)
+        Timber.tag(TAG).d("Previsioni viaggi generate: ${tripPredictions.size}")
+        tripPredictions.forEachIndexed { index, prediction ->
+            Timber.tag(TAG).d(
+                "  Predizione $index: ${prediction.suggestedDestination} " +
+                        "(confidenza: ${(prediction.confidence * 100).toInt()}%)"
+            )
+        }
+
         val poiSuggestions = suggestNewPOIs(completedTrips, pois)
+        Timber.tag(TAG).d("Suggerimenti POI generati: ${poiSuggestions.size}")
+        poiSuggestions.forEachIndexed { index, suggestion ->
+            Timber.tag(TAG).d(
+                "  Suggerimento $index: ${suggestion.name} - ${suggestion.category} " +
+                        "(confidenza: ${(suggestion.confidence * 100).toInt()}%)"
+            )
+        }
+
+        Timber.tag(TAG).d("=== FINE ANALISI PREDITTIVA ===")
 
         TravelAnalysis(
             totalTrips = completedTrips.size,
@@ -41,87 +91,11 @@ class TravelPredictionEngine {
         )
     }
 
-    private data class TravelStatistics(
-        val avgTripsPerMonth: Double,
-        val favoriteType: String,
-        val avgDuration: Double,
-        val mostActiveMonth: Int,
-        val avgDistance: Double,
-        val nextPredictedDate: Long,
-        val typeFrequency: Map<String, Int>,
-        val monthlyPattern: Map<Int, Int>,
-        val destinationClusters: List<DestinationCluster>
-    )
-
-    private data class DestinationCluster(
-        val centerLat: Double,
-        val centerLng: Double,
-        val radius: Double,
-        val tripCount: Int,
-        val dominantType: String
-    )
-
-    private fun calculateStatistics(trips: List<TripEntity>): TravelStatistics {
-        val calendar = Calendar.getInstance()
-        val now = System.currentTimeMillis()
-
-        // Calcola frequenza per tipo di viaggio
-        val typeFrequency = trips.groupingBy { it.type }.eachCount()
-        val favoriteType = typeFrequency.maxByOrNull { it.value }?.key ?: "Viaggio locale"
-
-        // Calcola pattern mensili
-        val monthlyPattern = mutableMapOf<Int, Int>()
-        trips.forEach { trip ->
-            calendar.timeInMillis = trip.startDate
-            val month = calendar.get(Calendar.MONTH)
-            monthlyPattern[month] = monthlyPattern.getOrDefault(month, 0) + 1
-        }
-
-        val mostActiveMonth = monthlyPattern.maxByOrNull { it.value }?.key ?: Calendar.getInstance().get(Calendar.MONTH)
-
-        // Calcola durata media
-        val avgDuration = trips.map { (it.endDate - it.startDate).toDouble() / (1000 * 60 * 60 * 24) }.average()
-
-        // Calcola distanza media
-        val avgDistance = trips.map { it.trackedDistance }.filter { it > 0 }.let { distances ->
-            if (distances.isNotEmpty()) distances.average() else 0.0
-        }
-
-        // Calcola viaggi per mese
-        val firstTripDate = trips.minOfOrNull { it.startDate } ?: now
-        val monthsDiff = max(1, ((now - firstTripDate) / (1000L * 60 * 60 * 24 * 30)).toInt())
-        val avgTripsPerMonth = trips.size.toDouble() / monthsDiff
-
-        // Predici prossima data di viaggio basata sui pattern storici
-        val avgDaysBetweenTrips = if (trips.size > 1) {
-            val sortedTrips = trips.sortedBy { it.startDate }
-            val intervals = sortedTrips.zipWithNext { a, b ->
-                (b.startDate - a.endDate).toDouble() / (1000 * 60 * 60 * 24)
-            }
-            intervals.average()
-        } else 30.0
-
-        val lastTripEnd = trips.maxOfOrNull { it.endDate } ?: now
-        val nextPredictedDate = lastTripEnd + (avgDaysBetweenTrips * 1000 * 60 * 60 * 24).toLong()
-
-        // Clustering delle destinazioni
-        val clusters = clusterDestinations(trips)
-
-        return TravelStatistics(
-            avgTripsPerMonth = avgTripsPerMonth,
-            favoriteType = favoriteType,
-            avgDuration = avgDuration,
-            mostActiveMonth = mostActiveMonth,
-            avgDistance = avgDistance,
-            nextPredictedDate = nextPredictedDate,
-            typeFrequency = typeFrequency,
-            monthlyPattern = monthlyPattern,
-            destinationClusters = clusters
-        )
-    }
-
+    // Aggiungi anche log nel metodo clusterDestinations:
     private fun clusterDestinations(trips: List<TripEntity>): List<DestinationCluster> {
         if (trips.isEmpty()) return emptyList()
+
+        Timber.tag(TAG).d("Inizio clustering di ${trips.size} viaggi")
 
         val clusters = mutableListOf<DestinationCluster>()
         val processed = mutableSetOf<TripEntity>()
@@ -132,7 +106,7 @@ class TravelPredictionEngine {
             val nearbyTrips = trips.filter { other ->
                 other !in processed &&
                         calculateDistance(trip.destinationLatitude, trip.destinationLongitude,
-                            other.destinationLatitude, other.destinationLongitude) <= 50.0 // 50km radius
+                            other.destinationLatitude, other.destinationLongitude) <= 50.0
             }
 
             if (nearbyTrips.size >= 2) {
@@ -143,11 +117,17 @@ class TravelPredictionEngine {
                 }
                 val dominantType = nearbyTrips.groupingBy { it.type }.eachCount().maxByOrNull { it.value }?.key ?: trip.type
 
+                Timber.tag(TAG).d(
+                    "Cluster trovato: ${nearbyTrips.size} viaggi, tipo dominante: $dominantType, " +
+                            "centro: ($centerLat, $centerLng)"
+                )
+
                 clusters.add(DestinationCluster(centerLat, centerLng, maxDistance, nearbyTrips.size, dominantType))
                 processed.addAll(nearbyTrips)
             }
         }
 
+        Timber.tag(TAG).d("Clustering completato: ${clusters.size} cluster trovati")
         return clusters.sortedByDescending { it.tripCount }
     }
 
@@ -461,6 +441,85 @@ class TravelPredictionEngine {
             nextPredictedTripDate = System.currentTimeMillis() + (30 * 24 * 60 * 60 * 1000L),
             tripPredictions = emptyList(),
             poiSuggestions = emptyList()
+        )
+    }
+
+    private data class TravelStatistics(
+        val avgTripsPerMonth: Double,
+        val favoriteType: String,
+        val avgDuration: Double,
+        val mostActiveMonth: Int,
+        val avgDistance: Double,
+        val nextPredictedDate: Long,
+        val typeFrequency: Map<String, Int>,
+        val monthlyPattern: Map<Int, Int>,
+        val destinationClusters: List<DestinationCluster>
+    )
+
+    private data class DestinationCluster(
+        val centerLat: Double,
+        val centerLng: Double,
+        val radius: Double,
+        val tripCount: Int,
+        val dominantType: String
+    )
+
+    private fun calculateStatistics(trips: List<TripEntity>): TravelStatistics {
+        val calendar = Calendar.getInstance()
+        val now = System.currentTimeMillis()
+
+        // Calcola frequenza per tipo di viaggio
+        val typeFrequency = trips.groupingBy { it.type }.eachCount()
+        val favoriteType = typeFrequency.maxByOrNull { it.value }?.key ?: "Viaggio locale"
+
+        // Calcola pattern mensili
+        val monthlyPattern = mutableMapOf<Int, Int>()
+        trips.forEach { trip ->
+            calendar.timeInMillis = trip.startDate
+            val month = calendar.get(Calendar.MONTH)
+            monthlyPattern[month] = monthlyPattern.getOrDefault(month, 0) + 1
+        }
+
+        val mostActiveMonth = monthlyPattern.maxByOrNull { it.value }?.key ?: Calendar.getInstance().get(Calendar.MONTH)
+
+        // Calcola durata media
+        val avgDuration = trips.map { (it.endDate - it.startDate).toDouble() / (1000 * 60 * 60 * 24) }.average()
+
+        // Calcola distanza media
+        val avgDistance = trips.map { it.trackedDistance }.filter { it > 0 }.let { distances ->
+            if (distances.isNotEmpty()) distances.average() else 0.0
+        }
+
+        // Calcola viaggi per mese
+        val firstTripDate = trips.minOfOrNull { it.startDate } ?: now
+        val monthsDiff = max(1, ((now - firstTripDate) / (1000L * 60 * 60 * 24 * 30)).toInt())
+        val avgTripsPerMonth = trips.size.toDouble() / monthsDiff
+
+        // Predici prossima data di viaggio basata sui pattern storici
+        val avgDaysBetweenTrips = if (trips.size > 1) {
+            val sortedTrips = trips.sortedBy { it.startDate }
+            val intervals = sortedTrips.zipWithNext { a, b ->
+                (b.startDate - a.endDate).toDouble() / (1000 * 60 * 60 * 24)
+            }
+            intervals.average()
+        } else 30.0
+
+        val lastTripEnd = trips.maxOfOrNull { it.endDate } ?: now
+        val nextPredictedDate = lastTripEnd + (avgDaysBetweenTrips * 1000 * 60 * 60 * 24).toLong()
+
+        // Clustering delle destinazioni
+        val clusters = clusterDestinations(trips)
+
+        return TravelStatistics(
+            avgTripsPerMonth = avgTripsPerMonth,
+            favoriteType = favoriteType,
+            avgDuration = avgDuration,
+            mostActiveMonth = mostActiveMonth,
+            avgDistance = avgDistance,
+            nextPredictedDate = nextPredictedDate,
+            typeFrequency = typeFrequency,
+            monthlyPattern = monthlyPattern,
+            destinationClusters = clusters
         )
     }
 }
