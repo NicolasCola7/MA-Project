@@ -2,7 +2,7 @@ package com.example.travel_companion.util
 
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.domain.model.TravelAnalysis
+import com.example.travel_companion.domain.model.TripAnalysis
 import com.example.travel_companion.domain.model.TripPrediction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,7 +10,7 @@ import timber.log.Timber
 import java.util.*
 import kotlin.math.*
 
-class TravelPredictionEngine {
+class TripPredictionEngine {
 
     companion object {
         private const val TAG = "TravelPredictionEngine"
@@ -18,7 +18,7 @@ class TravelPredictionEngine {
 
     suspend fun analyzeAndPredict(
         trips: List<TripEntity>
-    ): TravelAnalysis = withContext(Dispatchers.Default) {
+    ): TripAnalysis = withContext(Dispatchers.Default) {
 
         Timber.tag(TAG).d("=== INIZIO ANALISI PREDITTIVA ===")
         Timber.tag(TAG).d("Viaggi totali ricevuti: ${trips.size}")
@@ -56,7 +56,7 @@ class TravelPredictionEngine {
 
         Timber.tag(TAG).d("=== FINE ANALISI PREDITTIVA ===")
 
-        TravelAnalysis(
+        TripAnalysis(
             totalTrips = completedTrips.size,
             averageTripsPerMonth = statistics.avgTripsPerMonth,
             favoriteDestinationType = statistics.favoriteType,
@@ -108,7 +108,7 @@ class TravelPredictionEngine {
         return clusters.sortedByDescending { it.tripCount }
     }
 
-    private fun predictFutureTrips(trips: List<TripEntity>, stats: TravelStatistics): List<TripPrediction> {
+    private fun predictFutureTrips(trips: List<TripEntity>, stats: TripStatistics): List<TripPrediction> {
         val predictions = mutableListOf<TripPrediction>()
         val calendar = Calendar.getInstance()
 
@@ -228,8 +228,8 @@ class TravelPredictionEngine {
         return months[month]
     }
 
-    private fun createEmptyAnalysis(): TravelAnalysis {
-        return TravelAnalysis(
+    private fun createEmptyAnalysis(): TripAnalysis {
+        return TripAnalysis(
             totalTrips = 0,
             averageTripsPerMonth = 0.0,
             favoriteDestinationType = "Nessun dato",
@@ -241,7 +241,7 @@ class TravelPredictionEngine {
         )
     }
 
-    private data class TravelStatistics(
+    private data class TripStatistics(
         val avgTripsPerMonth: Double,
         val favoriteType: String,
         val avgDuration: Double,
@@ -261,7 +261,7 @@ class TravelPredictionEngine {
         val dominantType: String
     )
 
-    private fun calculateStatistics(trips: List<TripEntity>): TravelStatistics {
+    private fun calculateStatistics(trips: List<TripEntity>): TripStatistics {
         val calendar = Calendar.getInstance()
         val now = System.currentTimeMillis()
 
@@ -307,7 +307,7 @@ class TravelPredictionEngine {
         // Clustering delle destinazioni
         val clusters = clusterDestinations(trips)
 
-        return TravelStatistics(
+        return TripStatistics(
             avgTripsPerMonth = avgTripsPerMonth,
             favoriteType = favoriteType,
             avgDuration = avgDuration,

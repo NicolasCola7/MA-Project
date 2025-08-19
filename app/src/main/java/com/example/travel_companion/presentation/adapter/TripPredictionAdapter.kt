@@ -1,4 +1,3 @@
-// File: presentation/adapter/TripPredictionAdapter.kt
 package com.example.travel_companion.presentation.adapter
 
 import android.view.LayoutInflater

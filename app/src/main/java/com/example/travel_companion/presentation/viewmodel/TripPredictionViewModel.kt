@@ -2,8 +2,8 @@ package com.example.travel_companion.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.travel_companion.data.repository.TravelPredictionRepository
-import com.example.travel_companion.domain.model.TravelAnalysis
+import com.example.travel_companion.data.repository.TripPredictionRepository
+import com.example.travel_companion.domain.model.TripAnalysis
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class TravelPredictionViewModel @Inject constructor(
-    private val predictionRepository: TravelPredictionRepository
+class TripPredictionViewModel @Inject constructor(
+    private val predictionRepository: TripPredictionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PredictionUiState())
@@ -21,7 +21,7 @@ class TravelPredictionViewModel @Inject constructor(
 
     data class PredictionUiState(
         val isLoading: Boolean = false,
-        val analysis: TravelAnalysis? = null,
+        val analysis: TripAnalysis? = null,
         val error: String? = null,
         val selectedTripType: String = "Tutti"
     )
@@ -35,7 +35,7 @@ class TravelPredictionViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val analysis = predictionRepository.generateTravelAnalysis()
+                val analysis = predictionRepository.generateTripAnalysis()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     analysis = analysis
@@ -57,7 +57,7 @@ class TravelPredictionViewModel @Inject constructor(
 
             try {
                 val analysis = if (tripType == "Tutti") {
-                    predictionRepository.generateTravelAnalysis()
+                    predictionRepository.generateTripAnalysis()
                 } else {
                     predictionRepository.getPredictionsForTripType(tripType)
                 }

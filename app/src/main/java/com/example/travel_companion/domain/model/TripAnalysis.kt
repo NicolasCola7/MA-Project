@@ -1,6 +1,6 @@
 package com.example.travel_companion.domain.model
 
-data class TravelAnalysis(
+data class TripAnalysis(
     val totalTrips: Int,
     val averageTripsPerMonth: Double,
     val favoriteDestinationType: String,

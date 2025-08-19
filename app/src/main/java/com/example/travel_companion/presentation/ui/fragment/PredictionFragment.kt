@@ -1,7 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +10,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentPredictionBinding
+import com.example.travel_companion.domain.model.TripAnalysis
 import com.example.travel_companion.presentation.adapter.TripPredictionAdapter
-import com.example.travel_companion.presentation.viewmodel.TravelPredictionViewModel
+import com.example.travel_companion.presentation.viewmodel.TripPredictionViewModel
 import com.example.travel_companion.domain.model.TripPrediction
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
@@ -30,7 +29,7 @@ class PredictionFragment : Fragment() {
     private var _binding: FragmentPredictionBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: TravelPredictionViewModel by viewModels()
+    private val viewModel: TripPredictionViewModel by viewModels()
 
     private lateinit var tripPredictionAdapter: TripPredictionAdapter
 
@@ -118,7 +117,7 @@ class PredictionFragment : Fragment() {
         }
     }
 
-    private fun updateUI(state: TravelPredictionViewModel.PredictionUiState) {
+    private fun updateUI(state: TripPredictionViewModel.PredictionUiState) {
         binding.swipeRefreshLayout.isRefreshing = state.isLoading
         binding.progressBar.isVisible = state.isLoading && state.analysis == null
 
@@ -143,7 +142,7 @@ class PredictionFragment : Fragment() {
         }
     }
 
-    private fun updateStatistics(analysis: com.example.travel_companion.domain.model.TravelAnalysis) {
+    private fun updateStatistics(analysis: TripAnalysis) {
         with(binding) {
             textTotalTrips.text = analysis.totalTrips.toString()
             textAvgTripsPerMonth.text = String.format("%.1f", analysis.averageTripsPerMonth)
@@ -156,7 +155,7 @@ class PredictionFragment : Fragment() {
         }
     }
 
-    private fun updatePredictions(analysis: com.example.travel_companion.domain.model.TravelAnalysis) {
+    private fun updatePredictions(analysis: TripAnalysis) {
         Timber.tag("PredictionFragment").d("=== UPDATE PREDICTIONS ===")
         Timber.tag("PredictionFragment")
             .d("Numero previsioni ricevute: ${analysis.tripPredictions.size}")
