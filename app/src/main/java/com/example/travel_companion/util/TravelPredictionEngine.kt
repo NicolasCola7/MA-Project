@@ -1,12 +1,9 @@
 package com.example.travel_companion.util
 
-import android.util.Log
 import com.example.travel_companion.data.local.entity.TripEntity
-import com.example.travel_companion.data.local.entity.POIEntity
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.domain.model.TravelAnalysis
 import com.example.travel_companion.domain.model.TripPrediction
-import com.example.travel_companion.domain.model.POISuggestion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -20,13 +17,11 @@ class TravelPredictionEngine {
     }
 
     suspend fun analyzeAndPredict(
-        trips: List<TripEntity>,
-        pois: List<POIEntity>
+        trips: List<TripEntity>
     ): TravelAnalysis = withContext(Dispatchers.Default) {
 
         Timber.tag(TAG).d("=== INIZIO ANALISI PREDITTIVA ===")
         Timber.tag(TAG).d("Viaggi totali ricevuti: ${trips.size}")
-        Timber.tag(TAG).d("POI totali ricevuti: ${pois.size}")
 
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
         Timber.tag(TAG).d("Viaggi completati: ${completedTrips.size}")
@@ -41,14 +36,6 @@ class TravelPredictionEngine {
             Timber.tag(TAG).d(
                 "Viaggio $index: ${trip.destination}, tipo: ${trip.type}, " +
                         "coordinate: (${trip.destinationLatitude}, ${trip.destinationLongitude})"
-            )
-        }
-
-        // Log dettagli POI
-        pois.forEachIndexed { index, poi ->
-            Timber.tag(TAG).d(
-                "POI $index: ${poi.name}, " +
-                        "coordinate: (${poi.latitude}, ${poi.longitude})"
             )
         }
 
@@ -67,15 +54,6 @@ class TravelPredictionEngine {
             )
         }
 
-        val poiSuggestions = suggestNewPOIs(completedTrips, pois)
-        Timber.tag(TAG).d("Suggerimenti POI generati: ${poiSuggestions.size}")
-        poiSuggestions.forEachIndexed { index, suggestion ->
-            Timber.tag(TAG).d(
-                "  Suggerimento $index: ${suggestion.name} - ${suggestion.category} " +
-                        "(confidenza: ${(suggestion.confidence * 100).toInt()}%)"
-            )
-        }
-
         Timber.tag(TAG).d("=== FINE ANALISI PREDITTIVA ===")
 
         TravelAnalysis(
@@ -86,8 +64,7 @@ class TravelPredictionEngine {
             mostActiveMonth = statistics.mostActiveMonth,
             averageDistancePerTrip = statistics.avgDistance,
             nextPredictedTripDate = statistics.nextPredictedDate,
-            tripPredictions = tripPredictions,
-            poiSuggestions = poiSuggestions
+            tripPredictions = tripPredictions
         )
     }
 
@@ -189,173 +166,6 @@ class TravelPredictionEngine {
         return predictions.sortedByDescending { it.confidence }
     }
 
-    private fun suggestNewPOIs(trips: List<TripEntity>, existingPois: List<POIEntity>): List<POISuggestion> {
-        val suggestions = mutableListOf<POISuggestion>()
-
-        // Raggruppa POI per area geografica
-        val poiClusters = clusterPOIs(existingPois)
-
-        // Per ogni cluster, suggerisci POI simili nelle vicinanze
-        poiClusters.forEach { cluster ->
-            val nearbyTrips = trips.filter { trip ->
-                calculateDistance(trip.destinationLatitude, trip.destinationLongitude,
-                    cluster.centerLat, cluster.centerLng) <= 20.0 // 20km
-            }
-
-            if (nearbyTrips.isNotEmpty()) {
-                val poiSuggestions = generatePOISuggestionsForCluster(cluster, nearbyTrips)
-                suggestions.addAll(poiSuggestions)
-            }
-        }
-
-        // Suggerisci POI per destinazioni senza POI esistenti
-        val destinationsWithoutPOIs = trips.filter { trip ->
-            existingPois.none { poi ->
-                calculateDistance(trip.destinationLatitude, trip.destinationLongitude,
-                    poi.latitude, poi.longitude) <= 5.0 // 5km
-            }
-        }
-
-        destinationsWithoutPOIs.forEach { trip ->
-            suggestions.addAll(generateGenericPOISuggestions(trip))
-        }
-
-        return suggestions.distinctBy { "${it.name}_${it.latitude}_${it.longitude}" }
-            .sortedByDescending { it.confidence }
-            .take(10)
-    }
-
-    private data class POICluster(
-        val centerLat: Double,
-        val centerLng: Double,
-        val pois: List<POIEntity>,
-        val dominantCategory: String
-    )
-
-    private fun clusterPOIs(pois: List<POIEntity>): List<POICluster> {
-        if (pois.isEmpty()) return emptyList()
-
-        val clusters = mutableListOf<POICluster>()
-        val processed = mutableSetOf<POIEntity>()
-
-        pois.forEach { poi ->
-            if (poi in processed) return@forEach
-
-            val nearbyPOIs = pois.filter { other ->
-                other !in processed &&
-                        calculateDistance(poi.latitude, poi.longitude, other.latitude, other.longitude) <= 10.0 // 10km
-            }
-
-            if (nearbyPOIs.size >= 2) {
-                val centerLat = nearbyPOIs.map { it.latitude }.average()
-                val centerLng = nearbyPOIs.map { it.longitude }.average()
-                val category = categorizePOI(poi.name)
-
-                clusters.add(POICluster(centerLat, centerLng, nearbyPOIs, category))
-                processed.addAll(nearbyPOIs)
-            }
-        }
-
-        return clusters
-    }
-
-    private fun generatePOISuggestionsForCluster(cluster: POICluster, nearbyTrips: List<TripEntity>): List<POISuggestion> {
-        val suggestions = mutableListOf<POISuggestion>()
-        nearbyTrips.groupingBy { it.type }.eachCount().maxByOrNull { it.value }?.key ?: "Viaggio locale"
-
-        when (cluster.dominantCategory) {
-            "Ristorante" -> {
-                suggestions.add(POISuggestion(
-                    name = "Ristorante tradizionale locale",
-                    latitude = cluster.centerLat + (Random().nextDouble() - 0.5) * 0.01,
-                    longitude = cluster.centerLng + (Random().nextDouble() - 0.5) * 0.01,
-                    category = "Ristorante",
-                    confidence = 0.8,
-                    reasoning = "Hai già ${cluster.pois.size} ristoranti in questa zona",
-                    estimatedDistance = Random().nextDouble() * 2.0 + 0.5
-                ))
-            }
-            "Attrazione" -> {
-                suggestions.add(POISuggestion(
-                    name = "Punto panoramico",
-                    latitude = cluster.centerLat + (Random().nextDouble() - 0.5) * 0.01,
-                    longitude = cluster.centerLng + (Random().nextDouble() - 0.5) * 0.01,
-                    category = "Attrazione",
-                    confidence = 0.75,
-                    reasoning = "Zona ricca di attrazioni turistiche",
-                    estimatedDistance = Random().nextDouble() * 3.0 + 1.0
-                ))
-            }
-            "Alloggio" -> {
-                suggestions.add(POISuggestion(
-                    name = "B&B caratteristico",
-                    latitude = cluster.centerLat + (Random().nextDouble() - 0.5) * 0.01,
-                    longitude = cluster.centerLng + (Random().nextDouble() - 0.5) * 0.01,
-                    category = "Alloggio",
-                    confidence = 0.7,
-                    reasoning = "Zona con ${cluster.pois.size} alloggi già testati",
-                    estimatedDistance = Random().nextDouble() * 1.5 + 0.3
-                ))
-            }
-        }
-
-        return suggestions
-    }
-
-    private fun generateGenericPOISuggestions(trip: TripEntity): List<POISuggestion> {
-        val suggestions = mutableListOf<POISuggestion>()
-        val random = Random()
-
-        when (trip.type) {
-            "Viaggio di più giorni" -> {
-                suggestions.addAll(listOf(
-                    POISuggestion(
-                        name = "Centro storico",
-                        latitude = trip.destinationLatitude + (random.nextDouble() - 0.5) * 0.005,
-                        longitude = trip.destinationLongitude + (random.nextDouble() - 0.5) * 0.005,
-                        category = "Attrazione",
-                        confidence = 0.85,
-                        reasoning = "I centri storici sono sempre interessanti per viaggi lunghi",
-                        estimatedDistance = random.nextDouble() * 2.0 + 0.5
-                    ),
-                    POISuggestion(
-                        name = "Mercato locale",
-                        latitude = trip.destinationLatitude + (random.nextDouble() - 0.5) * 0.008,
-                        longitude = trip.destinationLongitude + (random.nextDouble() - 0.5) * 0.008,
-                        category = "Shopping",
-                        confidence = 0.7,
-                        reasoning = "Esperienza culturale autentica",
-                        estimatedDistance = random.nextDouble() * 3.0 + 1.0
-                    )
-                ))
-            }
-            "Gita giornaliera" -> {
-                suggestions.add(POISuggestion(
-                    name = "Area picnic",
-                    latitude = trip.destinationLatitude + (random.nextDouble() - 0.5) * 0.01,
-                    longitude = trip.destinationLongitude + (random.nextDouble() - 0.5) * 0.01,
-                    category = "Natura",
-                    confidence = 0.65,
-                    reasoning = "Perfetto per una gita giornaliera",
-                    estimatedDistance = random.nextDouble() * 5.0 + 2.0
-                ))
-            }
-            "Viaggio locale" -> {
-                suggestions.add(POISuggestion(
-                    name = "Caffè caratteristico",
-                    latitude = trip.destinationLatitude + (random.nextDouble() - 0.5) * 0.003,
-                    longitude = trip.destinationLongitude + (random.nextDouble() - 0.5) * 0.003,
-                    category = "Ristorante",
-                    confidence = 0.6,
-                    reasoning = "Scopri la zona con una pausa caffè",
-                    estimatedDistance = random.nextDouble() * 1.0 + 0.2
-                ))
-            }
-        }
-
-        return suggestions
-    }
-
     // Utility functions
     private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
         val earthRadius = 6371.0 // km
@@ -366,18 +176,6 @@ class TravelPredictionEngine {
                 sin(dLng / 2) * sin(dLng / 2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         return earthRadius * c
-    }
-
-    private fun categorizePOI(name: String): String {
-        val lowerName = name.lowercase()
-        return when {
-            lowerName.contains("ristorante") || lowerName.contains("pizzeria") || lowerName.contains("trattoria") -> "Ristorante"
-            lowerName.contains("hotel") || lowerName.contains("b&b") || lowerName.contains("ostello") -> "Alloggio"
-            lowerName.contains("museo") || lowerName.contains("chiesa") || lowerName.contains("castello") -> "Attrazione"
-            lowerName.contains("parco") || lowerName.contains("giardino") || lowerName.contains("natura") -> "Natura"
-            lowerName.contains("negozio") || lowerName.contains("mercato") || lowerName.contains("shopping") -> "Shopping"
-            else -> "Generale"
-        }
     }
 
     private fun getSeasonalTripType(month: Int): String {
@@ -439,8 +237,7 @@ class TravelPredictionEngine {
             mostActiveMonth = Calendar.getInstance().get(Calendar.MONTH),
             averageDistancePerTrip = 0.0,
             nextPredictedTripDate = System.currentTimeMillis() + (30 * 24 * 60 * 60 * 1000L),
-            tripPredictions = emptyList(),
-            poiSuggestions = emptyList()
+            tripPredictions = emptyList()
         )
     }
 

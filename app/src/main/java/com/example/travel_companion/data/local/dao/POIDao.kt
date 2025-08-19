@@ -15,10 +15,4 @@ interface POIDao {
 
     @Query("DELETE FROM poi WHERE name = :poiName AND tripId = :tripId")
     fun deletePOI(poiName: String, tripId: Long)
-
-    @Query("SELECT * FROM poi")
-    suspend fun getAllPOIsSync(): List<POIEntity>
-
-    @Query("SELECT * FROM poi WHERE tripId = :tripId")
-    suspend fun getPOIsForTripSync(tripId: Long): List<POIEntity>
 }

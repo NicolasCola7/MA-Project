@@ -8,6 +8,5 @@ data class TravelAnalysis(
     val mostActiveMonth: Int,
     val averageDistancePerTrip: Double,
     val nextPredictedTripDate: Long,
-    val tripPredictions: List<TripPrediction>,
-    val poiSuggestions: List<POISuggestion>
+    val tripPredictions: List<TripPrediction>
 )

@@ -1,4 +1,3 @@
-// File: presentation/viewmodel/TravelPredictionViewModel.kt
 package com.example.travel_companion.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
