@@ -4,12 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.databinding.FragmentPredictionBinding
 import com.example.travel_companion.domain.model.TripAnalysis
 import com.example.travel_companion.presentation.adapter.TripPredictionAdapter
@@ -17,6 +17,7 @@ import com.example.travel_companion.presentation.viewmodel.TripPredictionViewMod
 import com.example.travel_companion.domain.model.TripPrediction
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -30,7 +31,6 @@ class PredictionFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: TripPredictionViewModel by viewModels()
-
     private lateinit var tripPredictionAdapter: TripPredictionAdapter
 
     override fun onCreateView(
@@ -45,37 +45,18 @@ class PredictionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupRecyclerViews()
+        setupRecyclerView()
         setupChips()
         observeViewModel()
-        setupSwipeRefresh()
     }
 
-    private fun setupRecyclerViews() {
+    private fun setupRecyclerView() {
         tripPredictionAdapter = TripPredictionAdapter { prediction ->
             Timber.tag("PredictionFragment")
                 .d("Click su predizione: ${prediction.suggestedDestination}")
             showTripPredictionDialog(prediction)
         }
 
-        // Aggiungi un listener per verificare quando l'adapter riceve i dati
-        tripPredictionAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onChanged() {
-                Timber.tag("PredictionFragment")
-                    .d("Adapter dati cambiati - item count: ${tripPredictionAdapter.itemCount}")
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                Timber.tag("PredictionFragment")
-                    .d("Items inseriti: $itemCount dalla posizione $positionStart")
-            }
-        })
-
-        tripPredictionAdapter = TripPredictionAdapter { prediction ->
-            showTripPredictionDialog(prediction)
-        }
-
-        // ID corretti dal layout
         binding.recyclerViewTripPredictions.apply {
             adapter = tripPredictionAdapter
             layoutManager = LinearLayoutManager(context)
@@ -111,16 +92,11 @@ class PredictionFragment : Fragment() {
         }
     }
 
-    private fun setupSwipeRefresh() {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.loadPredictions()
-        }
-    }
-
     private fun updateUI(state: TripPredictionViewModel.PredictionUiState) {
-        binding.swipeRefreshLayout.isRefreshing = state.isLoading
-        binding.progressBar.isVisible = state.isLoading && state.analysis == null
+        // Mostra/nascondi progress bar
+        binding.progressBar.isVisible = state.isLoading
 
+        // Gestisci errori
         state.error?.let { error ->
             Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG)
                 .setAction("Riprova") { viewModel.loadPredictions() }
@@ -128,6 +104,7 @@ class PredictionFragment : Fragment() {
             viewModel.clearError()
         }
 
+        // Aggiorna contenuto
         state.analysis?.let { analysis ->
             updateStatistics(analysis)
             updatePredictions(analysis)
@@ -160,34 +137,40 @@ class PredictionFragment : Fragment() {
         Timber.tag("PredictionFragment")
             .d("Numero previsioni ricevute: ${analysis.tripPredictions.size}")
 
-        analysis.tripPredictions.forEachIndexed { index, prediction ->
-            Timber.tag("PredictionFragment").d("UI Predizione $index:")
-            Timber.tag("PredictionFragment")
-                .d("  - Destinazione: ${prediction.suggestedDestination}")
-            Timber.tag("PredictionFragment")
-                .d("  - Confidenza: ${(prediction.confidence * 100).toInt()}%")
-            Timber.tag("PredictionFragment").d("  - Tipo: ${prediction.predictedType}")
-        }
-
         tripPredictionAdapter.submitList(analysis.tripPredictions)
-
-        // AGGIUNGI QUESTO per forzare il layout:
-        binding.recyclerViewTripPredictions.post {
-            binding.recyclerViewTripPredictions.requestLayout()
-            Timber.tag("PredictionFragment")
-                .d("Layout forzato - altezza RecyclerView: ${binding.recyclerViewTripPredictions.height}")
-        }
-
         binding.textNoPredictions.isVisible = analysis.tripPredictions.isEmpty()
-
-        Timber.tag("PredictionFragment").d("Lista sottomessa all'adapter")
-        Timber.tag("PredictionFragment")
-            .d("textNoPredictions visibility: ${binding.textNoPredictions.isVisible}")
     }
 
     private fun showTripPredictionDialog(prediction: TripPrediction) {
-        // TODO: Implementa dialog per mostrare dettagli predizione
-        // Potresti navigare ad AddTripFragment con dati pre-compilati
+        val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Dettagli Predizione")
+            .setMessage("""
+                Destinazione: ${prediction.suggestedDestination}
+                Tipo viaggio: ${prediction.predictedType}
+                Data inizio: ${dateFormat.format(Date(prediction.suggestedStartDate))}
+                Data fine: ${dateFormat.format(Date(prediction.suggestedEndDate))}
+                Confidenza: ${(prediction.confidence * 100).toInt()}%
+                
+                Motivo: ${prediction.reasoning}
+            """.trimIndent())
+            .setPositiveButton("Pianifica Viaggio") { _, _ ->
+                planTripFromPrediction(prediction)
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
+    }
+
+    private fun planTripFromPrediction(prediction: TripPrediction) {
+        Timber.tag("PredictionFragment")
+            .d("Pianificazione viaggio da predizione: ${prediction.suggestedDestination}")
+
+        Snackbar.make(
+            binding.root,
+            "Funzione di pianificazione viaggio in sviluppo",
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     override fun onDestroyView() {

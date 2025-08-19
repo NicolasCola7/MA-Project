@@ -165,7 +165,7 @@
 
     <fragment
         android:id="@+id/predictionFragment"
-        android:name="com.example.travel_companion.presentation.ui.fragment.EnhancedPredictionFragment"
+        android:name="com.example.travel_companion.presentation.ui.fragment.PredictionFragment"
         android:label="Previsioni AI"
         tools:layout="@layout/fragment_prediction" />
 </navigation>
