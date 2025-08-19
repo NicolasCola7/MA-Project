@@ -30,6 +30,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -37,11 +38,18 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         dataBinding = true
+        mlModelBinding = true
         viewBinding = true
         buildConfig = true
     }
+
+    androidResources {
+        noCompress += listOf("tflite", "lite")
+    }
+    buildToolsVersion = "35.0.0"
 }
 
 dependencies {
@@ -115,6 +123,11 @@ dependencies {
     implementation(libs.android.maps.utils)
 
     implementation(libs.androidx.cardview)
+
+    // TensorFlow Lite
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.support)
 
     // Testing
     testImplementation(libs.junit)
