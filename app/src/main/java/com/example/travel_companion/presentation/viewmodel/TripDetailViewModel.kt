@@ -23,7 +23,9 @@ class TripDetailViewModel  @Inject constructor (
     private val tripScheduler: TripScheduler
 ) : ViewModel() {
 
-    private val _trip = MutableLiveData<TripEntity?>()
+    private var currentTripId: Long? = null
+
+    private val _trip = MediatorLiveData<TripEntity?>()
     val trip: LiveData<TripEntity?> get() = _trip
 
     private val _coordinates = MutableLiveData<List<CoordinateEntity>>()
@@ -33,9 +35,17 @@ class TripDetailViewModel  @Inject constructor (
     val pois: LiveData<List<POIEntity>> get() = _pois
 
     fun loadTrip(tripId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val loadedTrip = tripRepository.getTripById(tripId)
-            _trip.postValue(loadedTrip)
+        // Remove previous observation if exists
+        currentTripId?.let { oldId ->
+            _trip.removeSource(tripRepository.getTripById(oldId))
+        }
+
+        currentTripId = tripId
+
+        // Add new observation, this will automatically update when repository data changes
+        val tripLiveData = tripRepository.getTripById(tripId)
+        _trip.addSource(tripLiveData) { tripEntity ->
+            _trip.value = tripEntity
         }
     }
 
@@ -90,7 +100,6 @@ class TripDetailViewModel  @Inject constructor (
 
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
-            _trip.postValue(updated)
         }
     }
 
@@ -98,9 +107,16 @@ class TripDetailViewModel  @Inject constructor (
         val updated = _trip.value?.copy(status = TripStatus.FINISHED, endDate = System.currentTimeMillis()) ?: return
         viewModelScope.launch(Dispatchers.IO) {
             tripRepository.updateTrip(updated)
-            _trip.postValue(updated)
         }
 
         tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up any remaining sources
+        currentTripId?.let { tripId ->
+            _trip.removeSource(tripRepository.getTripById(tripId))
+        }
     }
 }

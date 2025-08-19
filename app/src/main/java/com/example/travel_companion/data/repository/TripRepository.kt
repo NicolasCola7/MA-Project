@@ -28,7 +28,7 @@ class TripRepository @Inject constructor(
         tripDao.deleteTrips(tripIds)
     }
 
-    suspend fun getTripById(id: Long): TripEntity? {
+    fun getTripById(id: Long): LiveData<TripEntity?> {
         return tripDao.getTripById(id)
     }
 
@@ -47,19 +47,4 @@ class TripRepository @Inject constructor(
     suspend fun getTripsByStatusSync(status: TripStatus): List<TripEntity> {
         return tripDao.getTripsByStatusSync(status)
     }
-
-    suspend fun updatePlannedTripsToStarted(currentTime: Long): Int {
-        return tripDao.updatePlannedTripsToStarted(currentTime)
-    }
-
-    suspend fun updateStartedTripsToFinished(currentTime: Long): Int {
-        return tripDao.updateStartedTripsToFinished(currentTime)
-    }
-
-    suspend fun forceUpdateAllStatuses() {
-        val currentTime = System.currentTimeMillis()
-        updatePlannedTripsToStarted(currentTime)
-        updateStartedTripsToFinished(currentTime)
-    }
-
 }

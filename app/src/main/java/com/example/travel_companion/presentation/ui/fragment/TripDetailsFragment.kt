@@ -44,6 +44,7 @@ import com.example.travel_companion.domain.model.TripStatus
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.PointOfInterest
+import java.util.Locale
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -162,6 +163,7 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun initTripData() {
         viewModel.loadCoordinates(args.tripId)
         viewModel.loadPOIs(args.tripId)
@@ -199,11 +201,10 @@ class TripDetailsFragment: Fragment() {
 
         trackedDistance.observe(viewLifecycleOwner) {
             if(trackedDistance.value!! >= 1000.00) {
-                val distanceInKM = "%.2f".format(trackedDistance.value!! / 1000.0)
-                    .toDouble()
-                binding.tvDistance.text = distanceInKM.toString() + " Km"
+                val distanceInKM = String.format(Locale.US, "%.2f", trackedDistance.value!! / 1000.0)
+                binding.tvDistance.text = "$distanceInKM Km"
             } else {
-                binding.tvDistance.text = trackedDistance.value!!.toInt().toString() + " m"
+                binding.tvDistance.text = "${trackedDistance.value!!.toInt()} m"
             }
         }
     }
@@ -218,11 +219,9 @@ class TripDetailsFragment: Fragment() {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
-               // Timber.d("new")
             }
 
             previousTimestamp = coordinate.timestamp
-           // Timber.d(Utils.timeFormat.format(previousTimestamp).toString())
             previousCoordinate = LatLng(coordinate.latitude, coordinate.longitude)
             currentPolyline.add(previousCoordinate)
         }
@@ -232,7 +231,7 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun subscribeToObservers() {
-        trackingObserver = Observer<Boolean> { isTracking ->
+        trackingObserver = Observer { isTracking ->
             if (isResumed) {
                 updateTracking(isTracking)
             } else {
@@ -240,7 +239,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
-        pathPointsObserver = Observer<Polylines> { pathPointsList ->
+        pathPointsObserver = Observer { pathPointsList ->
             pathPoints = pathPointsList
 
             refreshTrackedDistance()
@@ -280,7 +279,6 @@ class TripDetailsFragment: Fragment() {
             val lat = pathPoints.last().last().latitude
             val long = pathPoints.last().last().longitude
             viewModel.insertCoordinate(lat, long, args.tripId)
-            Timber.d("Stored")
         }
     }
 
@@ -292,14 +290,23 @@ class TripDetailsFragment: Fragment() {
         binding.tvDistance.text = trip.trackedDistance.toString()
         binding.tvStatus.text = trip.status.getValue()
 
-        if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
-            binding.btnFinishTrip.visibility = View.GONE
-            binding.btnToggleTracking.visibility = View.GONE
-        }
-
         if(isTracking) {
             binding.btnToggleTracking.visibility = View.VISIBLE
             binding.btnToggleTracking.text = "Ferma"
+        }
+
+        if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
+            binding.btnFinishTrip.visibility = View.GONE
+            binding.btnToggleTracking.visibility = View.GONE
+        } else {
+            binding.btnToggleTracking.visibility = View.VISIBLE
+            binding.btnFinishTrip.visibility = View.VISIBLE
+        }
+
+        // if is tracking and the scheduler terminates the trip, then stop the service
+        if (isTracking && trip.status == TripStatus.FINISHED) {
+            viewModel.updateTripDistance(trackedDistance.value!!)
+            sendCommandToService("ACTION_STOP_SERVICE")
         }
     }
 
@@ -313,11 +320,15 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if(!isTracking) {
             binding.btnToggleTracking.text = "Traccia"
             binding.btnFinishTrip.visibility = View.VISIBLE
+        } else if(isTracking && viewModel.trip.value!!.status == TripStatus.FINISHED){
+            binding.btnFinishTrip.visibility = View.GONE
+            binding.btnToggleTracking.visibility = View.GONE
         } else {
             binding.btnToggleTracking.text = "Ferma"
             binding.btnFinishTrip.visibility = View.GONE
@@ -384,7 +395,6 @@ class TripDetailsFragment: Fragment() {
             it.action = action
             requireContext().startService(it)
         }
-
 
     private fun addGeofence(pos: LatLng, placeName: String) {
         val geofence = Geofence.Builder()
@@ -541,19 +551,18 @@ class TripDetailsFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        if (requireActivity().isFinishing) {
-            trackingObserver?.let {
-                TrackingService.isTracking.removeObserver(it)
-            }
-            pathPointsObserver?.let {
-                TrackingService.pathPoints.removeObserver(it)
-            }
-            sendCommandToService("ACTION_STOP_SERVICE")
-            viewModel.updateTripDistance(trackedDistance.value!!)
+        trackingObserver?.let {
+            TrackingService.isTracking.removeObserver(it)
         }
-
+        pathPointsObserver?.let {
+            TrackingService.pathPoints.removeObserver(it)
+        }
+        sendCommandToService("ACTION_STOP_SERVICE")
         viewModel.updateTripDistance(trackedDistance.value!!)
+
+
         super.onDestroyView()
+        _binding?.mapView?.onDestroy()
         _binding = null
     }
 }

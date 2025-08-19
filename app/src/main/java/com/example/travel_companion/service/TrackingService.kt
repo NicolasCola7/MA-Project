@@ -76,8 +76,6 @@ class TrackingService : LifecycleService() {
 
     private fun killService() {
         isTracking.postValue(false)
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(NOTIFICATION_ID)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopGeofencing()
         stopSelf()
@@ -248,6 +246,12 @@ class TrackingService : LifecycleService() {
                 Timber.d("Geofencing stop failed ${it.message}")
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 }
 
