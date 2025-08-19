@@ -97,6 +97,8 @@ class TripDetailsFragment: Fragment() {
         isFetching.observe(viewLifecycleOwner) {
             binding.mapView.getMapAsync {
                 map = it
+                map!!.clear()
+                
                 addAllPolylines()
 
                 for(poi in poiPoints) {
@@ -559,8 +561,6 @@ class TripDetailsFragment: Fragment() {
         }
         sendCommandToService("ACTION_STOP_SERVICE")
         viewModel.updateTripDistance(trackedDistance.value!!)
-
-
         super.onDestroyView()
         _binding?.mapView?.onDestroy()
         _binding = null
