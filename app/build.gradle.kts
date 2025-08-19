@@ -125,8 +125,8 @@ dependencies {
     implementation(libs.androidx.cardview)
 
     // TensorFlow Lite
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.v2140)  // Era 2.13.0
+    implementation(libs.tensorflow.lite.gpu.v2140)
     implementation(libs.tensorflow.lite.support)
 
     // Testing

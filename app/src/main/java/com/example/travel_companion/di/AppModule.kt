@@ -2,8 +2,11 @@ package com.example.travel_companion.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.travel_companion.data.local.dao.TripDao
 
 import com.example.travel_companion.data.local.database.AppDatabase
+import com.example.travel_companion.data.repository.TripPredictionRepository
+import com.example.travel_companion.util.TensorFlowTripPredictionEngine
 import com.example.travel_companion.util.TripPredictionEngine
 import dagger.Module
 import dagger.Provides
@@ -48,7 +51,18 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTravelPredictionEngine(): TripPredictionEngine {
-        return TripPredictionEngine()
+    fun provideTensorFlowPredictionEngine(
+        @ApplicationContext context: Context
+    ): TensorFlowTripPredictionEngine {
+        return TensorFlowTripPredictionEngine(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTripPredictionRepository(
+        tripDao: TripDao,
+        @ApplicationContext context: Context
+    ): TripPredictionRepository {
+        return TripPredictionRepository(tripDao, context)
     }
 }
