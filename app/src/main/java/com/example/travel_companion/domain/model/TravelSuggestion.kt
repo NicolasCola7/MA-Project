@@ -5,11 +5,9 @@ data class TravelSuggestion(
     val title: String,
     val description: String,
     val destination: String,
-    val estimatedDistance: Double,
     val type: String,
     val priority: SuggestionPriority,
     val reason: String, // Motivo del suggerimento
-    val imageUrl: String? = null
 )
 
 enum class SuggestionPriority {

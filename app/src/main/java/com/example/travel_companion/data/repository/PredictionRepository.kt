@@ -33,14 +33,6 @@ class PredictionRepository @Inject constructor(
         return suggestionsEngine.generateSuggestions(allTrips, prediction, upcomingTrips)
     }
 
-    suspend fun getPredictionInsights(): List<PredictionInsight> {
-        val prediction = calculateTravelPrediction()
-        val allTrips = getAllTripsSync()
-        val upcomingTrips = getTripsByStatusSync(TripStatus.PLANNED)
-
-        return generateInsights(prediction, allTrips, upcomingTrips)
-    }
-
     fun getPredictionFlow(): Flow<TravelPrediction> {
         // Converti LiveData in Flow e poi mappa le predizioni
         return tripDao.getAll().asFlow().map { trips ->
@@ -66,105 +58,5 @@ class PredictionRepository @Inject constructor(
         } catch (e: Exception) {
             emptyList()
         }
-    }
-
-    private fun generateInsights(
-        prediction: TravelPrediction,
-        allTrips: List<TripEntity>,
-        upcomingTrips: List<TripEntity>
-    ): List<PredictionInsight> {
-        val insights = mutableListOf<PredictionInsight>()
-
-        // Insight su trend
-        when (prediction.trend) {
-            TravelTrend.INCREASING -> {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.ACHIEVEMENT,
-                        message = "I tuoi viaggi sono in crescita! Continua così!",
-                        actionText = "Vedi statistiche",
-                        actionType = ActionType.VIEW_STATISTICS
-                    )
-                )
-            }
-            TravelTrend.DECREASING -> {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.WARNING,
-                        message = "I tuoi viaggi stanno diminuendo. Che ne dici di pianificare qualcosa?",
-                        actionText = "Scopri suggerimenti",
-                        actionType = ActionType.VIEW_SUGGESTIONS
-                    )
-                )
-            }
-            TravelTrend.STABLE -> {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.INFO,
-                        message = "Mantieni un ritmo costante nei viaggi. Ottimo equilibrio!",
-                        actionText = "Pianifica viaggio",
-                        actionType = ActionType.PLAN_TRIP
-                    )
-                )
-            }
-            TravelTrend.INSUFFICIENT_DATA -> {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.SUGGESTION,
-                        message = "Inizia a tracciare i tuoi viaggi per ottenere previsioni personalizzate!",
-                        actionText = "Pianifica primo viaggio",
-                        actionType = ActionType.PLAN_TRIP
-                    )
-                )
-            }
-        }
-
-        // Insight su previsioni
-        if (prediction.confidence > 0.7f) {
-            if (prediction.predictedTripsCount > 2) {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.ACHIEVEMENT,
-                        message = "Prevediamo ${prediction.predictedTripsCount} viaggi per il prossimo mese!",
-                        actionText = "Pianifica ora",
-                        actionType = ActionType.PLAN_TRIP
-                    )
-                )
-            } else if (prediction.predictedTripsCount == 0 && upcomingTrips.isEmpty()) {
-                insights.add(
-                    PredictionInsight(
-                        type = InsightType.SUGGESTION,
-                        message = "Il prossimo mese sembra libero. Perfetto per un'avventura!",
-                        actionText = "Esplora destinazioni",
-                        actionType = ActionType.VIEW_SUGGESTIONS
-                    )
-                )
-            }
-        }
-
-        // Insight su distanza
-        if (prediction.predictedDistance > 100.0) {
-            insights.add(
-                PredictionInsight(
-                    type = InsightType.INFO,
-                    message = "Previsione: ${String.format("%.1f", prediction.predictedDistance)} km il prossimo mese"
-                )
-            )
-        }
-
-        // Insight basati su stagione
-        val currentMonth = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)
-        if (currentMonth in 5..7 && upcomingTrips.isEmpty()) { // Estate (Giugno=5, Luglio=6, Agosto=7)
-            insights.add(
-                PredictionInsight(
-                    type = InsightType.SUGGESTION,
-                    message = "È estate! Il momento perfetto per esplorare la costa italiana",
-                    actionText = "Vedi destinazioni estive",
-                    actionType = ActionType.VIEW_SUGGESTIONS
-                )
-            )
-        }
-
-        return insights
     }
 }

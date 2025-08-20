@@ -3,7 +3,6 @@ package com.example.travel_companion.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.repository.PredictionRepository
-import com.example.travel_companion.domain.model.PredictionInsight
 import com.example.travel_companion.domain.model.TravelPrediction
 import com.example.travel_companion.domain.model.TravelSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,10 +20,6 @@ class PredictionViewModel @Inject constructor(
     val uiState: StateFlow<PredictionUiState> = _uiState.asStateFlow()
 
     private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
-    val suggestions: StateFlow<List<TravelSuggestion>> = _suggestions.asStateFlow()
-
-    private val _insights = MutableStateFlow<List<PredictionInsight>>(emptyList())
-    val insights: StateFlow<List<PredictionInsight>> = _insights.asStateFlow()
 
     companion object {
         private const val TAG = "PredictionViewModel"
@@ -46,15 +41,11 @@ class PredictionViewModel @Inject constructor(
                 // Carica suggerimenti
                 val suggestions = predictionRepository.getTravelSuggestions()
 
-                // Carica insights
-                val insights = predictionRepository.getPredictionInsights()
-
                 _uiState.value = _uiState.value.copy(
                     prediction = prediction,
                     isLoading = false
                 )
                 _suggestions.value = suggestions
-                _insights.value = insights
 
                 Timber.tag(TAG).d("Predizioni caricate: ${prediction.predictedTripsCount} viaggi, ${prediction.predictedDistance} km")
 

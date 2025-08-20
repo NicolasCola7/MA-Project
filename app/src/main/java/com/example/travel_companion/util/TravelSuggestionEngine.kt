@@ -8,51 +8,50 @@ class TravelSuggestionsEngine {
 
     private val destinationPool = listOf(
         // Esperienze culturali
-        SuggestionTemplate("Viaggio culturale", "Esplora musei e monumenti", "Cultura", 45.0, "Immergiti nella storia e nell'arte"),
-        SuggestionTemplate("Tour dei centri storici", "Passeggia tra vicoli antichi", "Cultura", 35.0, "Scopri l'architettura medievale"),
-        SuggestionTemplate("Weekend artistico", "Visita gallerie e mostre", "Cultura", 40.0, "Arte contemporanea e classica"),
+        SuggestionTemplate("Viaggio culturale", "Esplora musei e monumenti", "Cultura", "Immergiti nella storia e nell'arte"),
+        SuggestionTemplate("Tour dei centri storici", "Passeggia tra vicoli antichi", "Cultura", "Scopri l'architettura medievale"),
+        SuggestionTemplate("Weekend artistico", "Visita gallerie e mostre", "Cultura", "Arte contemporanea e classica"),
 
         // Esperienze naturalistiche
-        SuggestionTemplate("Trekking in montagna", "Sentieri panoramici", "Natura", 80.0, "Aria pura e paesaggi mozzafiato"),
-        SuggestionTemplate("Escursione nei parchi", "Natura incontaminata", "Natura", 60.0, "Flora e fauna selvatica"),
-        SuggestionTemplate("Camminate nei boschi", "Percorsi immersi nel verde", "Natura", 50.0, "Relax nella natura"),
+        SuggestionTemplate("Trekking in montagna", "Sentieri panoramici", "Natura", "Aria pura e paesaggi mozzafiato"),
+        SuggestionTemplate("Escursione nei parchi", "Natura incontaminata", "Natura", "Flora e fauna selvatica"),
+        SuggestionTemplate("Camminate nei boschi", "Percorsi immersi nel verde", "Natura", "Relax nella natura"),
 
         // Esperienze marine
-        SuggestionTemplate("Vacanza al mare", "Relax in spiaggia", "Mare", 70.0, "Sole, sabbia e onde cristalline"),
-        SuggestionTemplate("Tour costiero", "Scopri borghi marinari", "Mare", 85.0, "Tradizioni marinare e panorami"),
-        SuggestionTemplate("Weekend sul lungomare", "Passeggiate vista oceano", "Mare", 65.0, "Tramonti indimenticabili"),
+        SuggestionTemplate("Vacanza al mare", "Relax in spiaggia", "Mare","Sole, sabbia e onde cristalline"),
+        SuggestionTemplate("Tour costiero", "Scopri borghi marinari", "Mare", "Tradizioni marinare e panorami"),
+        SuggestionTemplate("Weekend sul lungomare", "Passeggiate vista oceano", "Mare", "Tramonti indimenticabili"),
 
         // Esperienze gastronomiche
-        SuggestionTemplate("Tour enogastronomico", "Sapori locali autentici", "Gastronomia", 40.0, "Cucina tradizionale e vini"),
-        SuggestionTemplate("Mercati e sagre", "Prodotti tipici regionali", "Gastronomia", 30.0, "Tradizioni culinarie locali"),
-        SuggestionTemplate("Cooking class", "Impara ricette locali", "Gastronomia", 25.0, "Corso di cucina tradizionale"),
+        SuggestionTemplate("Tour enogastronomico", "Sapori locali autentici", "Gastronomia", "Cucina tradizionale e vini"),
+        SuggestionTemplate("Mercati e sagre", "Prodotti tipici regionali", "Gastronomia", "Tradizioni culinarie locali"),
+        SuggestionTemplate("Cooking class", "Impara ricette locali", "Gastronomia", "Corso di cucina tradizionale"),
 
         // Esperienze romantiche
-        SuggestionTemplate("Fuga romantica", "Momenti a due speciali", "Romantico", 55.0, "Atmosfere suggestive e intime"),
-        SuggestionTemplate("Cena con vista", "Ristoranti panoramici", "Romantico", 45.0, "Cene romantiche indimenticabili"),
-        SuggestionTemplate("Weekend spa", "Relax di coppia", "Romantico", 60.0, "Benessere e intimità"),
+        SuggestionTemplate("Fuga romantica", "Momenti a due speciali", "Romantico", "Atmosfere suggestive e intime"),
+        SuggestionTemplate("Cena con vista", "Ristoranti panoramici", "Romantico", "Cene romantiche indimenticabili"),
+        SuggestionTemplate("Weekend spa", "Relax di coppia", "Romantico", "Benessere e intimità"),
 
         // Esperienze business/urban
-        SuggestionTemplate("City break", "Scopri metropoli dinamiche", "Business", 40.0, "Grattacieli e vita urbana"),
-        SuggestionTemplate("Shopping tour", "Quartieri della moda", "Business", 35.0, "Negozi e design contemporaneo"),
-        SuggestionTemplate("Eventi e fiere", "Networking e cultura", "Business", 50.0, "Opportunità professionali"),
+        SuggestionTemplate("City break", "Scopri metropoli dinamiche", "Business", "Grattacieli e vita urbana"),
+        SuggestionTemplate("Shopping tour", "Quartieri della moda", "Business", "Negozi e design contemporaneo"),
+        SuggestionTemplate("Eventi e fiere", "Networking e cultura", "Business", "Opportunità professionali"),
 
         // Esperienze relax
-        SuggestionTemplate("Ritiro benessere", "Pace e tranquillità", "Relax", 65.0, "Terme e centri benessere"),
-        SuggestionTemplate("Vacanza slow", "Ritmi rilassati", "Relax", 55.0, "Disconnetti e ricaricati"),
-        SuggestionTemplate("Meditazione in natura", "Mindfulness all'aperto", "Relax", 45.0, "Equilibrio interiore"),
+        SuggestionTemplate("Ritiro benessere", "Pace e tranquillità", "Relax", "Terme e centri benessere"),
+        SuggestionTemplate("Vacanza slow", "Ritmi rilassati", "Relax", "Disconnetti e ricaricati"),
+        SuggestionTemplate("Meditazione in natura", "Mindfulness all'aperto", "Relax", "Equilibrio interiore"),
 
         // Esperienze avventura
-        SuggestionTemplate("Weekend avventura", "Attività adrenaliniche", "Avventura", 75.0, "Sport estremi e sfide"),
-        SuggestionTemplate("Esplorazione outdoor", "Attività all'aria aperta", "Avventura", 85.0, "Kayak, arrampicata, cycling"),
-        SuggestionTemplate("Safari urbano", "Scopri angoli nascosti", "Avventura", 30.0, "Esplora luoghi insoliti")
+        SuggestionTemplate("Weekend avventura", "Attività adrenaliniche", "Avventura", "Sport estremi e sfide"),
+        SuggestionTemplate("Esplorazione outdoor", "Attività all'aria aperta", "Avventura", "Kayak, arrampicata, cycling"),
+        SuggestionTemplate("Safari urbano", "Scopri angoli nascosti", "Avventura", "Esplora luoghi insoliti")
     )
 
     private data class SuggestionTemplate(
         val destination: String,
         val title: String,
         val type: String,
-        val estimatedDistance: Double,
         val description: String
     )
 
@@ -80,7 +79,7 @@ class TravelSuggestionsEngine {
         }
 
         // 2. Suggerimenti basati su preferenze
-        suggestions.addAll(generatePersonalizedSuggestions(userProfile, trips))
+        suggestions.addAll(generatePersonalizedSuggestions(userProfile))
 
         // 3. Suggerimenti stagionali
         suggestions.addAll(generateSeasonalSuggestions())
@@ -184,7 +183,6 @@ class TravelSuggestionsEngine {
 
         return destinationPool
             .filter { !userProfile.visitedDestinations.contains(it.destination) }
-            .filter { it.estimatedDistance <= userProfile.averageDistance * 1.5 }
             .take(3)
             .mapIndexed { index, template ->
                 TravelSuggestion(
@@ -192,7 +190,6 @@ class TravelSuggestionsEngine {
                     title = template.title,
                     description = template.description,
                     destination = template.destination,
-                    estimatedDistance = template.estimatedDistance,
                     type = template.type,
                     priority = SuggestionPriority.HIGH,
                     reason = messages[index % messages.size]
@@ -201,17 +198,14 @@ class TravelSuggestionsEngine {
     }
 
     private fun generatePersonalizedSuggestions(
-        userProfile: UserProfile,
-        trips: List<TripEntity>
+        userProfile: UserProfile
     ): List<TravelSuggestion> {
         return destinationPool
             .filter { template ->
                 // Filtra per tipo preferito
                 userProfile.preferredTypes.contains(template.type) &&
                         // Non già visitato
-                        !userProfile.visitedDestinations.contains(template.destination) &&
-                        // Distanza appropriata
-                        template.estimatedDistance <= userProfile.averageDistance * 2
+                        !userProfile.visitedDestinations.contains(template.destination)
             }
             .take(3)
             .map { template ->
@@ -220,7 +214,6 @@ class TravelSuggestionsEngine {
                     title = template.title,
                     description = template.description,
                     destination = template.destination,
-                    estimatedDistance = template.estimatedDistance,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
                     reason = "Basato sulle tue preferenze per ${template.type.lowercase()}"
@@ -249,7 +242,6 @@ class TravelSuggestionsEngine {
                     title = template.title,
                     description = template.description,
                     destination = template.destination,
-                    estimatedDistance = template.estimatedDistance,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
                     reason = "Ideale per questa stagione"
@@ -266,7 +258,6 @@ class TravelSuggestionsEngine {
         // Se la previsione è bassa, suggerisci esperienze brevi
         if (prediction.predictedTripsCount < 2) {
             val shortExperiences = destinationPool
-                .filter { it.estimatedDistance <= 50.0 }
                 .filter { !userProfile.visitedDestinations.contains(it.destination) }
                 .take(1)
 
@@ -277,7 +268,6 @@ class TravelSuggestionsEngine {
                         title = "Weekend ${template.destination.lowercase()}",
                         description = template.description,
                         destination = template.destination,
-                        estimatedDistance = template.estimatedDistance,
                         type = template.type,
                         priority = SuggestionPriority.LOW,
                         reason = "Perfetto per iniziare a viaggiare di più"

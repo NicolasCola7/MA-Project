@@ -15,13 +15,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentHomeBinding
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.ui.adapter.HomeSuggestionsAdapter
-import com.example.travel_companion.presentation.ui.adapter.InsightsAdapter
+import com.example.travel_companion.presentation.adapter.SuggestionsAdapter
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -32,12 +29,7 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: HomeViewModel by viewModels()
 
-    private lateinit var suggestionsAdapter: HomeSuggestionsAdapter
-    private lateinit var insightsAdapter: InsightsAdapter
-
-    companion object {
-        private const val TAG = "HomeFragment"
-    }
+    private lateinit var suggestionsAdapter: SuggestionsAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,58 +44,16 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        suggestionsAdapter = SuggestionsAdapter()
         setupRecyclerViews()
-        setupClickListeners()
         observeViewModel()
     }
 
+
     private fun setupRecyclerViews() {
-        // Setup Suggestions RecyclerView
-        suggestionsAdapter = HomeSuggestionsAdapter { suggestion ->
-            viewModel.onSuggestionClicked(suggestion)
-
-            // Mostra Snackbar con azione per pianificare
-            Snackbar.make(
-                binding.root,
-                "Pianifica viaggio a ${suggestion.destination}?",
-                Snackbar.LENGTH_LONG
-            ).setAction("Pianifica") {
-                // TODO: Naviga verso AddTripFragment con dati pre-compilati
-                // val bundle = bundleOf(
-                //     "destination" to suggestion.destination,
-                //     "type" to suggestion.type,
-                //     "estimated_distance" to suggestion.estimatedDistance
-                // )
-                // findNavController().navigate(R.id.action_home_to_addTrip, bundle)
-
-                Timber.tag(TAG).d("Navigating to trip planning for ${suggestion.destination}")
-            }.show()
-        }
-
         binding.suggestionsRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = suggestionsAdapter
-        }
-
-        // Setup Insights RecyclerView
-        insightsAdapter = InsightsAdapter { insight ->
-            viewModel.onInsightActionClicked(insight)
-        }
-
-        binding.insightsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            adapter = insightsAdapter
-        }
-    }
-
-    private fun setupClickListeners() {
-        binding.btnViewAllSuggestions.setOnClickListener {
-            viewModel.onViewAllSuggestionsClicked()
-
-            // TODO: Naviga verso StatisticsFragment con tab Previsioni selezionata
-            // findNavController().navigate(R.id.action_home_to_statistics)
-
-            Timber.tag(TAG).d("Navigating to all suggestions")
         }
     }
 
@@ -123,17 +73,6 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.suggestions.collect { suggestions ->
                 suggestionsAdapter.submitList(suggestions)
-
-                // Aggiorna il contatore
-                binding.suggestionsCount.text = suggestions.size.toString()
-                binding.suggestionsCount.visibility = if (suggestions.isNotEmpty()) View.VISIBLE else View.GONE
-            }
-        }
-
-        // Osserva gli insights
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.insights.collect { insights ->
-                insightsAdapter.submitList(insights)
             }
         }
 
@@ -144,11 +83,6 @@ class HomeFragment : Fragment() {
                 binding.suggestionsSection.visibility =
                     if (uiState.showSuggestions) View.VISIBLE else View.GONE
 
-                binding.insightsSection.visibility =
-                    if (uiState.showInsights) View.VISIBLE else View.GONE
-
-                binding.btnViewAllSuggestions.visibility =
-                    if (uiState.showSuggestions) View.VISIBLE else View.GONE
             }
         }
     }
@@ -205,15 +139,9 @@ class HomeFragment : Fragment() {
         }
 
         binding.cardTrip.setOnClickListener {
-            // Navigazione ai dettagli
-            try {
-                findNavController().navigate(
-                    HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
-                )
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Errore nella navigazione ai dettagli del viaggio")
-                Snackbar.make(binding.root, "Errore nell'apertura dei dettagli", Snackbar.LENGTH_SHORT).show()
-            }
+            findNavController().navigate(
+                HomeFragmentDirections.actionTripsFragmentToTripDetailFragment(trip.id)
+            )
         }
     }
 

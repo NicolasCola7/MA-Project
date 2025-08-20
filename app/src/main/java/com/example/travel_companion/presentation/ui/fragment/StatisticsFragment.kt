@@ -15,7 +15,6 @@ import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentStatisticsBinding
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.presentation.ui.adapter.InsightsAdapter
 import com.example.travel_companion.presentation.viewmodel.StatisticsViewModel
 import com.example.travel_companion.presentation.viewmodel.PredictionViewModel
 import com.github.mikephil.charting.components.XAxis
@@ -51,16 +50,12 @@ class StatisticsFragment : Fragment() {
     private var googleMap: GoogleMap? = null
     private var heatmapTileOverlay: TileOverlay? = null
 
-    // Variabile per tracciare la vista corrente - AGGIORNATA con 3 opzioni
     private var currentView = ViewType.MAP
 
     // Cache dei dati per ripristinare la heatmap
     private var cachedTrips: List<TripEntity> = emptyList()
 
-    // Adapter per predictions
-    private lateinit var insightsAdapter: InsightsAdapter
-
-    enum class ViewType { MAP, STATS, PREDICTIONS } // AGGIUNTO PREDICTIONS
+    enum class ViewType { MAP, STATS, PREDICTIONS }
 
     companion object {
         private const val TAG = "StatisticsFragment"
@@ -80,8 +75,7 @@ class StatisticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupMapView()
-        setupToggleButtons() // AGGIORNATO per 3 pulsanti
-        setupRecyclerViews()
+        setupToggleButtons()
         setupObservers()
         setupBarChart()
 
@@ -110,32 +104,6 @@ class StatisticsFragment : Fragment() {
             if (currentView != ViewType.PREDICTIONS) {
                 showView(ViewType.PREDICTIONS)
             }
-        }
-    }
-
-    private fun setupRecyclerViews() {
-        // Setup Insights RecyclerView
-        insightsAdapter = InsightsAdapter { insight ->
-            // Handle insight action clicks
-            when (insight.actionType) {
-                com.example.travel_companion.domain.model.ActionType.PLAN_TRIP -> {
-                    // Navigate to trip planning
-                    Timber.tag(TAG).d("Navigate to trip planning")
-                }
-                com.example.travel_companion.domain.model.ActionType.VIEW_SUGGESTIONS -> {
-                    // Scroll to suggestions o switch alla home
-                    Timber.tag(TAG).d("Navigate to suggestions")
-                }
-                com.example.travel_companion.domain.model.ActionType.VIEW_STATISTICS -> {
-                    showView(ViewType.STATS)
-                }
-                else -> {}
-            }
-        }
-
-        binding.insightsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            adapter = insightsAdapter
         }
     }
 
@@ -249,14 +217,6 @@ class StatisticsFragment : Fragment() {
 
                 // Mostra/nascondi loading per predictions
                 binding.predictionsProgressBar?.visibility = if (uiState.isLoading) View.VISIBLE else View.GONE
-            }
-        }
-
-        // AGGIUNTO: Osserva insights
-        viewLifecycleOwner.lifecycleScope.launch {
-            predictionViewModel.insights.collect { insights ->
-                insightsAdapter.submitList(insights)
-                binding.insightsSection?.visibility = if (insights.isNotEmpty()) View.VISIBLE else View.GONE
             }
         }
     }

@@ -4,7 +4,6 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.PredictionRepository
 import com.example.travel_companion.data.repository.TripRepository
-import com.example.travel_companion.domain.model.PredictionInsight
 import com.example.travel_companion.domain.model.TravelSuggestion
 import com.example.travel_companion.domain.model.TripStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,10 +54,6 @@ class HomeViewModel @Inject constructor(
     private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
     val suggestions: StateFlow<List<TravelSuggestion>> = _suggestions.asStateFlow()
 
-    // StateFlow per insights rapidi
-    private val _insights = MutableStateFlow<List<PredictionInsight>>(emptyList())
-    val insights: StateFlow<List<PredictionInsight>> = _insights.asStateFlow()
-
     // StateFlow per UI state
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -88,21 +83,11 @@ class HomeViewModel @Inject constructor(
                 val allSuggestions = predictionRepository.getTravelSuggestions()
                 val homeSuggestions = allSuggestions.take(MAX_HOME_SUGGESTIONS)
 
-                // Carica insights rapidi solo se non ci sono viaggi attivi
-                val shouldShowInsights = tripToShow.value == null
-                val homeInsights = if (shouldShowInsights) {
-                    predictionRepository.getPredictionInsights().take(2)
-                } else {
-                    emptyList()
-                }
-
                 _suggestions.value = homeSuggestions
-                _insights.value = homeInsights
 
                 _uiState.value = _uiState.value.copy(
                     isLoadingSuggestions = false,
                     showSuggestions = homeSuggestions.isNotEmpty(),
-                    showInsights = homeInsights.isNotEmpty(),
                     error = null
                 )
 
@@ -127,48 +112,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun onSuggestionClicked(suggestion: TravelSuggestion) {
-        // Analytics o tracking del click
-        Timber.tag(TAG).d("Suggestion clicked: ${suggestion.destination}")
-
-        // Potresti emettere un evento per navigare verso la creazione del viaggio
-        // con i dati pre-compilati del suggerimento
-    }
-
-    fun onViewAllSuggestionsClicked() {
-        // Naviga verso la sezione completa dei suggerimenti (probabilmente nelle statistiche)
-        Timber.tag(TAG).d("View all suggestions clicked")
-    }
-
-    fun onInsightActionClicked(insight: PredictionInsight) {
-        // Gestisce le azioni degli insights
-        when (insight.actionType) {
-            com.example.travel_companion.domain.model.ActionType.PLAN_TRIP -> {
-                // Naviga verso pianificazione viaggio
-                Timber.tag(TAG).d("Navigate to trip planning")
-            }
-            com.example.travel_companion.domain.model.ActionType.VIEW_SUGGESTIONS -> {
-                // Mostra tutti i suggerimenti
-                onViewAllSuggestionsClicked()
-            }
-            com.example.travel_companion.domain.model.ActionType.VIEW_STATISTICS -> {
-                // Naviga verso statistiche
-                Timber.tag(TAG).d("Navigate to statistics")
-            }
-            null -> {
-                // Nessuna azione
-            }
-        }
-    }
-
     data class HomeUiState(
         val isLoadingSuggestions: Boolean = false,
         val showSuggestions: Boolean = false,
-        val showInsights: Boolean = false,
         val error: String? = null
     )
 }
