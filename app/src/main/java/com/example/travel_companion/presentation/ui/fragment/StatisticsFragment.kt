@@ -10,7 +10,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentStatisticsBinding
@@ -23,6 +22,9 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.highlight.Highlight
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
@@ -54,8 +56,10 @@ class StatisticsFragment : Fragment() {
 
     // Cache dei dati per ripristinare la heatmap
     private var cachedTrips: List<TripEntity> = emptyList()
+    // 12 mesi + 1 per la predizione
+    private var monthlyTripsData: IntArray = IntArray(13)
 
-    enum class ViewType { MAP, STATS, PREDICTIONS }
+    enum class ViewType { MAP, STATS }
 
     companion object {
         private const val TAG = "StatisticsFragment"
@@ -98,23 +102,14 @@ class StatisticsFragment : Fragment() {
                 showView(ViewType.STATS)
             }
         }
-
-        // AGGIUNTO: Handler per il pulsante Previsioni
-        binding.btnPredictions.setOnClickListener {
-            if (currentView != ViewType.PREDICTIONS) {
-                showView(ViewType.PREDICTIONS)
-            }
-        }
     }
 
-    // AGGIORNATO: Gestisce 3 viste invece di 2
     private fun showView(viewType: ViewType) {
         currentView = viewType
 
         // Nascondi tutte le viste
         binding.mapView.visibility = View.GONE
         binding.statsContainer.visibility = View.GONE
-        binding.predictionsContainer.visibility = View.GONE
 
         // Mostra la vista selezionata
         when (viewType) {
@@ -126,16 +121,11 @@ class StatisticsFragment : Fragment() {
                 binding.statsContainer.visibility = View.VISIBLE
                 updateButtonStyles(1)
             }
-            ViewType.PREDICTIONS -> {
-                binding.predictionsContainer.visibility = View.VISIBLE
-                updateButtonStyles(2)
-            }
         }
     }
 
-    // AGGIORNATO: Gestisce 3 pulsanti invece di 2
     private fun updateButtonStyles(selectedIndex: Int) {
-        val buttons = listOf(binding.btnMap, binding.btnStats, binding.btnPredictions)
+        val buttons = listOf(binding.btnMap, binding.btnStats)
 
         buttons.forEachIndexed { index, button ->
             if (index == selectedIndex) {
@@ -197,15 +187,21 @@ class StatisticsFragment : Fragment() {
                 cachedTrips = trips
 
                 updateHeatmap(trips)
-                updateMonthlyChart(trips)
+                monthlyTripsData = calculateMonthlyTrips(trips)
                 updateStatisticsCards(trips)
             }
         }
 
-        // AGGIUNTO: Osserva le predizioni
+        // Osserva le predizioni
         viewLifecycleOwner.lifecycleScope.launch {
             predictionViewModel.uiState.collect { uiState ->
-                updatePredictionCards(uiState.prediction)
+                // Aggiungi la predizione ai dati mensili
+                if (uiState.prediction != null) {
+                    monthlyTripsData[12] = uiState.prediction.predictedTripsCount
+                    updateMonthlyChart(monthlyTripsData)
+                } else {
+                    updateMonthlyChart(monthlyTripsData)
+                }
 
                 if (uiState.error != null) {
                     Snackbar.make(binding.root, uiState.error, Snackbar.LENGTH_LONG)
@@ -216,58 +212,13 @@ class StatisticsFragment : Fragment() {
                 }
 
                 // Mostra/nascondi loading per predictions
-                binding.predictionsProgressBar?.visibility = if (uiState.isLoading) View.VISIBLE else View.GONE
+                binding.predictionsProgressBar.visibility = if (uiState.isLoading) View.VISIBLE else View.GONE
             }
         }
     }
 
-    // AGGIUNTO: Metodo per aggiornare le cards delle predizioni
-    @SuppressLint("SetTextI18n")
-    private fun updatePredictionCards(prediction: com.example.travel_companion.domain.model.TravelPrediction?) {
-        prediction?.let { pred ->
-            binding.apply {
-                // Previsione viaggi
-                predictedTripsText?.text = pred.predictedTripsCount.toString()
-                predictedTripsSubtext?.text = "viaggi previsti"
-
-                // Previsione distanza
-                if (pred.predictedDistance < 1.0) {
-                    predictedDistanceText?.text = "0"
-                    predictedDistanceSubtext?.text = "km previsti"
-                } else {
-                    predictedDistanceText?.text = String.format("%.0f", pred.predictedDistance)
-                    predictedDistanceSubtext?.text = "km previsti"
-                }
-
-                // Indicatore di confidenza
-                val confidencePercent = (pred.confidence * 100).toInt()
-                confidenceText?.text = "$confidencePercent%"
-                confidenceSubtext?.text = "affidabilità"
-
-                // Colore basato sulla confidenza
-                val confidenceColor = when {
-                    pred.confidence > 0.7f -> ContextCompat.getColor(requireContext(), R.color.success_color)
-                    pred.confidence > 0.4f -> ContextCompat.getColor(requireContext(), R.color.warning_color)
-                    else -> ContextCompat.getColor(requireContext(), R.color.error_color)
-                }
-                confidenceText?.setTextColor(confidenceColor)
-
-                // Trend indicator
-                val trendText = when (pred.trend) {
-                    com.example.travel_companion.domain.model.TravelTrend.INCREASING -> "In crescita"
-                    com.example.travel_companion.domain.model.TravelTrend.DECREASING -> "In calo"
-                    com.example.travel_companion.domain.model.TravelTrend.STABLE -> "Stabile"
-                    com.example.travel_companion.domain.model.TravelTrend.INSUFFICIENT_DATA -> "Dati insufficienti"
-                }
-                trendIndicatorText?.text = trendText
-            }
-        }
-    }
-
-    // Mantieni tutti i metodi esistenti per heatmap, chart, etc.
     private fun updateHeatmap(trips: List<TripEntity>) {
         googleMap?.let { map ->
-            // Rimuovi tutti i marker esistenti e la heatmap
             map.clear()
             heatmapTileOverlay?.remove()
             heatmapTileOverlay = null
@@ -365,11 +316,26 @@ class StatisticsFragment : Fragment() {
             setDrawBarShadow(false)
             setDrawValueAboveBar(true)
 
+            // Aggiungi il listener per i click sui mesi
+            setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+                override fun onValueSelected(e: Entry?, h: Highlight?) {
+                    if (e != null) {
+                        val monthIndex = e.x.toInt()
+                        updatePredictionCardsForMonth(monthIndex)
+                    }
+                }
+
+                override fun onNothingSelected() {
+                    // Mostra le statistiche generali quando nessun mese è selezionato
+                    resetPredictionCards()
+                }
+            })
+
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 setDrawGridLines(false)
                 granularity = 1f
-                labelCount = 12
+                labelCount = 13 // 12 mesi + 1 per la predizione
             }
 
             axisLeft.apply {
@@ -393,14 +359,22 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    private fun updateMonthlyChart(trips: List<TripEntity>) {
-        val monthlyData = calculateMonthlyTrips(trips)
+    private fun updateMonthlyChart(monthlyData: IntArray) {
         val entries = monthlyData.mapIndexed { index, count ->
             BarEntry(index.toFloat(), count.toFloat())
         }
 
         val dataSet = BarDataSet(entries, "Viaggi per Mese").apply {
-            color = Color.parseColor("#2196F3")
+            // Colori diversi per dati storici e predizione
+            colors = monthlyData.mapIndexed { index, _ ->
+                if (index == 12) {
+                    // Colore arancione per la predizione
+                    Color.parseColor("#FF9800")
+                } else {
+                    // Colore blu per i dati storici
+                    Color.parseColor("#2196F3")
+                }
+            }
             valueTextColor = Color.BLACK
             valueTextSize = 12f
             // Formatter personalizzato per mostrare solo valori > 0 sulle barre
@@ -420,12 +394,12 @@ class StatisticsFragment : Fragment() {
 
         binding.monthlyChart.apply {
             data = barData
-            // Formatter personalizzato per l'asse X per mostrare solo le etichette dei mesi con dati
-            xAxis.valueFormatter = object : IndexAxisValueFormatter(getMonthLabels()) {
+            // Formatter personalizzato per l'asse X
+            xAxis.valueFormatter = object : IndexAxisValueFormatter(getMonthLabelsWithPrediction()) {
                 override fun getAxisLabel(value: Float, axis: com.github.mikephil.charting.components.AxisBase?): String {
                     val index = value.toInt()
                     return if (index >= 0 && index < monthlyData.size && monthlyData[index] > 0) {
-                        getMonthLabels()[index]
+                        getMonthLabelsWithPrediction()[index]
                     } else {
                         ""
                     }
@@ -433,6 +407,87 @@ class StatisticsFragment : Fragment() {
             }
             animateY(1000)
             invalidate()
+        }
+
+        // Mostra le statistiche di default (mese corrente o generale)
+        resetPredictionCards()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updatePredictionCardsForMonth(monthIndex: Int) {
+        if (monthIndex == 12) {
+            // Mese predetto - mostra le predizioni
+            viewLifecycleOwner.lifecycleScope.launch {
+                predictionViewModel.uiState.collect { uiState ->
+                    uiState.prediction?.let { pred ->
+                        binding.apply {
+                            // Viaggi previsti
+                            predictedTripsText.text = pred.predictedTripsCount.toString()
+                            predictedTripsSubtext.text = "viaggi previsti"
+
+                            // Distanza prevista
+                            if (pred.predictedDistance < 1.0) {
+                                predictedDistanceText.text = "0"
+                                predictedDistanceSubtext.text = "km previsti"
+                            } else {
+                                predictedDistanceText.text = String.format("%.0f", pred.predictedDistance)
+                                predictedDistanceSubtext.text = "km previsti"
+                            }
+
+                            // Confidenza
+                            val confidencePercent = (pred.confidence * 100).toInt()
+                            confidenceText.text = "$confidencePercent%"
+                            confidenceSubtext.text = "affidabilità"
+
+                            // Colore basato sulla confidenza
+                            val confidenceColor = when {
+                                pred.confidence > 0.7f -> ContextCompat.getColor(requireContext(), R.color.success_color)
+                                pred.confidence > 0.4f -> ContextCompat.getColor(requireContext(), R.color.warning_color)
+                                else -> ContextCompat.getColor(requireContext(), R.color.error_color)
+                            }
+                            confidenceText.setTextColor(confidenceColor)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Mese storico - mostra le statistiche per quel mese
+            val tripsInMonth = monthlyTripsData[monthIndex]
+
+            // Calcola le statistiche per il mese selezionato dai dati cached
+            val monthTrips = getTripsForMonth(monthIndex)
+            val totalDistance = monthTrips.sumOf { it.trackedDistance }
+
+            binding.apply {
+                predictedTripsText.text = tripsInMonth.toString()
+                predictedTripsSubtext.text = "viaggi effettuati"
+
+                if (totalDistance < 1000) {
+                    predictedDistanceText.text = String.format("%.0f", totalDistance)
+                    predictedDistanceSubtext.text = "metri percorsi"
+                } else {
+                    predictedDistanceText.text = String.format("%.1f", totalDistance / 1000.0)
+                    predictedDistanceSubtext.text = "km percorsi"
+                }
+
+                confidenceText.text = "100%"
+                confidenceSubtext.text = "dato reale"
+                confidenceText.setTextColor(ContextCompat.getColor(requireContext(), R.color.success_color))
+            }
+        }
+    }
+
+    private fun resetPredictionCards() {
+        // Mostra le statistiche generali
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
+        updatePredictionCardsForMonth(currentMonth)
+    }
+
+    private fun getTripsForMonth(monthIndex: Int): List<TripEntity> {
+        val calendar = Calendar.getInstance()
+        return cachedTrips.filter { trip ->
+            calendar.timeInMillis = trip.startDate
+            calendar.get(Calendar.MONTH) == monthIndex && trip.status == TripStatus.FINISHED
         }
     }
 
@@ -462,7 +517,7 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun calculateMonthlyTrips(trips: List<TripEntity>): IntArray {
-        val monthlyCount = IntArray(12)
+        val monthlyCount = IntArray(13) // 12 mesi + 1 per la predizione
         val calendar = Calendar.getInstance()
 
         trips.filter { it.status == TripStatus.FINISHED }.forEach { trip ->
@@ -474,10 +529,18 @@ class StatisticsFragment : Fragment() {
         return monthlyCount
     }
 
-    private fun getMonthLabels(): Array<String> {
-        return arrayOf(
+    private fun getMonthLabelsWithPrediction(): Array<String> {
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
+        val nextMonth = (currentMonth + 1) % 12
+        val nextMonthName = arrayOf(
             "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
             "Lug", "Ago", "Set", "Ott", "Nov", "Dic"
+        )[nextMonth]
+
+        return arrayOf(
+            "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
+            "Lug", "Ago", "Set", "Ott", "Nov", "Dic",
+            "Prev. $nextMonthName"
         )
     }
 

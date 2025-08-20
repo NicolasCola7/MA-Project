@@ -2,7 +2,6 @@ package com.example.travel_companion.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.Observer
-import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.local.entity.CoordinateEntity
 import com.example.travel_companion.domain.model.TripStatus
