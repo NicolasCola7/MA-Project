@@ -108,7 +108,7 @@ class TrackingService : LifecycleService() {
     }
 
     private var lapTime = 0L
-    private var timeRun = trackingTimeInMillis.value!!
+    private var timeRun = trackingTimeInMillis.value ?: 0L
     private var timeStarted = 0L
 
     private fun startTimer() {
@@ -170,7 +170,7 @@ class TrackingService : LifecycleService() {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
             pathPoints.value?.apply {
-                if (last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
+                if (isNotEmpty() && last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
                     return
                 }
 
@@ -203,8 +203,8 @@ class TrackingService : LifecycleService() {
     }
 
     private fun startForegroundService() {
-        startTimer()
         isTracking.postValue(true)
+        startTimer()
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel(notificationManager, NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME)
