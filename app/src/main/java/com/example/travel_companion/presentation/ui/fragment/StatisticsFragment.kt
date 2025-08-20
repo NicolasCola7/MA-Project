@@ -61,10 +61,6 @@ class StatisticsFragment : Fragment() {
 
     enum class ViewType { MAP, STATS }
 
-    companion object {
-        private const val TAG = "StatisticsFragment"
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -194,31 +190,42 @@ class StatisticsFragment : Fragment() {
 
         // Osserva le predizioni
         viewLifecycleOwner.lifecycleScope.launch {
-            predictionViewModel.uiState.collect { uiState ->
+            predictionViewModel.prediction.collect { prediction ->
                 // Aggiungi la predizione ai dati mensili
-                if (uiState.prediction != null) {
-                    monthlyTripsData[12] = uiState.prediction.predictedTripsCount
+                if (prediction != null) {
+                    monthlyTripsData[12] = prediction.predictedTripsCount
                     updateMonthlyChart(monthlyTripsData)
                 } else {
                     updateMonthlyChart(monthlyTripsData)
                 }
+            }
+        }
 
-                if (uiState.error != null) {
-                    Snackbar.make(binding.root, uiState.error, Snackbar.LENGTH_LONG)
+        // Osserva gli errori
+        viewLifecycleOwner.lifecycleScope.launch {
+            predictionViewModel.error.collect { error ->
+                if (error != null) {
+                    Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG)
                         .setAction("Riprova") {
                             predictionViewModel.loadPredictions()
                         }.show()
                     predictionViewModel.dismissError()
                 }
+            }
+        }
 
-                // Mostra/nascondi loading per predictions
-                binding.predictionsProgressBar.visibility = if (uiState.isLoading) View.VISIBLE else View.GONE
+        // Osserva lo stato di loading
+        viewLifecycleOwner.lifecycleScope.launch {
+            predictionViewModel.isLoading.collect { isLoading ->
+                binding.predictionsProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
         }
     }
 
+    // Mantieni tutti i metodi esistenti per heatmap
     private fun updateHeatmap(trips: List<TripEntity>) {
         googleMap?.let { map ->
+            // Rimuovi tutti i marker esistenti e la heatmap
             map.clear()
             heatmapTileOverlay?.remove()
             heatmapTileOverlay = null
@@ -267,7 +274,7 @@ class StatisticsFragment : Fragment() {
                             centerMapOnCoordinates(map, heatmapData)
                         }
                     } catch (e: Exception) {
-                        Timber.tag(TAG).e(e, "Errore nel recupero coordinate: ${e.message}")
+                        Timber.e(e, "Errore nel recupero coordinate: ${e.message}")
                     }
                 }
             }
@@ -284,7 +291,7 @@ class StatisticsFragment : Fragment() {
                 // Usa un padding maggiore per mostrare meglio la heatmap
                 map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 150))
             } catch (e: Exception) {
-                Timber.tag(TAG).w("Errore nel centrare la mappa con bounds: ${e.message}")
+                Timber.w("Errore nel centrare la mappa con bounds: ${e.message}")
                 // Se ci sono problemi con i bounds, centra sul punto centrale
                 val centerLat = coordinates.map { it.latitude }.average()
                 val centerLng = coordinates.map { it.longitude }.average()
@@ -310,8 +317,8 @@ class StatisticsFragment : Fragment() {
         binding.monthlyChart.apply {
             description.isEnabled = false
             setTouchEnabled(true)
-            isDragEnabled = true
-            setScaleEnabled(true)
+            isDragEnabled = false
+            setScaleEnabled(false)
             setPinchZoom(false)
             setDrawBarShadow(false)
             setDrawValueAboveBar(true)
@@ -319,9 +326,13 @@ class StatisticsFragment : Fragment() {
             // Aggiungi il listener per i click sui mesi
             setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
                 override fun onValueSelected(e: Entry?, h: Highlight?) {
-                    if (e != null) {
+                    if (e != null && h != null) {
                         val monthIndex = e.x.toInt()
-                        updatePredictionCardsForMonth(monthIndex)
+                        // Verifica che l'indice sia valido e che ci siano dati per quel mese
+                        if (monthIndex >= 0 && monthIndex < monthlyTripsData.size &&
+                            (monthlyTripsData[monthIndex] > 0 || monthIndex == 12)) {
+                            updatePredictionCardsForMonth(monthIndex)
+                        }
                     }
                 }
 
@@ -368,11 +379,9 @@ class StatisticsFragment : Fragment() {
             // Colori diversi per dati storici e predizione
             colors = monthlyData.mapIndexed { index, _ ->
                 if (index == 12) {
-                    // Colore arancione per la predizione
-                    Color.parseColor("#FF9800")
+                    Color.parseColor("#FF9800") // Colore arancione per la predizione
                 } else {
-                    // Colore blu per i dati storici
-                    Color.parseColor("#2196F3")
+                    Color.parseColor("#2196F3") // Colore blu per i dati storici
                 }
             }
             valueTextColor = Color.BLACK
@@ -413,13 +422,13 @@ class StatisticsFragment : Fragment() {
         resetPredictionCards()
     }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "DefaultLocale")
     private fun updatePredictionCardsForMonth(monthIndex: Int) {
         if (monthIndex == 12) {
             // Mese predetto - mostra le predizioni
             viewLifecycleOwner.lifecycleScope.launch {
-                predictionViewModel.uiState.collect { uiState ->
-                    uiState.prediction?.let { pred ->
+                predictionViewModel.prediction.collect { prediction ->
+                    prediction?.let { pred ->
                         binding.apply {
                             // Viaggi previsti
                             predictedTripsText.text = pred.predictedTripsCount.toString()

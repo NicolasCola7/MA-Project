@@ -16,8 +16,14 @@ class PredictionViewModel @Inject constructor(
     private val predictionRepository: PredictionRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PredictionUiState())
-    val uiState: StateFlow<PredictionUiState> = _uiState.asStateFlow()
+    private val _prediction = MutableStateFlow<TravelPrediction?>(null)
+    val prediction: StateFlow<TravelPrediction?> = _prediction.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
 
@@ -33,7 +39,8 @@ class PredictionViewModel @Inject constructor(
     fun loadPredictions() {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+                _isLoading.value = true
+                _error.value = null
 
                 // Carica previsioni
                 val prediction = predictionRepository.calculateTravelPrediction()
@@ -41,26 +48,22 @@ class PredictionViewModel @Inject constructor(
                 // Carica suggerimenti
                 val suggestions = predictionRepository.getTravelSuggestions()
 
-                _uiState.value = _uiState.value.copy(
-                    prediction = prediction,
-                    isLoading = false
-                )
+                _prediction.value = prediction
                 _suggestions.value = suggestions
+                _isLoading.value = false
 
                 Timber.tag(TAG).d("Predizioni caricate: ${prediction.predictedTripsCount} viaggi, ${prediction.predictedDistance} km")
 
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Errore nel caricamento predizioni")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Errore nel caricamento delle previsioni"
-                )
+                _isLoading.value = false
+                _error.value = "Errore nel caricamento delle previsioni"
             }
         }
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _error.value = null
     }
 
     private fun observePredictionChanges() {
@@ -68,16 +71,11 @@ class PredictionViewModel @Inject constructor(
             predictionRepository.getPredictionFlow()
                 .catch { e ->
                     Timber.tag(TAG).e(e, "Errore nel flow predizioni")
+                    _error.value = "Errore nell'aggiornamento delle previsioni"
                 }
                 .collect { prediction ->
-                    _uiState.value = _uiState.value.copy(prediction = prediction)
+                    _prediction.value = prediction
                 }
         }
     }
-
-    data class PredictionUiState(
-        val prediction: TravelPrediction? = null,
-        val isLoading: Boolean = false,
-        val error: String? = null
-    )
 }
