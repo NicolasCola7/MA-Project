@@ -17,6 +17,9 @@ interface TripDao {
     @Query("SELECT * FROM trip ORDER BY startDate DESC")
     fun getAll(): LiveData<List<TripEntity>>
 
+    @Query("SELECT * FROM trip ORDER BY startDate DESC")
+    suspend fun getAllTripsSync(): List<TripEntity>
+
     @Query("SELECT * FROM trip WHERE id = :tripId LIMIT 1")
     suspend fun getTripById(tripId: Long): TripEntity?
 

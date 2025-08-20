@@ -12,7 +12,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="@color/card_background">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -28,9 +29,9 @@
                 android:text="@{viewModel.currentDate}"
                 android:textAppearance="?attr/textAppearanceHeadline5"
                 android:textStyle="bold"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="20dp" />
 
-            <!-- Card viaggio -->
             <!-- Card viaggio -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardTrip"
@@ -127,8 +128,103 @@
                 android:text="Nessun viaggio programmato per oggi"
                 android:textAppearance="?attr/textAppearanceBody1"
                 android:textStyle="italic"
+                android:textColor="@color/text_secondary"
                 android:visibility="gone" />
 
+            <!-- Sezione Suggerimenti -->
+            <LinearLayout
+                android:id="@+id/suggestions_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Header suggerimenti -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Suggerimenti per te"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/suggestions_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/place_details_circle_button_background"
+                        android:text="3"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:minWidth="24dp"
+                        android:minHeight="24dp"
+                        tools:text="3" />
+
+                </LinearLayout>
+
+                <!-- RecyclerView per suggerimenti -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/suggestions_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_home_suggestion" />
+
+                <!-- Pulsante "Vedi tutti" -->
+                <Button
+                    android:id="@+id/btn_view_all_suggestions"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:text="Vedi tutte le idee"
+                    android:textColor="@color/primary_color"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- Insights rapidi (quando non ci sono viaggi) -->
+            <LinearLayout
+                android:id="@+id/insights_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="La tua situazione"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/insights_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="16dp"
+                    tools:itemCount="2"
+                    tools:listitem="@layout/item_insight" />
+
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </layout>

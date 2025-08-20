@@ -2,8 +2,12 @@ package com.example.travel_companion.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.travel_companion.data.local.dao.TripDao
 
 import com.example.travel_companion.data.local.database.AppDatabase
+import com.example.travel_companion.data.repository.PredictionRepository
+import com.example.travel_companion.util.TravelPredictionAlgorithm
+import com.example.travel_companion.util.TravelSuggestionsEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,4 +49,29 @@ object AppModule {
     @Provides
     fun providePOIDao(db: AppDatabase) = db.poiDao()
 
+    @Provides
+    @Singleton
+    fun provideTravelPredictionAlgorithm(): TravelPredictionAlgorithm {
+        return TravelPredictionAlgorithm()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTravelSuggestionsEngine(): TravelSuggestionsEngine {
+        return TravelSuggestionsEngine()
+    }
+
+    @Provides
+    @Singleton
+    fun providePredictionRepository(
+        tripDao: TripDao,
+        predictionAlgorithm: TravelPredictionAlgorithm,
+        suggestionsEngine: TravelSuggestionsEngine
+    ): PredictionRepository {
+        return PredictionRepository(
+            tripDao = tripDao,
+            predictionAlgorithm = predictionAlgorithm,
+            suggestionsEngine = suggestionsEngine
+        )
+    }
 }

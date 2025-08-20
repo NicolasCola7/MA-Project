@@ -10,11 +10,14 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentStatisticsBinding
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.presentation.ui.adapter.InsightsAdapter
 import com.example.travel_companion.presentation.viewmodel.StatisticsViewModel
+import com.example.travel_companion.presentation.viewmodel.PredictionViewModel
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
@@ -27,6 +30,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
 import com.google.android.gms.maps.model.TileOverlayOptions
+import com.google.android.material.snackbar.Snackbar
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import com.google.maps.android.heatmaps.Gradient
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,15 +46,21 @@ class StatisticsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: StatisticsViewModel by viewModels()
+    private val predictionViewModel: PredictionViewModel by viewModels()
 
     private var googleMap: GoogleMap? = null
     private var heatmapTileOverlay: TileOverlay? = null
 
-    // Variabile per tracciare la vista corrente
-    private var isMapViewVisible = true
+    // Variabile per tracciare la vista corrente - AGGIORNATA con 3 opzioni
+    private var currentView = ViewType.MAP
 
     // Cache dei dati per ripristinare la heatmap
     private var cachedTrips: List<TripEntity> = emptyList()
+
+    // Adapter per predictions
+    private lateinit var insightsAdapter: InsightsAdapter
+
+    enum class ViewType { MAP, STATS, PREDICTIONS } // AGGIUNTO PREDICTIONS
 
     companion object {
         private const val TAG = "StatisticsFragment"
@@ -70,69 +80,103 @@ class StatisticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupMapView()
-        setupToggleButtons()
+        setupToggleButtons() // AGGIORNATO per 3 pulsanti
+        setupRecyclerViews()
         setupObservers()
         setupBarChart()
 
         // Inizializza con la vista mappa
-        showMapView()
+        showView(ViewType.MAP)
 
         viewModel.loadStatistics()
+        predictionViewModel.loadPredictions()
     }
 
     private fun setupToggleButtons() {
         binding.btnMap.setOnClickListener {
-            if (!isMapViewVisible) {
-                showMapView()
+            if (currentView != ViewType.MAP) {
+                showView(ViewType.MAP)
             }
         }
 
         binding.btnStats.setOnClickListener {
-            if (isMapViewVisible) {
-                showStatsView()
+            if (currentView != ViewType.STATS) {
+                showView(ViewType.STATS)
+            }
+        }
+
+        // AGGIUNTO: Handler per il pulsante Previsioni
+        binding.btnPredictions.setOnClickListener {
+            if (currentView != ViewType.PREDICTIONS) {
+                showView(ViewType.PREDICTIONS)
             }
         }
     }
 
-    private fun showMapView() {
-        isMapViewVisible = true
+    private fun setupRecyclerViews() {
+        // Setup Insights RecyclerView
+        insightsAdapter = InsightsAdapter { insight ->
+            // Handle insight action clicks
+            when (insight.actionType) {
+                com.example.travel_companion.domain.model.ActionType.PLAN_TRIP -> {
+                    // Navigate to trip planning
+                    Timber.tag(TAG).d("Navigate to trip planning")
+                }
+                com.example.travel_companion.domain.model.ActionType.VIEW_SUGGESTIONS -> {
+                    // Scroll to suggestions o switch alla home
+                    Timber.tag(TAG).d("Navigate to suggestions")
+                }
+                com.example.travel_companion.domain.model.ActionType.VIEW_STATISTICS -> {
+                    showView(ViewType.STATS)
+                }
+                else -> {}
+            }
+        }
 
-        // Mostra mappa, nascondi statistiche
-        binding.mapView.visibility = View.VISIBLE
-        binding.statsContainer.visibility = View.GONE
-
-        // Aggiorna stili dei pulsanti
-        updateButtonStyles(true)
+        binding.insightsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = insightsAdapter
+        }
     }
 
-    private fun showStatsView() {
-        isMapViewVisible = false
+    // AGGIORNATO: Gestisce 3 viste invece di 2
+    private fun showView(viewType: ViewType) {
+        currentView = viewType
 
-        // Nascondi mappa, mostra statistiche
+        // Nascondi tutte le viste
         binding.mapView.visibility = View.GONE
-        binding.statsContainer.visibility = View.VISIBLE
+        binding.statsContainer.visibility = View.GONE
+        binding.predictionsContainer.visibility = View.GONE
 
-        // Aggiorna stili dei pulsanti
-        updateButtonStyles(false)
+        // Mostra la vista selezionata
+        when (viewType) {
+            ViewType.MAP -> {
+                binding.mapView.visibility = View.VISIBLE
+                updateButtonStyles(0)
+            }
+            ViewType.STATS -> {
+                binding.statsContainer.visibility = View.VISIBLE
+                updateButtonStyles(1)
+            }
+            ViewType.PREDICTIONS -> {
+                binding.predictionsContainer.visibility = View.VISIBLE
+                updateButtonStyles(2)
+            }
+        }
     }
 
-    private fun updateButtonStyles(mapSelected: Boolean) {
-        if (mapSelected) {
-            // Pulsante mappa selezionato
-            binding.btnMap.setBackgroundResource(R.drawable.toggle_button_selected)
-            binding.btnMap.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+    // AGGIORNATO: Gestisce 3 pulsanti invece di 2
+    private fun updateButtonStyles(selectedIndex: Int) {
+        val buttons = listOf(binding.btnMap, binding.btnStats, binding.btnPredictions)
 
-            // Pulsante statistiche non selezionato
-            binding.btnStats.setBackgroundResource(R.drawable.toggle_button_unselected)
-            binding.btnStats.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
-        } else {
-            // Pulsante mappa non selezionato
-            binding.btnMap.setBackgroundResource(R.drawable.toggle_button_unselected)
-            binding.btnMap.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
-
-            // Pulsante statistiche selezionato
-            binding.btnStats.setBackgroundResource(R.drawable.toggle_button_selected)
-            binding.btnStats.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+        buttons.forEachIndexed { index, button ->
+            if (index == selectedIndex) {
+                button.setBackgroundResource(R.drawable.toggle_button_selected)
+                button.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+            } else {
+                button.setBackgroundResource(R.drawable.toggle_button_unselected)
+                button.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+            }
         }
     }
 
@@ -159,6 +203,7 @@ class StatisticsFragment : Fragment() {
         _binding?.mapView?.onResume()
         // Ricarica i dati quando il fragment torna visibile
         viewModel.loadStatistics()
+        predictionViewModel.loadPredictions()
     }
 
     override fun onPause() {
@@ -177,7 +222,7 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // Osserva StateFlow dal ViewModel
+        // Osserva StateFlow dal ViewModel per statistiche esistenti
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.completedTrips.collect { trips ->
                 // Salva i dati nella cache
@@ -188,46 +233,78 @@ class StatisticsFragment : Fragment() {
                 updateStatisticsCards(trips)
             }
         }
-    }
 
-    private fun setupBarChart() {
-        binding.monthlyChart.apply {
-            description.isEnabled = false
-            setTouchEnabled(true)
-            isDragEnabled = true
-            setScaleEnabled(true)
-            setPinchZoom(false)
-            setDrawBarShadow(false)
-            setDrawValueAboveBar(true)
+        // AGGIUNTO: Osserva le predizioni
+        viewLifecycleOwner.lifecycleScope.launch {
+            predictionViewModel.uiState.collect { uiState ->
+                updatePredictionCards(uiState.prediction)
 
-            xAxis.apply {
-                position = XAxis.XAxisPosition.BOTTOM
-                setDrawGridLines(false)
-                granularity = 1f
-                labelCount = 12
-            }
-
-            axisLeft.apply {
-                setDrawGridLines(true)
-                axisMinimum = 0f
-                // Formatter per mostrare solo valori interi sull'asse Y
-                valueFormatter = object : ValueFormatter() {
-                    override fun getAxisLabel(value: Float, axis: com.github.mikephil.charting.components.AxisBase?): String {
-                        return if (value > 0f) {
-                            value.toInt().toString()
-                        } else {
-                            ""
-                        }
-                    }
+                if (uiState.error != null) {
+                    Snackbar.make(binding.root, uiState.error, Snackbar.LENGTH_LONG)
+                        .setAction("Riprova") {
+                            predictionViewModel.loadPredictions()
+                        }.show()
+                    predictionViewModel.dismissError()
                 }
-                granularity = 1f // Forza intervalli di 1
-            }
 
-            axisRight.isEnabled = false
-            legend.isEnabled = false
+                // Mostra/nascondi loading per predictions
+                binding.predictionsProgressBar?.visibility = if (uiState.isLoading) View.VISIBLE else View.GONE
+            }
+        }
+
+        // AGGIUNTO: Osserva insights
+        viewLifecycleOwner.lifecycleScope.launch {
+            predictionViewModel.insights.collect { insights ->
+                insightsAdapter.submitList(insights)
+                binding.insightsSection?.visibility = if (insights.isNotEmpty()) View.VISIBLE else View.GONE
+            }
         }
     }
 
+    // AGGIUNTO: Metodo per aggiornare le cards delle predizioni
+    @SuppressLint("SetTextI18n")
+    private fun updatePredictionCards(prediction: com.example.travel_companion.domain.model.TravelPrediction?) {
+        prediction?.let { pred ->
+            binding.apply {
+                // Previsione viaggi
+                predictedTripsText?.text = pred.predictedTripsCount.toString()
+                predictedTripsSubtext?.text = "viaggi previsti"
+
+                // Previsione distanza
+                if (pred.predictedDistance < 1.0) {
+                    predictedDistanceText?.text = "0"
+                    predictedDistanceSubtext?.text = "km previsti"
+                } else {
+                    predictedDistanceText?.text = String.format("%.0f", pred.predictedDistance)
+                    predictedDistanceSubtext?.text = "km previsti"
+                }
+
+                // Indicatore di confidenza
+                val confidencePercent = (pred.confidence * 100).toInt()
+                confidenceText?.text = "$confidencePercent%"
+                confidenceSubtext?.text = "affidabilità"
+
+                // Colore basato sulla confidenza
+                val confidenceColor = when {
+                    pred.confidence > 0.7f -> ContextCompat.getColor(requireContext(), R.color.success_color)
+                    pred.confidence > 0.4f -> ContextCompat.getColor(requireContext(), R.color.warning_color)
+                    else -> ContextCompat.getColor(requireContext(), R.color.error_color)
+                }
+                confidenceText?.setTextColor(confidenceColor)
+
+                // Trend indicator
+                val trendText = when (pred.trend) {
+                    com.example.travel_companion.domain.model.TravelTrend.INCREASING -> "In crescita"
+                    com.example.travel_companion.domain.model.TravelTrend.DECREASING -> "In calo"
+                    com.example.travel_companion.domain.model.TravelTrend.STABLE -> "Stabile"
+                    com.example.travel_companion.domain.model.TravelTrend.INSUFFICIENT_DATA -> "Dati insufficienti"
+                }
+                trendIndicatorText?.text = trendText
+            }
+        }
+    }
+
+    // Mantieni tutti i metodi esistenti per heatmap, chart, etc.
     private fun updateHeatmap(trips: List<TripEntity>) {
         googleMap?.let { map ->
             // Rimuovi tutti i marker esistenti e la heatmap
@@ -316,6 +393,44 @@ class StatisticsFragment : Fragment() {
         val startPoints = floatArrayOf(0.1f, 0.4f, 0.7f, 1.0f)
 
         return Gradient(colors, startPoints)
+    }
+
+    private fun setupBarChart() {
+        binding.monthlyChart.apply {
+            description.isEnabled = false
+            setTouchEnabled(true)
+            isDragEnabled = true
+            setScaleEnabled(true)
+            setPinchZoom(false)
+            setDrawBarShadow(false)
+            setDrawValueAboveBar(true)
+
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                setDrawGridLines(false)
+                granularity = 1f
+                labelCount = 12
+            }
+
+            axisLeft.apply {
+                setDrawGridLines(true)
+                axisMinimum = 0f
+                // Formatter per mostrare solo valori interi sull'asse Y
+                valueFormatter = object : ValueFormatter() {
+                    override fun getAxisLabel(value: Float, axis: com.github.mikephil.charting.components.AxisBase?): String {
+                        return if (value > 0f) {
+                            value.toInt().toString()
+                        } else {
+                            ""
+                        }
+                    }
+                }
+                granularity = 1f // Forza intervalli di 1
+            }
+
+            axisRight.isEnabled = false
+            legend.isEnabled = false
+        }
     }
 
     private fun updateMonthlyChart(trips: List<TripEntity>) {
@@ -416,7 +531,7 @@ class StatisticsFragment : Fragment() {
         _binding?.mapView?.onSaveInstanceState(outState)
 
         // Salva lo stato corrente della vista
-        outState.putBoolean("is_map_view_visible", isMapViewVisible)
+        outState.putInt("current_view", currentView.ordinal)
     }
 
     override fun onDestroyView() {
