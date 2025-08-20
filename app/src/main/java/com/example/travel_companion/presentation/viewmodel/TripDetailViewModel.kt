@@ -95,14 +95,6 @@ class TripDetailViewModel  @Inject constructor (
         }
     }
 
-    fun updateTripDistance(newDistance: Double) {
-        val updated = _trip.value?.copy(trackedDistance = newDistance) ?: return
-
-        viewModelScope.launch(Dispatchers.IO) {
-            tripRepository.updateTrip(updated)
-        }
-    }
-
     fun finishTrip() {
         val updated = _trip.value?.copy(status = TripStatus.FINISHED, endDate = System.currentTimeMillis()) ?: return
         viewModelScope.launch(Dispatchers.IO) {
@@ -112,6 +104,13 @@ class TripDetailViewModel  @Inject constructor (
         tripScheduler.cancelTripAlarms(mutableListOf(_trip.value!!.id) )
     }
 
+    fun updateTimeAndDistanceTracked(time: Long, distance: Double) {
+        val updated = _trip.value?.copy(timeTracked = time, trackedDistance = distance) ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            tripRepository.updateTrip(updated)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         // Clean up any remaining sources
@@ -119,4 +118,5 @@ class TripDetailViewModel  @Inject constructor (
             _trip.removeSource(tripRepository.getTripById(tripId))
         }
     }
+
 }

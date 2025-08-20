@@ -41,6 +41,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.util.Utils.getFormattedTrackingTime
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.PointOfInterest
@@ -60,9 +61,11 @@ class TripDetailsFragment: Fragment() {
     private var geofenceList = mutableListOf<Geofence>()
     private var map: GoogleMap? = null
     private var trackedDistance: MutableLiveData<Double?> = MutableLiveData(0.0)
+    private var curTimeInMillis = 0L
 
     private var trackingObserver: Observer<Boolean>? = null
     private var pathPointsObserver: Observer<Polylines>? = null
+    private var timerObserver: Observer<Long>? = null
 
     private var isFetching: MutableLiveData<Boolean> = MutableLiveData(true)
 
@@ -98,7 +101,7 @@ class TripDetailsFragment: Fragment() {
             binding.mapView.getMapAsync {
                 map = it
                 map!!.clear()
-                
+
                 addAllPolylines()
 
                 for(poi in poiPoints) {
@@ -193,6 +196,7 @@ class TripDetailsFragment: Fragment() {
         viewModel.trip.observe(viewLifecycleOwner) { trip ->
             trip.let {
                 trackedDistance.postValue(it!!.trackedDistance)
+                TrackingService.trackingTimeInMillis.postValue(it.timeTracked)
 
                 val destinationCoordinates = LatLng(it.destinationLatitude, it.destinationLongitude)
                 initializeMap(destinationCoordinates)
@@ -253,8 +257,18 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
+        timerObserver = Observer { time ->
+            curTimeInMillis = time
+            val formattedTime = getFormattedTrackingTime(curTimeInMillis)
+
+            if(isResumed) {
+                binding.tvTimer.text = formattedTime
+            }
+        }
+
         TrackingService.isTracking.observeForever(trackingObserver!!)
         TrackingService.pathPoints.observeForever(pathPointsObserver!!)
+        TrackingService.trackingTimeInMillis.observeForever(timerObserver!!)
     }
 
     private fun refreshTrackedDistance() {
@@ -292,11 +306,6 @@ class TripDetailsFragment: Fragment() {
         binding.tvDistance.text = trip.trackedDistance.toString()
         binding.tvStatus.text = trip.status.getValue()
 
-        if(isTracking) {
-            binding.btnToggleTracking.visibility = View.VISIBLE
-            binding.btnToggleTracking.text = "Ferma"
-        }
-
         if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
             binding.btnFinishTrip.visibility = View.GONE
             binding.btnToggleTracking.visibility = View.GONE
@@ -307,7 +316,7 @@ class TripDetailsFragment: Fragment() {
 
         // if is tracking and the scheduler terminates the trip, then stop the service
         if (isTracking && trip.status == TripStatus.FINISHED) {
-            viewModel.updateTripDistance(trackedDistance.value!!)
+            viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
             sendCommandToService("ACTION_STOP_SERVICE")
         }
     }
@@ -318,7 +327,7 @@ class TripDetailsFragment: Fragment() {
             TrackingService.geofenceList.postValue(geofenceList)
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
-            viewModel.updateTripDistance(trackedDistance.value!!)
+            viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
         }
     }
 
@@ -559,8 +568,13 @@ class TripDetailsFragment: Fragment() {
         pathPointsObserver?.let {
             TrackingService.pathPoints.removeObserver(it)
         }
+        timerObserver?.let {
+            TrackingService.trackingTimeInMillis.removeObserver(it)
+        }
+
         sendCommandToService("ACTION_STOP_SERVICE")
-        viewModel.updateTripDistance(trackedDistance.value!!)
+        viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
+
         super.onDestroyView()
         _binding?.mapView?.onDestroy()
         _binding = null

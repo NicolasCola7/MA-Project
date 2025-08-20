@@ -26,6 +26,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -40,8 +44,8 @@ class TrackingService : LifecycleService() {
 
     private lateinit var geofencingClient: GeofencingClient
 
-
     companion object {
+        val trackingTimeInMillis = MutableLiveData<Long>()
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
         val geofenceList = MutableLiveData<List<Geofence>>()
@@ -101,6 +105,27 @@ class TrackingService : LifecycleService() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private var lapTime = 0L
+    private var timeRun = trackingTimeInMillis.value!!
+    private var timeStarted = 0L
+
+    private fun startTimer() {
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                // time difference between now and timeStarted
+                lapTime = System.currentTimeMillis() - timeStarted
+                // post the new lapTime
+                trackingTimeInMillis.postValue(timeRun + lapTime)
+
+                delay(50L) // delay the coroutine by 50 seconds to prevent too frequent updates in the live data
+            }
+            timeRun += lapTime
+        }
     }
 
     private fun pauseService() {
@@ -178,7 +203,7 @@ class TrackingService : LifecycleService() {
     }
 
     private fun startForegroundService() {
-        addEmptyPolyline()
+        startTimer()
         isTracking.postValue(true)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
