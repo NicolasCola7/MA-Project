@@ -3,8 +3,8 @@ package com.example.travel_companion.data.repository
 import androidx.lifecycle.asFlow
 import com.example.travel_companion.data.local.dao.TripDao
 import com.example.travel_companion.data.local.entity.TripEntity
-import com.example.travel_companion.util.TravelPredictionAlgorithm
-import com.example.travel_companion.util.TravelSuggestionsEngine
+import com.example.travel_companion.util.TripPredictionAlgorithm
+import com.example.travel_companion.util.TripSuggestionsEngine
 import com.example.travel_companion.domain.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -14,8 +14,8 @@ import javax.inject.Singleton
 @Singleton
 class PredictionRepository @Inject constructor(
     private val tripDao: TripDao,
-    private val predictionAlgorithm: TravelPredictionAlgorithm,
-    private val suggestionsEngine: TravelSuggestionsEngine
+    private val predictionAlgorithm: TripPredictionAlgorithm,
+    private val suggestionsEngine: TripSuggestionsEngine
 ) {
 
     suspend fun calculateTravelPrediction(): TravelPrediction {

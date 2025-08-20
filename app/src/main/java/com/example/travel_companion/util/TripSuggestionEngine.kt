@@ -4,7 +4,7 @@ import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.domain.model.*
 import java.util.*
 
-class TravelSuggestionsEngine {
+class TripSuggestionsEngine {
 
     private val destinationPool = listOf(
         // Esperienze culturali

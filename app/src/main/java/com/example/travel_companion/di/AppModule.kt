@@ -6,8 +6,8 @@ import com.example.travel_companion.data.local.dao.TripDao
 
 import com.example.travel_companion.data.local.database.AppDatabase
 import com.example.travel_companion.data.repository.PredictionRepository
-import com.example.travel_companion.util.TravelPredictionAlgorithm
-import com.example.travel_companion.util.TravelSuggestionsEngine
+import com.example.travel_companion.util.TripPredictionAlgorithm
+import com.example.travel_companion.util.TripSuggestionsEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,22 +51,22 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTravelPredictionAlgorithm(): TravelPredictionAlgorithm {
-        return TravelPredictionAlgorithm()
+    fun provideTravelPredictionAlgorithm(): TripPredictionAlgorithm {
+        return TripPredictionAlgorithm()
     }
 
     @Provides
     @Singleton
-    fun provideTravelSuggestionsEngine(): TravelSuggestionsEngine {
-        return TravelSuggestionsEngine()
+    fun provideTravelSuggestionsEngine(): TripSuggestionsEngine {
+        return TripSuggestionsEngine()
     }
 
     @Provides
     @Singleton
     fun providePredictionRepository(
         tripDao: TripDao,
-        predictionAlgorithm: TravelPredictionAlgorithm,
-        suggestionsEngine: TravelSuggestionsEngine
+        predictionAlgorithm: TripPredictionAlgorithm,
+        suggestionsEngine: TripSuggestionsEngine
     ): PredictionRepository {
         return PredictionRepository(
             tripDao = tripDao,

@@ -54,9 +54,11 @@ class HomeViewModel @Inject constructor(
     private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
     val suggestions: StateFlow<List<TravelSuggestion>> = _suggestions.asStateFlow()
 
-    // StateFlow per UI state
-    private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _showSuggestions = MutableStateFlow(false)
+    val showSuggestions: StateFlow<Boolean> = _showSuggestions.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     companion object {
         private const val TAG = "HomeViewModel"
@@ -77,28 +79,20 @@ class HomeViewModel @Inject constructor(
     private fun loadSuggestions() {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoadingSuggestions = true)
+                _error.value = null
 
                 // Carica suggerimenti limitati per la home
                 val allSuggestions = predictionRepository.getTravelSuggestions()
                 val homeSuggestions = allSuggestions.take(MAX_HOME_SUGGESTIONS)
 
                 _suggestions.value = homeSuggestions
-
-                _uiState.value = _uiState.value.copy(
-                    isLoadingSuggestions = false,
-                    showSuggestions = homeSuggestions.isNotEmpty(),
-                    error = null
-                )
+                _showSuggestions.value = homeSuggestions.isNotEmpty()
 
                 Timber.tag(TAG).d("Caricati ${homeSuggestions.size} suggerimenti per home")
 
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Errore nel caricamento suggerimenti")
-                _uiState.value = _uiState.value.copy(
-                    isLoadingSuggestions = false,
-                    error = "Errore nel caricamento dei suggerimenti"
-                )
+                _error.value = "Errore nel caricamento dei suggerimenti"
             }
         }
     }
@@ -112,9 +106,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    data class HomeUiState(
-        val isLoadingSuggestions: Boolean = false,
-        val showSuggestions: Boolean = false,
-        val error: String? = null
-    )
+    fun dismissError() {
+        _error.value = null
+    }
 }

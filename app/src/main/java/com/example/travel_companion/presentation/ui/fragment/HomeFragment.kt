@@ -1,5 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
+import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,6 +18,7 @@ import com.example.travel_companion.databinding.FragmentHomeBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.adapter.SuggestionsAdapter
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -49,7 +51,6 @@ class HomeFragment : Fragment() {
         observeViewModel()
     }
 
-
     private fun setupRecyclerViews() {
         binding.suggestionsRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
@@ -76,17 +77,25 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // Osserva lo stato UI
+        // Osserva se mostrare la sezione suggerimenti
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collect { uiState ->
-                // Mostra/nascondi sezioni
-                binding.suggestionsSection.visibility =
-                    if (uiState.showSuggestions) View.VISIBLE else View.GONE
+            viewModel.showSuggestions.collect { show ->
+                binding.suggestionsSection.visibility = if (show) View.VISIBLE else View.GONE
+            }
+        }
 
+        // Osserva gli errori
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.error.collect { error ->
+                if (error != null) {
+                    Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
+                    viewModel.dismissError()
+                }
             }
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupTripCard(trip: com.example.travel_companion.data.local.entity.TripEntity) {
         binding.cardTrip.visibility = View.VISIBLE
         binding.tvNoTrip.visibility = View.GONE

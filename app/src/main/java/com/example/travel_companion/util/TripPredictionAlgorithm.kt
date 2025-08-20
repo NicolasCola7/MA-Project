@@ -7,7 +7,7 @@ import com.example.travel_companion.domain.model.TripStatus
 import java.util.*
 import kotlin.math.*
 
-class TravelPredictionAlgorithm {
+class TripPredictionAlgorithm {
 
     companion object {
         private const val MIN_TRIPS_FOR_PREDICTION = 3
