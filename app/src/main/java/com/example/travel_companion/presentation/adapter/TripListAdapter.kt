@@ -1,12 +1,13 @@
 package com.example.travel_companion.presentation.adapter
 
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.ItemTripBinding
@@ -118,16 +119,41 @@ class TripListAdapter(
             } ?: "—"
             binding.tvDates.text = "$startDate – $endDate"
 
-            // Immagine o placeholder
+            // Gestione immagine e overlay condizionale
             if (trip.imageData != null) {
+                // Ha immagine: mostra immagine con overlay e testo bianco
+                val bitmap = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
+                binding.ivTripImage.setImageBitmap(bitmap)
                 binding.ivTripImage.visibility = View.VISIBLE
                 binding.viewImagePlaceholder.visibility = View.GONE
-                Glide.with(binding.ivTripImage)
-                    .load(trip.imageData)
-                    .into(binding.ivTripImage)
+
+                // Mostra overlay per leggibilità testo
+                binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.VISIBLE
+
+                // Testo bianco con ombra per contrasto
+                binding.tvDestination.setTextColor(
+                    ContextCompat.getColor(binding.root.context, android.R.color.white)
+                )
+                binding.tvDates.setTextColor(
+                    ContextCompat.getColor(binding.root.context, android.R.color.white)
+                )
+
             } else {
+                // Nessuna immagine: placeholder senza overlay e testo normale
+                binding.ivTripImage.setImageDrawable(null)
                 binding.ivTripImage.visibility = View.GONE
                 binding.viewImagePlaceholder.visibility = View.VISIBLE
+
+                // Nascondi overlay
+                binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.GONE
+
+                // Testo con colori normali per placeholder
+                binding.tvDestination.setTextColor(
+                    ContextCompat.getColor(binding.root.context, R.color.text_primary)
+                )
+                binding.tvDates.setTextColor(
+                    ContextCompat.getColor(binding.root.context, R.color.text_secondary)
+                )
             }
 
             // Gestione selezione visuale
