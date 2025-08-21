@@ -11,5 +11,5 @@ data class TravelSuggestion(
 )
 
 enum class SuggestionPriority {
-    HIGH, MEDIUM, LOW
+    HIGH, MEDIUM
 }

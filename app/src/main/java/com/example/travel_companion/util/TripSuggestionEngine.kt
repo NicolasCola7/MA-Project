@@ -6,7 +6,8 @@ import java.util.*
 
 class TripSuggestionsEngine {
 
-    private val destinationPool = listOf(
+    // Pool completo di destinazioni
+    private val suggestionTemplates = listOf(
         // Esperienze culturali
         SuggestionTemplate("Viaggio culturale", "Esplora musei e monumenti", "Cultura", "Immergiti nella storia e nell'arte"),
         SuggestionTemplate("Tour dei centri storici", "Passeggia tra vicoli antichi", "Cultura", "Scopri l'architettura medievale"),
@@ -55,227 +56,122 @@ class TripSuggestionsEngine {
         val description: String
     )
 
-    // Definisci le costanti per le stagioni
-    companion object {
-        private const val WINTER = 0
-        private const val SPRING = 1
-        private const val SUMMER = 2
-        private const val FALL = 3
-    }
-
     fun generateSuggestions(
         trips: List<TripEntity>,
         prediction: TravelPrediction,
         upcomingTrips: List<TripEntity>
     ): List<TravelSuggestion> {
         val suggestions = mutableListOf<TravelSuggestion>()
+        val userPreferences = analyzeUserPreferences(trips)
 
-        // Analizza pattern utente
-        val userProfile = analyzeUserProfile(trips)
-
-        // 1. Se trend in diminuzione o nessun viaggio programmato
-        if (shouldSuggestMoreTravel(prediction, upcomingTrips)) {
-            suggestions.addAll(generateMotivationalSuggestions(userProfile))
+        // 1. Suggerimenti motivazionali se pochi viaggi programmati
+        if (upcomingTrips.isEmpty() || prediction.trend == TravelTrend.DECREASING) {
+            suggestions.addAll(generateMotivationalSuggestions())
         }
 
-        // 2. Suggerimenti basati su preferenze
-        suggestions.addAll(generatePersonalizedSuggestions(userProfile))
+        // 2. Suggerimenti basati su preferenze utente
+        suggestions.addAll(generatePersonalizedSuggestions(userPreferences))
 
         // 3. Suggerimenti stagionali
         suggestions.addAll(generateSeasonalSuggestions())
 
-        // 4. Suggerimenti per completare obiettivi
-        suggestions.addAll(generateGoalBasedSuggestions(prediction, userProfile))
-
         return suggestions
-            .distinctBy { it.destination }
-            .sortedBy { it.priority }
-            .take(8) // Massimo 8 suggerimenti
+            .distinctBy { it.title }
+            .take(8) // Massimo 8 suggerimenti con pool più grande
     }
 
-    private data class UserProfile(
-        val preferredTypes: List<String>,
-        val averageDistance: Double,
-        val preferredSeasons: List<Int>,
-        val visitedDestinations: Set<String>,
-        val activityLevel: ActivityLevel
-    )
-
-    private enum class ActivityLevel { LOW, MEDIUM, HIGH }
-
-    private fun analyzeUserProfile(trips: List<TripEntity>): UserProfile {
+    private fun analyzeUserPreferences(trips: List<TripEntity>): UserPreferences {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
 
         if (completedTrips.isEmpty()) {
-            return UserProfile(
-                preferredTypes = listOf("Cultura", "Natura"),
-                averageDistance = 50.0,
-                preferredSeasons = listOf(SPRING, SUMMER),
-                visitedDestinations = emptySet(),
-                activityLevel = ActivityLevel.MEDIUM
+            return UserPreferences(
+                favoriteTypes = listOf("Cultura", "Natura"),
+                visitedDestinations = emptySet()
             )
         }
 
-        // Analizza tipi preferiti
         val typeFrequency = completedTrips.groupingBy { it.type }.eachCount()
-        val preferredTypes = typeFrequency.entries
-            .sortedByDescending { it.value }
-            .take(3)
-            .map { it.key }
-
-        // Calcola distanza media
-        val avgDistance = completedTrips.map { it.trackedDistance / 1000.0 }.average()
-
-        // Analizza stagioni preferite
-        val calendar = Calendar.getInstance()
-        val seasonFrequency = completedTrips.map { trip ->
-            calendar.timeInMillis = trip.startDate
-            getSeason(calendar.get(Calendar.MONTH))
-        }.groupingBy { it }.eachCount()
-
-        val preferredSeasons = seasonFrequency.entries
+        val favoriteTypes = typeFrequency.entries
             .sortedByDescending { it.value }
             .take(2)
             .map { it.key }
 
-        // Determina livello di attività
-        val tripsPerMonth = completedTrips.size.toDouble() / 12.0
-        val activityLevel = when {
-            tripsPerMonth >= 2.0 -> ActivityLevel.HIGH
-            tripsPerMonth >= 0.5 -> ActivityLevel.MEDIUM
-            else -> ActivityLevel.LOW
-        }
-
-        return UserProfile(
-            preferredTypes = preferredTypes,
-            averageDistance = avgDistance,
-            preferredSeasons = preferredSeasons,
-            visitedDestinations = completedTrips.map { it.destination }.toSet(),
-            activityLevel = activityLevel
+        return UserPreferences(
+            favoriteTypes = favoriteTypes,
+            visitedDestinations = completedTrips.map { it.destination }.toSet()
         )
     }
 
-    private fun getSeason(month: Int): Int {
-        return when (month) {
-            Calendar.DECEMBER, Calendar.JANUARY, Calendar.FEBRUARY -> WINTER
-            Calendar.MARCH, Calendar.APRIL, Calendar.MAY -> SPRING
-            Calendar.JUNE, Calendar.JULY, Calendar.AUGUST -> SUMMER
-            else -> FALL // Calendar.SEPTEMBER, Calendar.OCTOBER, Calendar.NOVEMBER
-        }
-    }
+    private data class UserPreferences(
+        val favoriteTypes: List<String>,
+        val visitedDestinations: Set<String>
+    )
 
-    private fun shouldSuggestMoreTravel(
-        prediction: TravelPrediction,
-        upcomingTrips: List<TripEntity>
-    ): Boolean {
-        return prediction.trend == TravelTrend.DECREASING ||
-                upcomingTrips.isEmpty() ||
-                prediction.predictedTripsCount < 1
-    }
-
-    private fun generateMotivationalSuggestions(userProfile: UserProfile): List<TravelSuggestion> {
-        val messages = listOf(
-            "Il momento perfetto per una nuova esperienza!",
-            "Esplora qualcosa di diverso dal solito",
-            "Una piccola avventura può riaccendere la passione",
-            "Tempo di creare nuovi ricordi speciali!"
-        )
-
-        return destinationPool
-            .filter { !userProfile.visitedDestinations.contains(it.destination) }
-            .take(3)
+    private fun generateMotivationalSuggestions(): List<TravelSuggestion> {
+        return suggestionTemplates
+            .take(2)
             .mapIndexed { index, template ->
                 TravelSuggestion(
-                    id = "motivational_${template.destination.replace(" ", "_")}",
+                    id = "motivational_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.destination,
+                    destination = template.title,
                     type = template.type,
                     priority = SuggestionPriority.HIGH,
-                    reason = messages[index % messages.size]
+                    reason = "È il momento perfetto per una nuova esperienza!"
                 )
             }
     }
 
-    private fun generatePersonalizedSuggestions(
-        userProfile: UserProfile
-    ): List<TravelSuggestion> {
-        return destinationPool
-            .filter { template ->
-                // Filtra per tipo preferito
-                userProfile.preferredTypes.contains(template.type) &&
-                        // Non già visitato
-                        !userProfile.visitedDestinations.contains(template.destination)
-            }
-            .take(3)
-            .map { template ->
+    private fun generatePersonalizedSuggestions(preferences: UserPreferences): List<TravelSuggestion> {
+        return suggestionTemplates
+            .filter { preferences.favoriteTypes.contains(it.type) }
+            .take(2)
+            .mapIndexed { index, template ->
                 TravelSuggestion(
-                    id = "personalized_${template.destination.replace(" ", "_")}",
+                    id = "personalized_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.destination,
+                    destination = template.title,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
-                    reason = "Basato sulle tue preferenze per ${template.type.lowercase()}"
+                    reason = "Basato sui tuoi interessi per ${template.type.lowercase()}"
                 )
             }
     }
 
     private fun generateSeasonalSuggestions(): List<TravelSuggestion> {
-        val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
-        val season = getSeason(currentMonth)
-
-        val seasonalExperiences = when (season) {
-            WINTER -> listOf("Ritiro benessere", "Tour dei centri storici", "Weekend artistico")
-            SPRING -> listOf("Camminate nei boschi", "Weekend avventura", "Tour enogastronomico")
-            SUMMER -> listOf("Vacanza al mare", "Tour costiero", "Escursione nei parchi")
-            FALL -> listOf("Trekking in montagna", "Fuga romantica", "Meditazione in natura")
-            else -> listOf("City break", "Viaggio culturale") // fallback
+        val currentSeason = getCurrentSeason()
+        val seasonalTypes = when (currentSeason) {
+            "Inverno" -> listOf("Relax", "Cultura", "Business")
+            "Primavera" -> listOf("Natura", "Avventura", "Gastronomia")
+            "Estate" -> listOf("Mare", "Avventura", "Natura")
+            "Autunno" -> listOf("Gastronomia", "Romantico", "Cultura")
+            else -> listOf("Cultura")
         }
 
-        return destinationPool
-            .filter { seasonalExperiences.contains(it.destination) }
+        return suggestionTemplates
+            .filter { seasonalTypes.contains(it.type) }
             .take(2)
-            .map { template ->
+            .mapIndexed { index, template ->
                 TravelSuggestion(
-                    id = "seasonal_${template.destination.replace(" ", "_")}",
+                    id = "seasonal_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.destination,
+                    destination = template.title,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
-                    reason = "Ideale per questa stagione"
+                    reason = "Ideale per $currentSeason"
                 )
             }
     }
 
-    private fun generateGoalBasedSuggestions(
-        prediction: TravelPrediction,
-        userProfile: UserProfile
-    ): List<TravelSuggestion> {
-        val suggestions = mutableListOf<TravelSuggestion>()
-
-        // Se la previsione è bassa, suggerisci esperienze brevi
-        if (prediction.predictedTripsCount < 2) {
-            val shortExperiences = destinationPool
-                .filter { !userProfile.visitedDestinations.contains(it.destination) }
-                .take(1)
-
-            shortExperiences.forEach { template ->
-                suggestions.add(
-                    TravelSuggestion(
-                        id = "goal_${template.destination.replace(" ", "_")}",
-                        title = "Weekend ${template.destination.lowercase()}",
-                        description = template.description,
-                        destination = template.destination,
-                        type = template.type,
-                        priority = SuggestionPriority.LOW,
-                        reason = "Perfetto per iniziare a viaggiare di più"
-                    )
-                )
-            }
+    private fun getCurrentSeason(): String {
+        return when (Calendar.getInstance().get(Calendar.MONTH)) {
+            Calendar.DECEMBER, Calendar.JANUARY, Calendar.FEBRUARY -> "Inverno"
+            Calendar.MARCH, Calendar.APRIL, Calendar.MAY -> "Primavera"
+            Calendar.JUNE, Calendar.JULY, Calendar.AUGUST -> "Estate"
+            else -> "Autunno"
         }
-
-        return suggestions
     }
 }
