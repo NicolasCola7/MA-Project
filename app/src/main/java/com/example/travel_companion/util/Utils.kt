@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit
 object Utils {
     const val TRACKING_TIME: Long = 1000
     val dateTimeFormat: SimpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
-    val timeFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss", Locale.ITALY)
 
     fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val originalWidth = bitmap.width
@@ -31,6 +30,19 @@ object Utils {
         val newHeight = (originalHeight * scaleFactor).toInt()
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
+    fun getFormattedTrackingTime(timestamp: Long): String {
+        var milliseconds = timestamp
+        val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
+        milliseconds -= TimeUnit.HOURS.toMillis(hours)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds)
+        milliseconds -= TimeUnit.MINUTES.toMillis(minutes)
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds)
+
+        return "${if(hours < 10) "0" else ""}$hours:" +
+                "${if(minutes < 10) "0" else ""}$minutes:" +
+                "${if(seconds < 10) "0" else ""}$seconds"
     }
 
     fun createNotificationChannel(notificationManager: NotificationManager, channelId: String, channelName: String) {

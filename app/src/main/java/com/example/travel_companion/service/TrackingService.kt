@@ -26,6 +26,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -38,10 +42,10 @@ class TrackingService : LifecycleService() {
     @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
-    lateinit var geofencingClient: GeofencingClient
-
+    private lateinit var geofencingClient: GeofencingClient
 
     companion object {
+        val trackingTimeInMillis = MutableLiveData<Long>()
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
         val geofenceList = MutableLiveData<List<Geofence>>()
@@ -103,6 +107,27 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private var lapTime = 0L
+    private var timeRun = trackingTimeInMillis.value ?: 0L
+    private var timeStarted = 0L
+
+    private fun startTimer() {
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                // time difference between now and timeStarted
+                lapTime = System.currentTimeMillis() - timeStarted
+                // post the new lapTime
+                trackingTimeInMillis.postValue(timeRun + lapTime)
+
+                delay(50L) // delay the coroutine by 50 seconds to prevent too frequent updates in the live data
+            }
+            timeRun += lapTime
+        }
+    }
+
     private fun pauseService() {
         isTracking.postValue(false)
     }
@@ -145,7 +170,7 @@ class TrackingService : LifecycleService() {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
             pathPoints.value?.apply {
-                if (last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
+                if (isNotEmpty() && last().isNotEmpty() && areCoordinatesSame(last().last(), pos)) {
                     return
                 }
 
@@ -178,8 +203,8 @@ class TrackingService : LifecycleService() {
     }
 
     private fun startForegroundService() {
-        addEmptyPolyline()
         isTracking.postValue(true)
+        startTimer()
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel(notificationManager, NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME)
@@ -250,7 +275,6 @@ class TrackingService : LifecycleService() {
 
     override fun onDestroy() {
         super.onDestroy()
-
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
     }

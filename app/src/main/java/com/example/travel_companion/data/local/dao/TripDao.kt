@@ -18,7 +18,7 @@ interface TripDao {
     fun getAll(): LiveData<List<TripEntity>>
 
     @Query("SELECT * FROM trip WHERE id = :tripId LIMIT 1")
-    suspend fun getTripById(tripId: Long): TripEntity?
+    fun getTripById(tripId: Long): LiveData<TripEntity?>
 
     @Update
     suspend fun updateTrip(trip: TripEntity)

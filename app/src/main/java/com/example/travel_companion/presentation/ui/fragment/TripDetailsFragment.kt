@@ -41,9 +41,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.Date
 import com.example.travel_companion.domain.model.TripStatus
+import com.example.travel_companion.util.Utils.getFormattedTrackingTime
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.PointOfInterest
+import java.util.Locale
 
 @AndroidEntryPoint
 class TripDetailsFragment: Fragment() {
@@ -53,15 +55,17 @@ class TripDetailsFragment: Fragment() {
     private val viewModel: TripDetailViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
 
-    private var isTracking = false
+    private var isTracking = TrackingService.isTracking.value ?: false
     private var pathPoints = mutableListOf<Polyline>()
     private var poiPoints = mutableListOf<POIEntity>()
     private var geofenceList = mutableListOf<Geofence>()
     private var map: GoogleMap? = null
     private var trackedDistance: MutableLiveData<Double?> = MutableLiveData(0.0)
+    private var curTimeInMillis = 0L
 
     private var trackingObserver: Observer<Boolean>? = null
     private var pathPointsObserver: Observer<Polylines>? = null
+    private var timerObserver: Observer<Long>? = null
 
     private var isFetching: MutableLiveData<Boolean> = MutableLiveData(true)
 
@@ -96,6 +100,8 @@ class TripDetailsFragment: Fragment() {
         isFetching.observe(viewLifecycleOwner) {
             binding.mapView.getMapAsync {
                 map = it
+                map!!.clear()
+
                 addAllPolylines()
 
                 for(poi in poiPoints) {
@@ -153,7 +159,7 @@ class TripDetailsFragment: Fragment() {
             .setTitle("Terminazione viaggio")
             .setMessage("Terminando il viaggio non sarai più in grado di tracciare i tuoi spostamenti, sei sicuro di voler continuare?")
             .setPositiveButton("Si") { _, _ ->
-                viewModel.updateTripStatus(TripStatus.FINISHED)
+                viewModel.finishTrip()
             }
             .setNegativeButton("No") { dialogInterface, _ ->
                 dialogInterface.cancel()
@@ -162,6 +168,7 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun initTripData() {
         viewModel.loadCoordinates(args.tripId)
         viewModel.loadPOIs(args.tripId)
@@ -177,7 +184,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
-        viewModel.poi.observe(viewLifecycleOwner) { pois ->
+        viewModel.pois.observe(viewLifecycleOwner) { pois ->
             pois.let {
                 if(it.isNotEmpty()) {
                     poiPoints = it.toMutableList()
@@ -189,6 +196,7 @@ class TripDetailsFragment: Fragment() {
         viewModel.trip.observe(viewLifecycleOwner) { trip ->
             trip.let {
                 trackedDistance.postValue(it!!.trackedDistance)
+                TrackingService.trackingTimeInMillis.postValue(it.timeTracked)
 
                 val destinationCoordinates = LatLng(it.destinationLatitude, it.destinationLongitude)
                 initializeMap(destinationCoordinates)
@@ -199,11 +207,10 @@ class TripDetailsFragment: Fragment() {
 
         trackedDistance.observe(viewLifecycleOwner) {
             if(trackedDistance.value!! >= 1000.00) {
-                val distanceInKM = "%.2f".format(trackedDistance.value!! / 1000.0)
-                    .toDouble()
-                binding.tvDistance.text = distanceInKM.toString() + " Km"
+                val distanceInKM = String.format(Locale.US, "%.2f", trackedDistance.value!! / 1000.0)
+                binding.tvDistance.text = "$distanceInKM Km"
             } else {
-                binding.tvDistance.text = trackedDistance.value!!.toInt().toString() + " m"
+                binding.tvDistance.text = "${trackedDistance.value!!.toInt()} m"
             }
         }
     }
@@ -218,11 +225,9 @@ class TripDetailsFragment: Fragment() {
                 pathPoints.add(currentPolyline)
                 currentPolyline = mutableListOf() // reset current polyline
                 pathPoints.add(mutableListOf()) // add empty polyline to separate next from the previous one
-               // Timber.d("new")
             }
 
             previousTimestamp = coordinate.timestamp
-           // Timber.d(Utils.timeFormat.format(previousTimestamp).toString())
             previousCoordinate = LatLng(coordinate.latitude, coordinate.longitude)
             currentPolyline.add(previousCoordinate)
         }
@@ -232,7 +237,7 @@ class TripDetailsFragment: Fragment() {
     }
 
     private fun subscribeToObservers() {
-        trackingObserver = Observer<Boolean> { isTracking ->
+        trackingObserver = Observer { isTracking ->
             if (isResumed) {
                 updateTracking(isTracking)
             } else {
@@ -240,7 +245,7 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
-        pathPointsObserver = Observer<Polylines> { pathPointsList ->
+        pathPointsObserver = Observer { pathPointsList ->
             pathPoints = pathPointsList
 
             refreshTrackedDistance()
@@ -252,8 +257,18 @@ class TripDetailsFragment: Fragment() {
             }
         }
 
+        timerObserver = Observer { time ->
+            curTimeInMillis = time
+            val formattedTime = getFormattedTrackingTime(curTimeInMillis)
+
+            if(isResumed) {
+                binding.tvTimer.text = formattedTime
+            }
+        }
+
         TrackingService.isTracking.observeForever(trackingObserver!!)
         TrackingService.pathPoints.observeForever(pathPointsObserver!!)
+        TrackingService.trackingTimeInMillis.observeForever(timerObserver!!)
     }
 
     private fun refreshTrackedDistance() {
@@ -280,7 +295,6 @@ class TripDetailsFragment: Fragment() {
             val lat = pathPoints.last().last().latitude
             val long = pathPoints.last().last().longitude
             viewModel.insertCoordinate(lat, long, args.tripId)
-            Timber.d("Stored")
         }
     }
 
@@ -295,6 +309,15 @@ class TripDetailsFragment: Fragment() {
         if (trip.status == TripStatus.FINISHED || trip.status == TripStatus.PLANNED) {
             binding.btnFinishTrip.visibility = View.GONE
             binding.btnToggleTracking.visibility = View.GONE
+        } else {
+            binding.btnToggleTracking.visibility = View.VISIBLE
+            binding.btnFinishTrip.visibility = View.VISIBLE
+        }
+
+        // if is tracking and the scheduler terminates the trip, then stop the service
+        if (isTracking && trip.status == TripStatus.FINISHED) {
+            viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
+            sendCommandToService("ACTION_STOP_SERVICE")
         }
     }
 
@@ -304,15 +327,19 @@ class TripDetailsFragment: Fragment() {
             TrackingService.geofenceList.postValue(geofenceList)
         } else {
             sendCommandToService("ACTION_PAUSE_SERVICE")
-            viewModel.updateTripDistance(trackedDistance.value!!)
+            viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if(!isTracking) {
             binding.btnToggleTracking.text = "Traccia"
             binding.btnFinishTrip.visibility = View.VISIBLE
+        } else if(isTracking && viewModel.trip.value!!.status == TripStatus.FINISHED){
+            binding.btnFinishTrip.visibility = View.GONE
+            binding.btnToggleTracking.visibility = View.GONE
         } else {
             binding.btnToggleTracking.text = "Ferma"
             binding.btnFinishTrip.visibility = View.GONE
@@ -380,7 +407,6 @@ class TripDetailsFragment: Fragment() {
             requireContext().startService(it)
         }
 
-
     private fun addGeofence(pos: LatLng, placeName: String) {
         val geofence = Geofence.Builder()
             .setRequestId(placeName)
@@ -447,9 +473,9 @@ class TripDetailsFragment: Fragment() {
         layout.addView(nameInput)
 
         val dialog = AlertDialog.Builder(requireContext()).setView(layout)
-            .setTitle("User Information")
-            .setPositiveButton("OK",null)
-            .setNegativeButton("Cancel", null)
+            .setTitle("Salva Punto di Interesse")
+            .setPositiveButton("Salva",null)
+            .setNegativeButton("Annulla", null)
             .create()
 
         dialog.setOnShowListener {
@@ -512,7 +538,6 @@ class TripDetailsFragment: Fragment() {
         super.onResume()
         _binding?.mapView?.onResume()
 
-        updateTracking(isTracking)
         addAllPolylines()
     }
 
@@ -537,17 +562,21 @@ class TripDetailsFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        //remove observers
         trackingObserver?.let {
             TrackingService.isTracking.removeObserver(it)
         }
         pathPointsObserver?.let {
             TrackingService.pathPoints.removeObserver(it)
         }
+        timerObserver?.let {
+            TrackingService.trackingTimeInMillis.removeObserver(it)
+        }
 
         sendCommandToService("ACTION_STOP_SERVICE")
-        viewModel.updateTripDistance(trackedDistance.value!!)
+        viewModel.updateTimeAndDistanceTracked(curTimeInMillis, trackedDistance.value!!)
+
         super.onDestroyView()
+        _binding?.mapView?.onDestroy()
         _binding = null
     }
 }
