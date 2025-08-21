@@ -26,9 +26,18 @@
 
         <!-- Overlay scuro per migliorare la leggibilità del testo -->
         <View
+            android:id="@+id/overlay_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/dark_overlay" />
+
+        <!-- Overlay di selezione (per evidenziare le card selezionate) -->
+        <View
+            android:id="@+id/selection_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/selection_overlay"
+            android:visibility="gone" />
 
         <!-- Placeholder quando non c'è immagine -->
         <View

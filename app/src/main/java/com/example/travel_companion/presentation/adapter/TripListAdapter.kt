@@ -164,12 +164,20 @@ class TripListAdapter(
             val cardView = binding.root
 
             if (isSelected) {
+                // Aggiungi overlay di selezione sopra l'immagine/contenuto
+                val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
+                selectionOverlay?.visibility = View.VISIBLE
+
                 // Cambia lo sfondo per indicare la selezione
                 cardView.setBackgroundResource(R.drawable.note_card_selected)
 
                 // Aggiungi una leggera elevazione
                 cardView.cardElevation = 8f
             } else {
+                // Rimuovi overlay di selezione
+                val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
+                selectionOverlay?.visibility = View.GONE
+
                 // Ripristina lo sfondo normale
                 cardView.setBackgroundResource(R.drawable.note_card_gradient)
 
