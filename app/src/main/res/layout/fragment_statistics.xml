@@ -298,13 +298,6 @@
                     android:textStyle="bold"
                     android:textColor="@color/text_primary" />
 
-                <!-- Progress Bar per le predizioni -->
-                <ProgressBar
-                    android:id="@+id/predictions_progress_bar"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:visibility="gone" />
-
             </LinearLayout>
 
             <com.github.mikephil.charting.charts.BarChart

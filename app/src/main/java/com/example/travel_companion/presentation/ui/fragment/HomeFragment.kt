@@ -83,16 +83,6 @@ class HomeFragment : Fragment() {
                 binding.suggestionsSection.visibility = if (show) View.VISIBLE else View.GONE
             }
         }
-
-        // Osserva gli errori
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.error.collect { error ->
-                if (error != null) {
-                    Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
-                    viewModel.dismissError()
-                }
-            }
-        }
     }
 
     @SuppressLint("SetTextI18n")

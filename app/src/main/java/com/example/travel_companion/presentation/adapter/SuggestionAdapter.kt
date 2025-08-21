@@ -8,10 +8,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.ItemSuggestionBinding
-import com.example.travel_companion.domain.model.TravelSuggestion
+import com.example.travel_companion.domain.model.TripSuggestion
 
 class SuggestionsAdapter
-    : ListAdapter<TravelSuggestion, SuggestionsAdapter.SuggestionViewHolder>(
+    : ListAdapter<TripSuggestion, SuggestionsAdapter.SuggestionViewHolder>(
     SuggestionDiffCallback()
 ) {
 
@@ -32,7 +32,7 @@ class SuggestionsAdapter
         private val binding: ItemSuggestionBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(suggestion: TravelSuggestion) {
+        fun bind(suggestion: TripSuggestion) {
             binding.apply {
                 suggestionDestination.text = suggestion.destination
                 suggestionTitle.text = suggestion.title
@@ -56,15 +56,15 @@ class SuggestionsAdapter
         }
     }
 
-    private class SuggestionDiffCallback : DiffUtil.ItemCallback<TravelSuggestion>() {
+    private class SuggestionDiffCallback : DiffUtil.ItemCallback<TripSuggestion>() {
         override fun areItemsTheSame(
-            oldItem: TravelSuggestion,
-            newItem: TravelSuggestion
+            oldItem: TripSuggestion,
+            newItem: TripSuggestion
         ): Boolean = oldItem.id == newItem.id
 
         override fun areContentsTheSame(
-            oldItem: TravelSuggestion,
-            newItem: TravelSuggestion
+            oldItem: TripSuggestion,
+            newItem: TripSuggestion
         ): Boolean = oldItem == newItem
     }
 }

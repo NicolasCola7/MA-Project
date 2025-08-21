@@ -3,8 +3,8 @@ package com.example.travel_companion.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travel_companion.data.repository.PredictionRepository
-import com.example.travel_companion.domain.model.TravelPrediction
-import com.example.travel_companion.domain.model.TravelSuggestion
+import com.example.travel_companion.domain.model.TripPrediction
+import com.example.travel_companion.domain.model.TripSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,16 +16,10 @@ class PredictionViewModel @Inject constructor(
     private val predictionRepository: PredictionRepository
 ) : ViewModel() {
 
-    private val _prediction = MutableStateFlow<TravelPrediction?>(null)
-    val prediction: StateFlow<TravelPrediction?> = _prediction.asStateFlow()
+    private val _prediction = MutableStateFlow<TripPrediction?>(null)
+    val prediction: StateFlow<TripPrediction?> = _prediction.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
+    private val _suggestions = MutableStateFlow<List<TripSuggestion>>(emptyList())
 
     companion object {
         private const val TAG = "PredictionViewModel"
@@ -39,9 +33,6 @@ class PredictionViewModel @Inject constructor(
     fun loadPredictions() {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
-                _error.value = null
-
                 // Carica previsioni
                 val prediction = predictionRepository.calculateTravelPrediction()
 
@@ -50,20 +41,10 @@ class PredictionViewModel @Inject constructor(
 
                 _prediction.value = prediction
                 _suggestions.value = suggestions
-                _isLoading.value = false
-
-                Timber.tag(TAG).d("Predizioni caricate: ${prediction.predictedTripsCount} viaggi, ${prediction.predictedDistance} km")
-
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Errore nel caricamento predizioni")
-                _isLoading.value = false
-                _error.value = "Errore nel caricamento delle previsioni"
             }
         }
-    }
-
-    fun dismissError() {
-        _error.value = null
     }
 
     private fun observePredictionChanges() {
@@ -71,7 +52,6 @@ class PredictionViewModel @Inject constructor(
             predictionRepository.getPredictionFlow()
                 .catch { e ->
                     Timber.tag(TAG).e(e, "Errore nel flow predizioni")
-                    _error.value = "Errore nell'aggiornamento delle previsioni"
                 }
                 .collect { prediction ->
                     _prediction.value = prediction

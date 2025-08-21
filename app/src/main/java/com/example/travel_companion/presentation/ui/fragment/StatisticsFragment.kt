@@ -200,26 +200,6 @@ class StatisticsFragment : Fragment() {
                 }
             }
         }
-
-        // Osserva gli errori
-        viewLifecycleOwner.lifecycleScope.launch {
-            predictionViewModel.error.collect { error ->
-                if (error != null) {
-                    Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG)
-                        .setAction("Riprova") {
-                            predictionViewModel.loadPredictions()
-                        }.show()
-                    predictionViewModel.dismissError()
-                }
-            }
-        }
-
-        // Osserva lo stato di loading
-        viewLifecycleOwner.lifecycleScope.launch {
-            predictionViewModel.isLoading.collect { isLoading ->
-                binding.predictionsProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-            }
-        }
     }
 
     // Mantieni tutti i metodi esistenti per heatmap
@@ -379,9 +359,11 @@ class StatisticsFragment : Fragment() {
             // Colori diversi per dati storici e predizione
             colors = monthlyData.mapIndexed { index, _ ->
                 if (index == 12) {
-                    Color.parseColor("#FF9800") // Colore arancione per la predizione
+                    // Colore arancione per la predizione
+                    Color.parseColor("#FF9800")
                 } else {
-                    Color.parseColor("#2196F3") // Colore blu per i dati storici
+                    // Colore blu per i dati storici
+                    Color.parseColor("#2196F3")
                 }
             }
             valueTextColor = Color.BLACK

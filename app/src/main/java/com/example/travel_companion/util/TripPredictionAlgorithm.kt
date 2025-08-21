@@ -1,8 +1,8 @@
 package com.example.travel_companion.util
 
 import com.example.travel_companion.data.local.entity.TripEntity
-import com.example.travel_companion.domain.model.TravelPrediction
-import com.example.travel_companion.domain.model.TravelTrend
+import com.example.travel_companion.domain.model.TripPrediction
+import com.example.travel_companion.domain.model.TripTrend
 import com.example.travel_companion.domain.model.TripStatus
 import java.util.*
 import kotlin.math.min
@@ -14,15 +14,15 @@ class TripPredictionAlgorithm {
         private const val MONTHS_TO_ANALYZE = 4
     }
 
-    fun calculatePrediction(trips: List<TripEntity>): TravelPrediction {
+    fun calculatePrediction(trips: List<TripEntity>): TripPrediction {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
 
         if (completedTrips.size < MIN_TRIPS_FOR_PREDICTION) {
-            return TravelPrediction(
+            return TripPrediction(
                 predictedDistance = 0.0,
                 predictedTripsCount = 0,
                 confidence = 0.0f,
-                trend = TravelTrend.INSUFFICIENT_DATA
+                trend = TripTrend.INSUFFICIENT_DATA
             )
         }
 
@@ -33,12 +33,12 @@ class TripPredictionAlgorithm {
 
         // Predizione semplice basata sulla media e trend
         val trendMultiplier = when (trend) {
-            TravelTrend.INCREASING -> 1.2
-            TravelTrend.DECREASING -> 0.8
+            TripTrend.INCREASING -> 1.2
+            TripTrend.DECREASING -> 0.8
             else -> 1.0
         }
 
-        return TravelPrediction(
+        return TripPrediction(
             predictedDistance = avgDistancePerMonth * trendMultiplier,
             predictedTripsCount = (avgTripsPerMonth * trendMultiplier).toInt(),
             confidence = calculateConfidence(completedTrips.size, monthlyData.size),
@@ -69,16 +69,16 @@ class TripPredictionAlgorithm {
             }
     }
 
-    private fun calculateTrend(monthlyData: List<MonthlyData>): TravelTrend {
-        if (monthlyData.size < 2) return TravelTrend.INSUFFICIENT_DATA
+    private fun calculateTrend(monthlyData: List<MonthlyData>): TripTrend {
+        if (monthlyData.size < 2) return TripTrend.INSUFFICIENT_DATA
 
         val recentTrips = monthlyData.takeLast(2).sumOf { it.tripsCount }
         val olderTrips = monthlyData.dropLast(2).sumOf { it.tripsCount }
 
         return when {
-            recentTrips > olderTrips -> TravelTrend.INCREASING
-            recentTrips < olderTrips -> TravelTrend.DECREASING
-            else -> TravelTrend.STABLE
+            recentTrips > olderTrips -> TripTrend.INCREASING
+            recentTrips < olderTrips -> TripTrend.DECREASING
+            else -> TripTrend.STABLE
         }
     }
 

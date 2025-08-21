@@ -1,6 +1,6 @@
 package com.example.travel_companion.domain.model
 
-data class TravelSuggestion(
+data class TripSuggestion(
     val id: String,
     val title: String,
     val description: String,

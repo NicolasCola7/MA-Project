@@ -4,7 +4,7 @@ import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.data.repository.PredictionRepository
 import com.example.travel_companion.data.repository.TripRepository
-import com.example.travel_companion.domain.model.TravelSuggestion
+import com.example.travel_companion.domain.model.TripSuggestion
 import com.example.travel_companion.domain.model.TripStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +23,6 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
-    val currentDate: LiveData<String> get() = _currentDate
 
     // LiveData del viaggio in corso
     private val currentTrip: LiveData<TripEntity?> =
@@ -51,14 +50,11 @@ class HomeViewModel @Inject constructor(
     }
 
     // StateFlow per suggerimenti
-    private val _suggestions = MutableStateFlow<List<TravelSuggestion>>(emptyList())
-    val suggestions: StateFlow<List<TravelSuggestion>> = _suggestions.asStateFlow()
+    private val _suggestions = MutableStateFlow<List<TripSuggestion>>(emptyList())
+    val suggestions: StateFlow<List<TripSuggestion>> = _suggestions.asStateFlow()
 
     private val _showSuggestions = MutableStateFlow(false)
     val showSuggestions: StateFlow<Boolean> = _showSuggestions.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
 
     companion object {
         private const val TAG = "HomeViewModel"
@@ -79,34 +75,24 @@ class HomeViewModel @Inject constructor(
     private fun loadSuggestions() {
         viewModelScope.launch {
             try {
-                _error.value = null
-
                 // Carica suggerimenti limitati per la home
                 val allSuggestions = predictionRepository.getTravelSuggestions()
                 val homeSuggestions = allSuggestions.take(MAX_HOME_SUGGESTIONS)
 
                 _suggestions.value = homeSuggestions
                 _showSuggestions.value = homeSuggestions.isNotEmpty()
-
-                Timber.tag(TAG).d("Caricati ${homeSuggestions.size} suggerimenti per home")
-
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Errore nel caricamento suggerimenti")
-                _error.value = "Errore nel caricamento dei suggerimenti"
             }
         }
     }
 
     private fun observeTripChanges() {
         // Ricarica suggerimenti quando cambia lo stato dei viaggi
-        tripToShow.observeForever { trip ->
+        tripToShow.observeForever {
             viewModelScope.launch {
                 loadSuggestions()
             }
         }
-    }
-
-    fun dismissError() {
-        _error.value = null
     }
 }

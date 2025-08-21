@@ -58,14 +58,14 @@ class TripSuggestionsEngine {
 
     fun generateSuggestions(
         trips: List<TripEntity>,
-        prediction: TravelPrediction,
+        prediction: TripPrediction,
         upcomingTrips: List<TripEntity>
-    ): List<TravelSuggestion> {
-        val suggestions = mutableListOf<TravelSuggestion>()
+    ): List<TripSuggestion> {
+        val suggestions = mutableListOf<TripSuggestion>()
         val userPreferences = analyzeUserPreferences(trips)
 
         // 1. Suggerimenti motivazionali se pochi viaggi programmati
-        if (upcomingTrips.isEmpty() || prediction.trend == TravelTrend.DECREASING) {
+        if (upcomingTrips.isEmpty() || prediction.trend == TripTrend.DECREASING) {
             suggestions.addAll(generateMotivationalSuggestions())
         }
 
@@ -85,7 +85,7 @@ class TripSuggestionsEngine {
 
         if (completedTrips.isEmpty()) {
             return UserPreferences(
-                favoriteTypes = listOf("Cultura", "Natura"),
+                favoriteTypes = listOf("Cultura", "Natura", "Mare"),
                 visitedDestinations = emptySet()
             )
         }
@@ -107,15 +107,15 @@ class TripSuggestionsEngine {
         val visitedDestinations: Set<String>
     )
 
-    private fun generateMotivationalSuggestions(): List<TravelSuggestion> {
+    private fun generateMotivationalSuggestions(): List<TripSuggestion> {
         return suggestionTemplates
             .take(2)
             .mapIndexed { index, template ->
-                TravelSuggestion(
+                TripSuggestion(
                     id = "motivational_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.title,
+                    destination = template.destination,
                     type = template.type,
                     priority = SuggestionPriority.HIGH,
                     reason = "È il momento perfetto per una nuova esperienza!"
@@ -123,16 +123,16 @@ class TripSuggestionsEngine {
             }
     }
 
-    private fun generatePersonalizedSuggestions(preferences: UserPreferences): List<TravelSuggestion> {
+    private fun generatePersonalizedSuggestions(preferences: UserPreferences): List<TripSuggestion> {
         return suggestionTemplates
             .filter { preferences.favoriteTypes.contains(it.type) }
             .take(2)
             .mapIndexed { index, template ->
-                TravelSuggestion(
+                TripSuggestion(
                     id = "personalized_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.title,
+                    destination = template.destination,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
                     reason = "Basato sui tuoi interessi per ${template.type.lowercase()}"
@@ -140,7 +140,7 @@ class TripSuggestionsEngine {
             }
     }
 
-    private fun generateSeasonalSuggestions(): List<TravelSuggestion> {
+    private fun generateSeasonalSuggestions(): List<TripSuggestion> {
         val currentSeason = getCurrentSeason()
         val seasonalTypes = when (currentSeason) {
             "Inverno" -> listOf("Relax", "Cultura", "Business")
@@ -154,11 +154,11 @@ class TripSuggestionsEngine {
             .filter { seasonalTypes.contains(it.type) }
             .take(2)
             .mapIndexed { index, template ->
-                TravelSuggestion(
+                TripSuggestion(
                     id = "seasonal_$index",
                     title = template.title,
                     description = template.description,
-                    destination = template.title,
+                    destination = template.destination,
                     type = template.type,
                     priority = SuggestionPriority.MEDIUM,
                     reason = "Ideale per $currentSeason"
