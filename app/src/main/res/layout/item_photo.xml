@@ -4,10 +4,18 @@
     android:layout_height="200dp"
     android:layout_margin="8dp">
 
+    <!-- Immagine della foto -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:contentDescription="Foto del viaggio" />
+        android:scaleType="centerCrop" />
+
+    <!-- Overlay di selezione -->
+    <View
+        android:id="@+id/selection_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/selection_overlay"
+        android:visibility="gone" />
 </FrameLayout>

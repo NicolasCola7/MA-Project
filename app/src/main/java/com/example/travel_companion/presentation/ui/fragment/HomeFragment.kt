@@ -107,7 +107,34 @@ class HomeFragment : Fragment() {
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val start = dateFormat.format(Date(trip.startDate))
         val end = dateFormat.format(Date(trip.endDate))
-        binding.tvDates.text = "$start – $end"
+        binding.tvDates.text = "$start $end"
+
+        // Gestione immagine e overlay
+        if (trip.imageData != null) {
+            // Ha immagine: mostra immagine con overlay e testo bianco
+            val bitmap = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
+            binding.ivTripImage.setImageBitmap(bitmap)
+            binding.viewImagePlaceholder.visibility = View.GONE
+
+            // Mostra overlay per leggibilità testo
+            binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.VISIBLE
+
+            // Testo bianco con ombra
+            binding.tvDestination.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+            binding.tvDates.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+
+        } else {
+            // Nessuna immagine: placeholder senza overlay e testo normale
+            binding.ivTripImage.setImageDrawable(null)
+            binding.viewImagePlaceholder.visibility = View.VISIBLE
+
+            // Nascondi overlay
+            binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.GONE
+
+            // Testo con colori normali
+            binding.tvDestination.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
+            binding.tvDates.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+        }
 
         // Stato viaggio basato sul campo status nel database
         when (trip.status) {
@@ -135,16 +162,6 @@ class HomeFragment : Fragment() {
                     ContextCompat.getColor(requireContext(), R.color.gray_dark)
                 )
             }
-        }
-
-        // Immagine
-        if (trip.imageData != null) {
-            val bitmap = BitmapFactory.decodeByteArray(trip.imageData, 0, trip.imageData.size)
-            binding.ivTripImage.setImageBitmap(bitmap)
-            binding.viewImagePlaceholder.visibility = View.GONE
-        } else {
-            binding.ivTripImage.setImageDrawable(null)
-            binding.viewImagePlaceholder.visibility = View.VISIBLE
         }
 
         binding.cardTrip.setOnClickListener {

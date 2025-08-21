@@ -1,6 +1,7 @@
 package com.example.travel_companion.presentation.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
@@ -132,7 +133,15 @@ class PhotoAdapter(
         }
 
         fun updateSelectionVisuals(isSelected: Boolean, isSelectionMode: Boolean) {
-            binding.root.alpha = if (isSelectionMode && !isSelected) 0.5f else 1.0f
+            // Gestione overlay di selezione
+            val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
+
+            if (isSelected && isSelectionMode) {
+                // Foto selezionata: mostra overlay
+                selectionOverlay?.visibility = View.VISIBLE
+            } else{
+                selectionOverlay?.visibility = View.GONE
+            }
         }
 
         fun updateSelectionMode(isSelectionMode: Boolean, isSelected: Boolean) {
@@ -249,14 +258,11 @@ class PhotoAdapter(
         }
     }
 
-    /**
-     * SpanSizeLookup per il GridLayoutManager
-     */
     class PhotoSpanSizeLookup(private val adapter: PhotoAdapter) : GridLayoutManager.SpanSizeLookup() {
         override fun getSpanSize(position: Int): Int {
             return when (adapter.getItemViewType(position)) {
-                VIEW_TYPE_DATE_HEADER -> SPAN_COUNT // L'intestazione occupa tutta la larghezza
-                VIEW_TYPE_PHOTO -> 1 // Ogni foto occupa una cella
+                VIEW_TYPE_DATE_HEADER -> SPAN_COUNT
+                VIEW_TYPE_PHOTO -> 1
                 else -> 1
             }
         }
