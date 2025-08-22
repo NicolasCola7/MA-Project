@@ -2,20 +2,27 @@ package com.example.travel_companion.presentation.viewmodel
 
 import androidx.lifecycle.*
 import com.example.travel_companion.data.local.entity.TripEntity
+import com.example.travel_companion.data.repository.PredictionRepository
 import com.example.travel_companion.data.repository.TripRepository
+import com.example.travel_companion.domain.model.TripSuggestion
 import com.example.travel_companion.domain.model.TripStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val tripRepository: TripRepository, // Per le query
+    tripRepository: TripRepository,
+    private val predictionRepository: PredictionRepository
 ) : ViewModel() {
 
     private val _currentDate = MutableLiveData<String>()
-    val currentDate: LiveData<String> get() = _currentDate
 
     // LiveData del viaggio in corso
     private val currentTrip: LiveData<TripEntity?> =
@@ -42,12 +49,50 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    // StateFlow per suggerimenti
+    private val _suggestions = MutableStateFlow<List<TripSuggestion>>(emptyList())
+    val suggestions: StateFlow<List<TripSuggestion>> = _suggestions.asStateFlow()
+
+    private val _showSuggestions = MutableStateFlow(false)
+    val showSuggestions: StateFlow<Boolean> = _showSuggestions.asStateFlow()
+
+    companion object {
+        private const val TAG = "HomeViewModel"
+        private const val MAX_HOME_SUGGESTIONS = 3
+    }
+
     init {
         setupCurrentDate()
+        loadSuggestions()
+        observeTripChanges()
     }
 
     private fun setupCurrentDate() {
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
         _currentDate.value = dateFormat.format(Date())
+    }
+
+    private fun loadSuggestions() {
+        viewModelScope.launch {
+            try {
+                // Carica suggerimenti limitati per la home
+                val allSuggestions = predictionRepository.getTravelSuggestions()
+                val homeSuggestions = allSuggestions.take(MAX_HOME_SUGGESTIONS)
+
+                _suggestions.value = homeSuggestions
+                _showSuggestions.value = homeSuggestions.isNotEmpty()
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Errore nel caricamento suggerimenti")
+            }
+        }
+    }
+
+    private fun observeTripChanges() {
+        // Ricarica suggerimenti quando cambia lo stato dei viaggi
+        tripToShow.observeForever {
+            viewModelScope.launch {
+                loadSuggestions()
+            }
+        }
     }
 }

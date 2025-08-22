@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/card_background">
 
-    <!-- Top Selection Bar -->
+    <!-- Top Selection Bar - 2 pulsanti -->
     <androidx.cardview.widget.CardView
         android:id="@+id/selection_card"
         android:layout_width="match_parent"
@@ -29,9 +29,9 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="2dp"
                 android:text="Heatmap"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:background="@drawable/toggle_button_selected"
                 android:textColor="@android:color/white"
@@ -43,9 +43,9 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="Grafico"
-                android:textSize="14sp"
+                android:layout_marginStart="2dp"
+                android:text="Dati"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:background="@drawable/toggle_button_unselected"
                 android:textColor="@color/text_secondary"
@@ -84,27 +84,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/selection_card">
 
-        <!-- Statistics Cards Grid -->
+        <!-- Statistics Cards Grid - Matrice 2x2 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="12dp">
 
             <!-- First Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="4dp">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="65dp"
                     android:layout_weight="1"
-                    android:layout_margin="8dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="4dp"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
                     app:strokeWidth="0dp"
                     app:strokeColor="@android:color/transparent"
                     app:cardBackgroundColor="#E3F2FD">
@@ -113,7 +113,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="16dp"
+                        android:padding="8dp"
                         android:gravity="center">
 
                         <TextView
@@ -121,7 +121,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
-                            android:textSize="36sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"
                             android:textColor="@color/primary_color"
                             tools:text="15" />
@@ -129,8 +129,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Viaggi Totali"
-                            android:textSize="12sp"
+                            android:text="Viaggi"
+                            android:textSize="9sp"
                             android:textColor="@color/text_secondary"
                             android:textStyle="bold" />
 
@@ -140,11 +140,11 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="65dp"
                     android:layout_weight="1"
-                    android:layout_margin="8dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="4dp"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
                     app:strokeWidth="0dp"
                     app:strokeColor="@android:color/transparent"
                     app:cardBackgroundColor="#E8F5E8">
@@ -153,7 +153,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="16dp"
+                        android:padding="8dp"
                         android:gravity="center">
 
                         <TextView
@@ -161,16 +161,16 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0 km"
-                            android:textSize="24sp"
+                            android:textSize="14sp"
                             android:textStyle="bold"
                             android:textColor="@color/green"
-                            tools:text="2,450 km" />
+                            tools:text="2.4k km" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Distanza Totale"
-                            android:textSize="12sp"
+                            android:text="Distanza"
+                            android:textSize="9sp"
                             android:textColor="@color/text_secondary"
                             android:textStyle="bold" />
 
@@ -188,11 +188,11 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="65dp"
                     android:layout_weight="1"
-                    android:layout_margin="8dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="4dp"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
                     app:strokeWidth="0dp"
                     app:strokeColor="@android:color/transparent"
                     app:cardBackgroundColor="#FFF3E0">
@@ -201,7 +201,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="16dp"
+                        android:padding="8dp"
                         android:gravity="center">
 
                         <TextView
@@ -209,7 +209,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
-                            android:textSize="36sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"
                             android:textColor="@color/colorAccent"
                             tools:text="8" />
@@ -218,7 +218,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Destinazioni"
-                            android:textSize="12sp"
+                            android:textSize="9sp"
                             android:textColor="@color/text_secondary"
                             android:textStyle="bold" />
 
@@ -228,11 +228,11 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="65dp"
                     android:layout_weight="1"
-                    android:layout_margin="8dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="4dp"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
                     app:strokeWidth="0dp"
                     app:strokeColor="@android:color/transparent"
                     app:cardBackgroundColor="#FCE4EC">
@@ -241,7 +241,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
-                        android:padding="16dp"
+                        android:padding="8dp"
                         android:gravity="center">
 
                         <TextView
@@ -249,10 +249,10 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="N/A"
-                            android:textSize="18sp"
+                            android:textSize="12sp"
                             android:textStyle="bold"
                             android:textColor="@color/errorColor"
-                            android:maxLines="2"
+                            android:maxLines="1"
                             android:ellipsize="end"
                             android:gravity="center"
                             tools:text="Roma" />
@@ -260,8 +260,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Viaggio Più Lungo"
-                            android:textSize="12sp"
+                            android:text="Più Lungo"
+                            android:textSize="9sp"
                             android:textColor="@color/text_secondary"
                             android:textStyle="bold"
                             android:gravity="center" />
@@ -280,28 +280,23 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_vertical">
 
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Viaggi per Mese"
-                    android:textSize="20sp"
+                    android:text="Viaggi Mensili"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary" />
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:contentDescription="Chart Icon" />
 
             </LinearLayout>
 
@@ -309,7 +304,147 @@
                 android:id="@+id/monthly_chart"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_weight="0.7"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Istruzioni compatte -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tocca per dettagli"
+                android:textSize="10sp"
+                android:textColor="@color/text_secondary"
+                android:layout_gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Cards delle statistiche mensili/predizioni - compatte -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="3">
+
+                <!-- Viaggi mese selezionato -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="#F5F5F5">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp">
+
+                        <TextView
+                            android:id="@+id/predicted_trips_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/predicted_trips_subtext"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="viaggi"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Distanza mese selezionato -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="#F5F5F5">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp">
+
+                        <TextView
+                            android:id="@+id/predicted_distance_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/predicted_distance_subtext"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Affidabilità/Tipo dato -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="#F5F5F5">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp">
+
+                        <TextView
+                            android:id="@+id/confidence_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100%"
+                            android:textColor="@color/colorAccent"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/confidence_subtext"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="dato"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
         </LinearLayout>
 
