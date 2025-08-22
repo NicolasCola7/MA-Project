@@ -3,7 +3,6 @@ package com.example.travel_companion.presentation.ui.fragment
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.*
-import android.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -75,12 +74,9 @@ class TripsFragment : Fragment() {
             showFiltersOverlay()
         }
 
-        // Chiudi overlay cliccando fuori dalla card
-        binding.filtersOverlay.setOnClickListener { view ->
-            // Chiudi solo se si clicca direttamente sull'overlay (non sulla card)
-            if (view.id == R.id.filtersOverlay) {
-                hideFiltersOverlay()
-            }
+        // Freccia per chiudere l'overlay
+        binding.closeFiltersButton.setOnClickListener {
+            hideFiltersOverlay()
         }
 
         // Evita che il click sulla card chiuda l'overlay

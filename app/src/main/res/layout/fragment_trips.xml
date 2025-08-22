@@ -119,15 +119,37 @@
                     android:orientation="vertical"
                     android:padding="24dp">
 
-                    <!-- Titolo -->
-                    <TextView
+                    <!-- Header con freccia e titolo -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Filtri di Ricerca"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:layout_marginBottom="24dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="24dp">
+
+                        <ImageButton
+                            android:id="@+id/closeFiltersButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/ic_arrow_back_24"
+                            android:contentDescription="Chiudi filtri" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Filtri di Ricerca"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <!-- Spazio vuoto per bilanciare la freccia -->
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="40dp" />
+
+                    </LinearLayout>
 
                     <!-- Filtro Destinazione -->
                     <TextView
