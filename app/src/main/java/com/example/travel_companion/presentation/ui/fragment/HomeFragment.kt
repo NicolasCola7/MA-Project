@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.travel_companion.R
+import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentHomeBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.adapter.SuggestionsAdapter
@@ -86,7 +87,7 @@ class HomeFragment : Fragment() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun setupTripCard(trip: com.example.travel_companion.data.local.entity.TripEntity) {
+    private fun setupTripCard(trip: TripEntity) {
         binding.cardTrip.visibility = View.VISIBLE
         binding.tvNoTrip.visibility = View.GONE
 
