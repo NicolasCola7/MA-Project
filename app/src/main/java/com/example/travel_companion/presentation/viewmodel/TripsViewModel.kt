@@ -32,6 +32,91 @@ class TripsViewModel @Inject constructor(
     private val _uiEvent = MutableLiveData<Event>()
     val uiEvent: LiveData<Event> get() = _uiEvent
 
+    // Lista filtrata semplice
+    private val _filteredTrips = MutableLiveData<List<TripEntity>>()
+    val filteredTrips: LiveData<List<TripEntity>> get() = _filteredTrips
+
+    // Variabili per i filtri
+    private var allTrips: List<TripEntity> = emptyList()
+    private var currentStartDateFilter: Long? = null
+    private var currentEndDateFilter: Long? = null
+    private var currentDestinationFilter: String = ""
+
+    init {
+        // Osserva i viaggi dal repository e applica i filtri
+        trips.observeForever { tripList ->
+            allTrips = tripList
+            applyCurrentFilters()
+        }
+    }
+
+    fun applyFilters(startDate: Long?, endDate: Long?, destination: String) {
+        currentStartDateFilter = startDate
+        currentEndDateFilter = endDate
+        currentDestinationFilter = destination
+        applyCurrentFilters()
+    }
+
+    private fun applyCurrentFilters() {
+        val filtered = allTrips.filter { trip ->
+            var includeTrip = true
+
+            // Filtro per data inizio
+            if (currentStartDateFilter != null) {
+                val tripStartDate = Calendar.getInstance().apply {
+                    timeInMillis = trip.startDate
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val filterStartDate = Calendar.getInstance().apply {
+                    timeInMillis = currentStartDateFilter!!
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                includeTrip = includeTrip && tripStartDate.timeInMillis >= filterStartDate.timeInMillis
+            }
+
+            // Filtro per data fine
+            if (currentEndDateFilter != null) {
+                val tripStartDate = Calendar.getInstance().apply {
+                    timeInMillis = trip.startDate
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val filterEndDate = Calendar.getInstance().apply {
+                    timeInMillis = currentEndDateFilter!!
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                    set(Calendar.MILLISECOND, 999)
+                }
+                includeTrip = includeTrip && tripStartDate.timeInMillis <= filterEndDate.timeInMillis
+            }
+
+            // Filtro per destinazione
+            if (currentDestinationFilter.isNotBlank()) {
+                includeTrip = includeTrip && trip.destination.lowercase().contains(currentDestinationFilter.lowercase())
+            }
+
+            includeTrip
+        }
+
+        _filteredTrips.value = filtered
+    }
+
+    fun clearFilters() {
+        currentStartDateFilter = null
+        currentEndDateFilter = null
+        currentDestinationFilter = ""
+        applyCurrentFilters()
+    }
+
     fun onCreateTripClicked(destination: String, startDateStr: String, endDateStr: String, type: String, lat: Double, long: Double) {
         // Validazioni di base
         if (destination.isBlank() || startDateStr.isBlank() || (type == "Viaggio di più giorni" && endDateStr.isBlank())) {
