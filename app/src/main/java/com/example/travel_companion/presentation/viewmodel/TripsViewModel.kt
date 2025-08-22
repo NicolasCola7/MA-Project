@@ -77,7 +77,7 @@ class TripsViewModel @Inject constructor(
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }
-                includeTrip = includeTrip && tripStartDate.timeInMillis >= filterStartDate.timeInMillis
+                includeTrip = tripStartDate.timeInMillis >= filterStartDate.timeInMillis
             }
 
             // Filtro per data fine
@@ -101,7 +101,7 @@ class TripsViewModel @Inject constructor(
 
             // Filtro per destinazione
             if (currentDestinationFilter.isNotBlank()) {
-                includeTrip = includeTrip && trip.destination.lowercase().contains(currentDestinationFilter.lowercase())
+                includeTrip = includeTrip && trip.destination.lowercase().startsWith(currentDestinationFilter.lowercase())
             }
 
             includeTrip
@@ -222,7 +222,6 @@ class TripsViewModel @Inject constructor(
             try {
                 val hasConflict = tripRepository.isTripOverlapping(start, end)
                 if (!hasConflict) {
-                    // USA TripManagerService invece di tripRepository direttamente, questo includerà automaticamente lo scheduling degli alarm
                     val id = tripRepository.addTrip(newTrip)
                     tripScheduler.scheduleTrip(id, newTrip.startDate, newTrip.endDate)
                     _uiEvent.postValue(Event.Success)
