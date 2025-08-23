@@ -102,7 +102,6 @@ class TripsFragment : Fragment() {
 
         binding.applyFilters.setOnClickListener {
             filtersViewModel.applyFilters()
-            hideKeyboard()
             hideFiltersOverlay()
         }
 
@@ -125,6 +124,9 @@ class TripsFragment : Fragment() {
     }
 
     private fun hideFiltersOverlay() {
+        // Nascondi sempre la tastiera quando si chiude l'overlay
+        hideKeyboard()
+
         binding.filtersOverlay.isVisible = false
 
         // Rimostra lo stato vuoto se necessario dopo la chiusura dell'overlay
