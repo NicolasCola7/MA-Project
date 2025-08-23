@@ -18,6 +18,7 @@ import com.example.travel_companion.databinding.FragmentHomeBinding
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.adapter.SuggestionsAdapter
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
+import com.example.travel_companion.util.Utils
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -59,14 +60,23 @@ class HomeFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Osserva il viaggio corrente (logica esistente)
+        // Osserva il viaggio corrente
         viewModel.tripToShow.observe(viewLifecycleOwner) { trip ->
             if (trip != null) {
                 setupTripCard(trip)
+                // Nascondi empty state e mostra la card del viaggio
+                binding.cardTrip.visibility = View.VISIBLE
+                Utils.EmptyStateHelper.hideEmptyState(
+                    binding.emptyStateLayout.root
+                )
             } else {
-                // Nessun viaggio
+                // Nessun viaggio: nascondi card e mostra empty state
                 binding.cardTrip.visibility = View.GONE
-                binding.tvNoTrip.visibility = View.VISIBLE
+                Utils.EmptyStateHelper.showHomeEmptyState(
+                    binding.emptyStateLayout.root
+                ) {
+                    navigateToNewTrip()
+                }
             }
         }
 
@@ -85,11 +95,14 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun navigateToNewTrip() {
+        findNavController().navigate(
+            HomeFragmentDirections.actionHomeFragmentToNewTripFragment()
+        )
+    }
+
     @SuppressLint("SetTextI18n")
     private fun setupTripCard(trip: com.example.travel_companion.data.local.entity.TripEntity) {
-        binding.cardTrip.visibility = View.VISIBLE
-        binding.tvNoTrip.visibility = View.GONE
-
         // Destinazione
         binding.tvDestination.text = trip.destination
 

@@ -189,7 +189,7 @@ object Utils {
             } else {
                 "Non hai ancora pianificato nessun viaggio"
             }
-            setupEmptyState(emptyStateView, R.drawable.ic_trip, text)
+            setupEmptyState(emptyStateView, R.drawable.ic_detail_trip_24, text)
             showEmptyState(emptyStateView)
         }
 
@@ -208,6 +208,19 @@ object Utils {
                 R.drawable.ic_menu_gallery,
                 "Non hai ancora scattato nessuna foto per questo viaggio"
             )
+            showEmptyState(emptyStateView)
+        }
+
+        fun showHomeEmptyState(
+            emptyStateView: ConstraintLayout,
+            onButtonClick: () -> Unit
+        ) {
+            val iconView = emptyStateView.findViewById<ImageView>(R.id.emptyStateIcon)
+            val buttonView = emptyStateView.findViewById<com.google.android.material.button.MaterialButton>(R.id.emptyStateButton)
+
+            iconView?.setImageResource(R.drawable.ic_detail_trip_24)
+            buttonView?.setOnClickListener { onButtonClick() }
+
             showEmptyState(emptyStateView)
         }
     }
