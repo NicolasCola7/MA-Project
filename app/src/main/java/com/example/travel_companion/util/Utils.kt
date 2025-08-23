@@ -1,6 +1,5 @@
 package com.example.travel_companion.util
 
-import android.Manifest
 import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,8 +7,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import com.example.travel_companion.R
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -152,4 +156,59 @@ object Utils {
         }
     }
 
+    /**
+     * Helper class per gestire gli empty states in modo uniforme nell'applicazione
+     */
+    object EmptyStateHelper {
+        private fun setupEmptyState(
+            emptyStateView: ConstraintLayout,
+            @DrawableRes iconRes: Int,
+            text: String
+        ) {
+            val iconView = emptyStateView.findViewById<ImageView>(R.id.emptyStateIcon)
+            val textView = emptyStateView.findViewById<TextView>(R.id.emptyStateText)
+
+            iconView?.setImageResource(iconRes)
+            textView?.text = text
+        }
+
+        private fun showEmptyState(emptyStateView: ConstraintLayout) {
+            emptyStateView.visibility = View.VISIBLE
+        }
+
+        fun hideEmptyState(emptyStateView: ConstraintLayout) {
+            emptyStateView.visibility = View.GONE
+        }
+
+        fun showTripsEmptyState(
+            emptyStateView: ConstraintLayout,
+            hasFilters: Boolean = false
+        ) {
+            val text = if (hasFilters) {
+                "Nessun viaggio trovato con i filtri attuali"
+            } else {
+                "Non hai ancora pianificato nessun viaggio"
+            }
+            setupEmptyState(emptyStateView, R.drawable.ic_trip, text)
+            showEmptyState(emptyStateView)
+        }
+
+        fun showNotesEmptyState(emptyStateView: ConstraintLayout) {
+            setupEmptyState(
+                emptyStateView,
+                R.drawable.ic_edit_note_24,
+                "Non hai ancora scritto nessuna nota per questo viaggio"
+            )
+            showEmptyState(emptyStateView)
+        }
+
+        fun showPhotosEmptyState(emptyStateView: ConstraintLayout) {
+            setupEmptyState(
+                emptyStateView,
+                R.drawable.ic_menu_gallery,
+                "Non hai ancora scattato nessuna foto per questo viaggio"
+            )
+            showEmptyState(emptyStateView)
+        }
+    }
 }
