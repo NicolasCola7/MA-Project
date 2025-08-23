@@ -14,6 +14,7 @@ import com.example.travel_companion.databinding.FragmentTripsBinding
 import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
+import com.example.travel_companion.presentation.viewmodel.FiltersViewModel
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
@@ -24,20 +25,11 @@ class TripsFragment : Fragment() {
     private var _binding: FragmentTripsBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: TripsViewModel by viewModels()
+    private val tripsViewModel: TripsViewModel by viewModels()
+    private val filtersViewModel: FiltersViewModel by viewModels()
     private lateinit var adapter: TripListAdapter
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-    // Variabili temporanee per l'overlay
-    private var tempStartDate: Long? = null
-    private var tempEndDate: Long? = null
-    private var tempDestination: String = ""
-
-    // Variabili per memorizzare i filtri applicati
-    private var appliedStartDate: Long? = null
-    private var appliedEndDate: Long? = null
-    private var appliedDestination: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,7 +56,7 @@ class TripsFragment : Fragment() {
         setupDeleteButton()
         setupFiltersOverlay()
 
-        binding.viewModel = viewModel
+        binding.viewModel = tripsViewModel
         binding.lifecycleOwner = viewLifecycleOwner
     }
 
@@ -84,11 +76,13 @@ class TripsFragment : Fragment() {
             // Non fare nulla, evita la propagazione del click
         }
 
-        // Setup filtro destinazione nell'overlay
+        // Setup filtro destinazione nell'overlay - collegato al FiltersViewModel
         binding.searchDestination.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                filtersViewModel.setTempDestination(s?.toString() ?: "")
+            }
         })
 
         // Setup filtri data nell'overlay
@@ -102,24 +96,28 @@ class TripsFragment : Fragment() {
 
         // Setup pulsanti azione
         binding.clearFilters.setOnClickListener {
-            clearFiltersInOverlay()
+            filtersViewModel.resetTempFilters()
+            updateFiltersUI()
         }
 
         binding.applyFilters.setOnClickListener {
-            applyFiltersAndClose()
+            filtersViewModel.applyFilters()
+            hideKeyboard()
+            hideFiltersOverlay()
         }
 
-        // Aggiungi anche la possibilità di pulire completamente i filtri
+        // Long click per pulire tutti i filtri
         binding.clearFilters.setOnLongClickListener {
-            // Long click per pulire tutti i filtri applicati
-            clearAllAppliedFilters()
+            filtersViewModel.clearAllFilters()
+            updateFiltersUI()
             true
         }
     }
 
     private fun showFiltersOverlay() {
-        // Carica i filtri attualmente applicati nell'overlay
-        loadCurrentFiltersToOverlay()
+        // Carica i filtri applicati nei temporanei
+        filtersViewModel.loadAppliedFiltersToTemp()
+        updateFiltersUI()
         binding.filtersOverlay.isVisible = true
 
         // Nascondi lo stato vuoto quando l'overlay è aperto
@@ -130,74 +128,34 @@ class TripsFragment : Fragment() {
         binding.filtersOverlay.isVisible = false
 
         // Rimostra lo stato vuoto se necessario dopo la chiusura dell'overlay
-        val currentTrips = viewModel.filteredTrips.value ?: emptyList()
-        binding.emptyStateText.isVisible = currentTrips.isEmpty()
+        // Applica i filtri tramite FiltersViewModel per ottenere i risultati corretti
+        val allTrips = tripsViewModel.trips.value ?: emptyList()
+        val filteredTrips = filtersViewModel.filterTrips(allTrips)
+        val shouldShowEmptyState = filteredTrips.isEmpty()
+
+        binding.emptyStateText.isVisible = shouldShowEmptyState
+        binding.emptyStateText.text = when {
+            filteredTrips.isEmpty() && filtersViewModel.hasActiveFilters() -> "Nessun viaggio trovato con i filtri attuali"
+            filteredTrips.isEmpty() -> "Non hai ancora pianificato nessun viaggio"
+            else -> ""
+        }
     }
 
-    private fun loadCurrentFiltersToOverlay() {
-        // Carica i filtri attualmente applicati
-        tempStartDate = appliedStartDate
-        tempEndDate = appliedEndDate
-        tempDestination = appliedDestination
+    private fun updateFiltersUI() {
+        // Aggiorna UI basandosi sui filtri temporanei
+        binding.searchDestination.setText(filtersViewModel.tempDestination.value ?: "")
 
-        // Aggiorna l'UI dell'overlay
-        binding.searchDestination.setText(appliedDestination)
-
-        binding.filterStartDate.text = if (appliedStartDate != null) {
-            "Da: ${dateFormat.format(Date(appliedStartDate!!))}"
+        binding.filterStartDate.text = if (filtersViewModel.tempStartDate.value != null) {
+            "Da: ${dateFormat.format(Date(filtersViewModel.tempStartDate.value!!))}"
         } else {
             "Data inizio"
         }
 
-        binding.filterEndDate.text = if (appliedEndDate != null) {
-            "A: ${dateFormat.format(Date(appliedEndDate!!))}"
+        binding.filterEndDate.text = if (filtersViewModel.tempEndDate.value != null) {
+            "A: ${dateFormat.format(Date(filtersViewModel.tempEndDate.value!!))}"
         } else {
             "Data fine"
         }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun clearFiltersInOverlay() {
-        tempStartDate = null
-        tempEndDate = null
-        tempDestination = ""
-        binding.searchDestination.setText("")
-        binding.filterStartDate.text = "Data inizio"
-        binding.filterEndDate.text = "Data fine"
-    }
-
-    private fun applyFiltersAndClose() {
-        val destination = binding.searchDestination.text.toString()
-
-        // Salva i filtri applicati
-        appliedStartDate = tempStartDate
-        appliedEndDate = tempEndDate
-        appliedDestination = destination
-
-        // Applica i filtri al ViewModel
-        viewModel.applyFilters(tempStartDate, tempEndDate, destination)
-
-        // Nascondi la tastiera
-        hideKeyboard()
-
-        hideFiltersOverlay()
-    }
-
-    private fun hideKeyboard() {
-        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-        imm.hideSoftInputFromWindow(binding.searchDestination.windowToken, 0)
-    }
-
-    private fun clearAllAppliedFilters() {
-        // Pulisce sia i filtri temporanei che quelli applicati
-        appliedStartDate = null
-        appliedEndDate = null
-        appliedDestination = ""
-
-        clearFiltersInOverlay()
-
-        // Applica i filtri vuoti al ViewModel
-        viewModel.clearFilters()
     }
 
     @SuppressLint("SetTextI18n")
@@ -212,15 +170,20 @@ class TripsFragment : Fragment() {
 
         datePicker.addOnPositiveButtonClickListener { dateInMillis ->
             if (isStartDate) {
-                tempStartDate = dateInMillis
+                filtersViewModel.setTempStartDate(dateInMillis)
                 binding.filterStartDate.text = "Da: ${dateFormat.format(Date(dateInMillis))}"
             } else {
-                tempEndDate = dateInMillis
+                filtersViewModel.setTempEndDate(dateInMillis)
                 binding.filterEndDate.text = "A: ${dateFormat.format(Date(dateInMillis))}"
             }
         }
 
         datePicker.show(childFragmentManager, tag)
+    }
+
+    private fun hideKeyboard() {
+        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(binding.searchDestination.windowToken, 0)
     }
 
     private fun setupAdapter() {
@@ -247,18 +210,41 @@ class TripsFragment : Fragment() {
     }
 
     private fun observeData() {
-        viewModel.filteredTrips.observe(viewLifecycleOwner) { tripList ->
-            adapter.submitList(tripList) {
-                adapter.updateSelectionAfterListChange()
-            }
+        // Osserva i viaggi dal repository
+        tripsViewModel.trips.observe(viewLifecycleOwner) { allTrips ->
+            // Applica i filtri tramite FiltersViewModel
+            val filteredTrips = filtersViewModel.filterTrips(allTrips)
+            updateTripsList(filteredTrips)
+        }
 
-            // Mostra messaggio se non ci sono risultati e l'overlay non è visibile
-            val shouldShowEmptyState = tripList.isEmpty() && !binding.filtersOverlay.isVisible
-            binding.emptyStateText.isVisible = shouldShowEmptyState
-            binding.emptyStateText.text = when {
-                tripList.isEmpty() -> "Non hai ancora pianificato nessun viaggio"
-                else -> ""
+        // Osserva gli eventi dei filtri per riapplicare i filtri quando cambiano
+        filtersViewModel.filtersEvent.observe(viewLifecycleOwner) { event ->
+            when (event) {
+                is FiltersViewModel.FiltersEvent.FiltersApplied,
+                FiltersViewModel.FiltersEvent.FiltersCleared -> {
+                    // Riapplica i filtri quando cambiano
+                    val allTrips = tripsViewModel.trips.value ?: emptyList()
+                    val filteredTrips = filtersViewModel.filterTrips(allTrips)
+                    updateTripsList(filteredTrips)
+                }
             }
+        }
+    }
+
+    private fun updateTripsList(filteredTrips: List<TripEntity>) {
+        adapter.submitList(filteredTrips) {
+            adapter.updateSelectionAfterListChange()
+        }
+
+        // Mostra messaggio se non ci sono risultati e l'overlay non è visibile
+        val shouldShowEmptyState = filteredTrips.isEmpty() && !binding.filtersOverlay.isVisible
+        binding.emptyStateText.isVisible = shouldShowEmptyState
+
+        // Messaggio diverso se ci sono filtri attivi
+        binding.emptyStateText.text = when {
+            filteredTrips.isEmpty() && filtersViewModel.hasActiveFilters() -> "Nessun viaggio trovato con i filtri attuali"
+            filteredTrips.isEmpty() -> "Non hai ancora pianificato nessun viaggio"
+            else -> ""
         }
     }
 
@@ -295,7 +281,7 @@ class TripsFragment : Fragment() {
 
     private fun deleteSelectedTrips(trips: List<TripEntity>) {
         val tripIds = trips.map { it.id }
-        viewModel.deleteTrips(tripIds)
+        tripsViewModel.deleteTrips(tripIds)
     }
 
     override fun onDestroyView() {
