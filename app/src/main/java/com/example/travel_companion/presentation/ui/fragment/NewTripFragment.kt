@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
@@ -26,8 +27,12 @@ import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
+import java.text.SimpleDateFormat
 import java.util.*
 
 @AndroidEntryPoint
@@ -184,22 +189,24 @@ class NewTripFragment : Fragment() {
 
                     when (selected) {
                         "Viaggio di più giorni" -> {
-                            binding.editEndLayout.hint = "Data e ora fine viaggio"
+                            binding.editEndLabel.text = "Data e ora fine viaggio"
+                            binding.editEndDate.visibility = View.VISIBLE
                             if (previousTripType != "Viaggio di più giorni") {
-                                binding.editEndDate.setText("")
+                                binding.editEndDate.text = "Seleziona data e ora"
                             }
                         }
 
                         "Gita Giornaliera", "Viaggio Locale" -> {
-                            binding.editEndLayout.hint = "Ora fine viaggio"
+                            binding.editEndLabel.text = "Ora fine viaggio"
+                            binding.editEndDate.visibility = View.VISIBLE
                             if (previousTripType == "Viaggio di più giorni") {
-                                binding.editEndDate.setText("")
+                                binding.editEndDate.text = "Seleziona ora"
                             }
                         }
 
                         else -> {
                             binding.editEndDate.visibility = View.GONE
-                            binding.editEndDate.setText("")
+                            binding.editEndDate.text = "Seleziona data e ora"
                         }
                     }
 
@@ -238,48 +245,53 @@ class NewTripFragment : Fragment() {
 
     //imposta lo stile del picker a seconda del tipo di viaggio
     @SuppressLint("DefaultLocale")
-    private fun showDateTimePicker(target: EditText, onlyTime: Boolean = false) {
-        val calendar = Calendar.getInstance()
-
+    private fun showDateTimePicker(button: Button, onlyTime: Boolean) {
         if (onlyTime) {
-            TimePickerDialog(
-                requireContext(),
-                { _, hourOfDay, minute ->
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                    calendar.set(Calendar.MINUTE, minute)
-                    calendar.set(Calendar.SECOND, 0)
-                    target.setText(String.format("%02d:%02d", hourOfDay, minute))
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                true
-            ).show()
+            // Mostra solo il time picker
+            showTimePicker { time ->
+                button.text = time
+            }
         } else {
-            DatePickerDialog(
-                requireContext(),
-                { _, year, month, day ->
-                    calendar.set(Calendar.YEAR, year)
-                    calendar.set(Calendar.MONTH, month)
-                    calendar.set(Calendar.DAY_OF_MONTH, day)
-
-                    TimePickerDialog(
-                        requireContext(),
-                        { _, hourOfDay, minute ->
-                            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                            calendar.set(Calendar.MINUTE, minute)
-                            calendar.set(Calendar.SECOND, 0)
-                            target.setText(Utils.dateTimeFormat.format(calendar.time))
-                        },
-                        calendar.get(Calendar.HOUR_OF_DAY),
-                        calendar.get(Calendar.MINUTE),
-                        true
-                    ).show()
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            // Mostra prima il date picker, poi il time picker
+            showDatePicker { date ->
+                showTimePicker { time ->
+                    button.text = "$date $time"
+                }
+            }
         }
+    }
+
+    private fun showDatePicker(onDateSelected: (String) -> Unit) {
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Seleziona data")
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+
+        datePicker.addOnPositiveButtonClickListener { dateInMillis ->
+            val formattedDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(dateInMillis))
+            onDateSelected(formattedDate)
+        }
+
+        datePicker.show(childFragmentManager, "DATE_PICKER")
+    }
+
+    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+        val timePicker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setTitleText("Seleziona ora")
+            .build()
+
+        timePicker.addOnPositiveButtonClickListener {
+            val formattedTime = String.format(
+                Locale.getDefault(),
+                "%02d:%02d",
+                timePicker.hour,
+                timePicker.minute
+            )
+            onTimeSelected(formattedTime)
+        }
+
+        timePicker.show(childFragmentManager, "TIME_PICKER")
     }
 
     override fun onDestroyView() {
