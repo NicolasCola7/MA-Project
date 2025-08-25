@@ -146,7 +146,7 @@ class NotesListAdapter(
 
         private fun updateSelectionUI(isSelected: Boolean) {
             val cardView = binding.root
-
+            val defaultBackground = cardView.cardBackgroundColor.defaultColor
             // IMPORTANTE: Ripristina sempre lo stato di default prima di applicare
             // quello nuovo per evitare stati inconsistenti
             if (isSelected) {
@@ -156,7 +156,7 @@ class NotesListAdapter(
                 cardView.cardElevation = 8f
             } else {
                 // Ripristina lo sfondo normale
-                cardView.setBackgroundResource(R.drawable.note_card_gradient)
+                cardView.setBackgroundColor(defaultBackground)
                 // Ripristina l'elevazione normale
                 cardView.cardElevation = 6f
             }

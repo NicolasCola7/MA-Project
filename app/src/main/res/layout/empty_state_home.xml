@@ -26,7 +26,6 @@
         android:layout_marginBottom="10dp"
         android:gravity="center"
         android:text="Nessun viaggio programmato"
-        android:textColor="?android:attr/textColorSecondary"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@id/emptyStateButton"
         app:layout_constraintEnd_toEndOf="parent"
