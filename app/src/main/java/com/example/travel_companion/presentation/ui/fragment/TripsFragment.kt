@@ -120,7 +120,9 @@ class TripsFragment : Fragment() {
         binding.filtersOverlay.isVisible = true
 
         // Nascondi lo stato vuoto quando l'overlay è aperto
-        binding.emptyStateText.isVisible = false
+        Utils.EmptyStateHelper.hideEmptyState(
+            binding.emptyStateLayout.root
+        )
     }
 
     private fun hideFiltersOverlay() {
@@ -135,11 +137,15 @@ class TripsFragment : Fragment() {
         val filteredTrips = filtersViewModel.filterTrips(allTrips)
         val shouldShowEmptyState = filteredTrips.isEmpty()
 
-        binding.emptyStateText.isVisible = shouldShowEmptyState
-        binding.emptyStateText.text = when {
-            filteredTrips.isEmpty() && filtersViewModel.hasActiveFilters() -> "Nessun viaggio trovato con i filtri attuali"
-            filteredTrips.isEmpty() -> "Non hai ancora pianificato nessun viaggio"
-            else -> ""
+        if (shouldShowEmptyState) {
+            Utils.EmptyStateHelper.showTripsEmptyState(
+                binding.emptyStateLayout.root,
+                filtersViewModel.hasActiveFilters()
+            )
+        } else {
+            Utils.EmptyStateHelper.hideEmptyState(
+                binding.emptyStateLayout.root
+            )
         }
     }
 
@@ -238,15 +244,17 @@ class TripsFragment : Fragment() {
             adapter.updateSelectionAfterListChange()
         }
 
-        // Mostra messaggio se non ci sono risultati e l'overlay non è visibile
         val shouldShowEmptyState = filteredTrips.isEmpty() && !binding.filtersOverlay.isVisible
-        binding.emptyStateText.isVisible = shouldShowEmptyState
 
-        // Messaggio diverso se ci sono filtri attivi
-        binding.emptyStateText.text = when {
-            filteredTrips.isEmpty() && filtersViewModel.hasActiveFilters() -> "Nessun viaggio trovato con i filtri attuali"
-            filteredTrips.isEmpty() -> "Non hai ancora pianificato nessun viaggio"
-            else -> ""
+        if (shouldShowEmptyState) {
+            Utils.EmptyStateHelper.showTripsEmptyState(
+                binding.emptyStateLayout.root,
+                filtersViewModel.hasActiveFilters()
+            )
+        } else {
+            Utils.EmptyStateHelper.hideEmptyState(
+                binding.emptyStateLayout.root
+            )
         }
     }
 

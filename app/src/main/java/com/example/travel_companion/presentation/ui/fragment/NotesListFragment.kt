@@ -97,6 +97,18 @@ class NotesListFragment : Fragment() {
             adapter.submitList(noteList) {
                 adapter.updateSelectionAfterListChange()
             }
+
+            // Gestisci empty state
+            val shouldShowEmptyState = noteList.isEmpty()
+            if (shouldShowEmptyState) {
+                Utils.EmptyStateHelper.showNotesEmptyState(
+                    binding.emptyStateLayout.root
+                )
+            } else {
+                Utils.EmptyStateHelper.hideEmptyState(
+                    binding.emptyStateLayout.root
+                )
+            }
         }
     }
 

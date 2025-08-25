@@ -14,6 +14,10 @@
         <action
             android:id="@+id/action_tripsFragment_to_tripDetailFragment"
             app:destination="@id/tripDetailFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_newTripFragment"
+            app:destination="@id/newTripFragment" />
     </fragment>
 
     <fragment
