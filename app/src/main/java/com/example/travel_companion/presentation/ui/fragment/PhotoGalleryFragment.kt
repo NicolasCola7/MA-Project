@@ -86,6 +86,18 @@ class PhotoGalleryFragment : Fragment() {
             adapter.submitList(groupedItems) {
                 adapter.updateSelectionAfterListChange()
             }
+
+            // Gestisci empty state
+            val shouldShowEmptyState = groupedItems.isEmpty()
+            if (shouldShowEmptyState) {
+                Utils.EmptyStateHelper.showPhotosEmptyState(
+                    binding.emptyStateLayout.root
+                )
+            } else {
+                Utils.EmptyStateHelper.hideEmptyState(
+                    binding.emptyStateLayout.root
+                )
+            }
         }
     }
 
