@@ -6,8 +6,8 @@ import com.example.travel_companion.data.local.dao.TripDao
 
 import com.example.travel_companion.data.local.database.AppDatabase
 import com.example.travel_companion.data.repository.PredictionRepository
-import com.example.travel_companion.util.TripPredictionAlgorithm
-import com.example.travel_companion.util.TripSuggestionsEngine
+import com.example.travel_companion.util.trip.TripPredictionAlgorithm
+import com.example.travel_companion.util.trip.TripSuggestionsEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

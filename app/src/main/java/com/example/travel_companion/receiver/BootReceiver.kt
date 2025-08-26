@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.util.TripScheduler
+import com.example.travel_companion.util.trip.TripScheduler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

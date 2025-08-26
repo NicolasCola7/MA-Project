@@ -1,19 +1,17 @@
 package com.example.travel_companion.receiver
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.travel_companion.R
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.ui.activity.MainActivity
-import com.example.travel_companion.util.PermissionsManager.hasNotificationPermissions
-import com.example.travel_companion.util.TripScheduler
+import com.example.travel_companion.util.managers.PermissionsManager.hasNotificationPermissions
+import com.example.travel_companion.util.trip.TripScheduler
 import com.example.travel_companion.util.Utils.createNotificationChannel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope

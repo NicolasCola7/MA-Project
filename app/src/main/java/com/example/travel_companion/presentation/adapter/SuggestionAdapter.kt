@@ -4,14 +4,13 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.ItemSuggestionBinding
 import com.example.travel_companion.domain.model.TripSuggestion
+import com.example.travel_companion.presentation.adapter.base.BaseAdapter
 
-class SuggestionsAdapter
-    : ListAdapter<TripSuggestion, SuggestionsAdapter.SuggestionViewHolder>(
+class SuggestionsAdapter : BaseAdapter<TripSuggestion, SuggestionsAdapter.SuggestionViewHolder>(
     SuggestionDiffCallback()
 ) {
 
@@ -24,8 +23,10 @@ class SuggestionsAdapter
         return SuggestionViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: SuggestionViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onItemClick(item: TripSuggestion, position: Int) {}
+
+    override fun bindItem(holder: SuggestionViewHolder, item: TripSuggestion, position: Int) {
+        holder.bind(item)
     }
 
     inner class SuggestionViewHolder(
@@ -50,21 +51,16 @@ class SuggestionsAdapter
                     else -> ContextCompat.getColor(itemView.context, R.color.primary_color)
                 }
 
-                // Badge del tipo di viaggio
                 suggestionTypeBadge.setCardBackgroundColor(iconColor)
             }
         }
     }
 
     private class SuggestionDiffCallback : DiffUtil.ItemCallback<TripSuggestion>() {
-        override fun areItemsTheSame(
-            oldItem: TripSuggestion,
-            newItem: TripSuggestion
-        ): Boolean = oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: TripSuggestion, newItem: TripSuggestion): Boolean =
+            oldItem.id == newItem.id
 
-        override fun areContentsTheSame(
-            oldItem: TripSuggestion,
-            newItem: TripSuggestion
-        ): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: TripSuggestion, newItem: TripSuggestion): Boolean =
+            oldItem == newItem
     }
 }

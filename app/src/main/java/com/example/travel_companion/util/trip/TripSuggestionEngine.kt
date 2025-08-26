@@ -1,4 +1,4 @@
-package com.example.travel_companion.util
+package com.example.travel_companion.util.trip
 
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.domain.model.*

@@ -6,7 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.travel_companion.util.InactivityCheckWorker
+import com.example.travel_companion.util.workers.InactivityCheckWorker
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
 import dagger.hilt.android.HiltAndroidApp

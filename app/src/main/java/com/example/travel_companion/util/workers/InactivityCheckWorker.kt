@@ -1,4 +1,4 @@
-package com.example.travel_companion.util
+package com.example.travel_companion.util.workers
 
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -9,7 +9,7 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.travel_companion.R
 import com.example.travel_companion.presentation.ui.activity.MainActivity
-import com.example.travel_companion.util.PermissionsManager.hasNotificationPermissions
+import com.example.travel_companion.util.managers.PermissionsManager.hasNotificationPermissions
 import com.example.travel_companion.util.Utils.createNotificationChannel
 
 class InactivityCheckWorker(
@@ -39,7 +39,7 @@ class InactivityCheckWorker(
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        createNotificationChannel(notificationManager,CHANNEL_ID, CHANNEL_NAME)
+        createNotificationChannel(notificationManager, CHANNEL_ID, CHANNEL_NAME)
 
         val intent = Intent(applicationContext, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(

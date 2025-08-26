@@ -91,4 +91,12 @@
 
     </LinearLayout>
 
+    <!-- Aggiungi questo View come ultimo elemento nel CardView -->
+    <View
+        android:id="@+id/selection_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/selection_overlay"
+        android:visibility="gone" />
+
 </com.google.android.material.card.MaterialCardView>

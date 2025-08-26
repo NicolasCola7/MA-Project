@@ -15,7 +15,9 @@ import com.example.travel_companion.data.local.entity.NoteEntity
 import com.example.travel_companion.databinding.FragmentNoteListBinding
 import com.example.travel_companion.presentation.adapter.NotesListAdapter
 import com.example.travel_companion.presentation.viewmodel.NotesViewModel
-import com.example.travel_companion.util.Utils
+import com.example.travel_companion.util.helpers.EmptyStateHelper
+import com.example.travel_companion.util.helpers.SelectionHelper
+
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -101,11 +103,11 @@ class NotesListFragment : Fragment() {
             // Gestisci empty state
             val shouldShowEmptyState = noteList.isEmpty()
             if (shouldShowEmptyState) {
-                Utils.EmptyStateHelper.showNotesEmptyState(
+                EmptyStateHelper.showNotesEmptyState(
                     binding.emptyStateLayout.root
                 )
             } else {
-                Utils.EmptyStateHelper.hideEmptyState(
+                EmptyStateHelper.hideEmptyState(
                     binding.emptyStateLayout.root
                 )
             }
@@ -139,7 +141,7 @@ class NotesListFragment : Fragment() {
     }
 
     private fun updateDeleteButton(selectedCount: Int) {
-        Utils.SelectionHelper.updateDeleteButton(
+        SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedNotes,
             selectedCount = selectedCount,
             baseText = "Elimina"
@@ -149,7 +151,7 @@ class NotesListFragment : Fragment() {
     private fun handleMultipleDelete() {
         val selectedNotes = adapter.getSelectedNotes()
 
-        Utils.SelectionHelper.handleMultipleDelete(
+        SelectionHelper.handleMultipleDelete(
             context = requireContext(),
             selectedItems = selectedNotes,
             itemType = "note",

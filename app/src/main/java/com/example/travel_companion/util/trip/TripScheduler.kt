@@ -1,4 +1,4 @@
-package com.example.travel_companion.util
+package com.example.travel_companion.util.trip
 
 import android.annotation.SuppressLint
 import android.app.AlarmManager

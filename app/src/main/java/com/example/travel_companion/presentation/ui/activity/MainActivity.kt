@@ -7,7 +7,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.ActivityMainBinding
-import com.example.travel_companion.util.PermissionsManager
+import com.example.travel_companion.util.managers.PermissionsManager
 import dagger.hilt.android.AndroidEntryPoint
 
 /**

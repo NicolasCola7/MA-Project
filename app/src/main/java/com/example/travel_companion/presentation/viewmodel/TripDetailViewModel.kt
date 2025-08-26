@@ -9,7 +9,7 @@ import com.example.travel_companion.data.repository.CoordinateRepository
 import com.example.travel_companion.data.repository.POIRepository
 import com.example.travel_companion.data.repository.TripRepository
 import com.example.travel_companion.domain.model.TripStatus
-import com.example.travel_companion.util.TripScheduler
+import com.example.travel_companion.util.trip.TripScheduler
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
