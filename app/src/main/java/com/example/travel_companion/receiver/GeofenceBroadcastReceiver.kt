@@ -19,7 +19,6 @@ import timber.log.Timber
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
     companion object {
-        private const val NOTIFICATION_ID = 1004
         private const val CHANNEL_ID = "geofence_channel"
         private const val CHANNEL_NAME = "Geofence"
     }
@@ -63,7 +62,6 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
         createNotificationChannel(notificationManager, CHANNEL_ID, CHANNEL_NAME)
 
         val transition = if (geofenceTransition == 1) "entrando in" else "uscendo da"
@@ -77,6 +75,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        val notificationId = geofence.requestId.hashCode()
+        notificationManager.notify(notificationId, notification)
     }
 }
