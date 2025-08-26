@@ -323,6 +323,7 @@ class StatisticsFragment : Fragment() {
             })
 
             xAxis.apply {
+                textColor = binding.instructions.currentTextColor
                 position = XAxis.XAxisPosition.BOTTOM
                 setDrawGridLines(false)
                 granularity = 1f
@@ -330,6 +331,7 @@ class StatisticsFragment : Fragment() {
             }
 
             axisLeft.apply {
+                textColor = binding.instructions.currentTextColor
                 setDrawGridLines(true)
                 axisMinimum = 0f
                 // Formatter per mostrare solo valori interi sull'asse Y
@@ -366,10 +368,12 @@ class StatisticsFragment : Fragment() {
                     Color.parseColor("#2196F3")
                 }
             }
-            valueTextColor = Color.BLACK
+
+            valueTextColor = binding.instructions.currentTextColor
             valueTextSize = 12f
             // Formatter personalizzato per mostrare solo valori > 0 sulle barre
             valueFormatter = object : ValueFormatter() {
+
                 override fun getBarLabel(barEntry: BarEntry?): String {
                     return if (barEntry != null && barEntry.y > 0f) {
                         barEntry.y.toInt().toString()

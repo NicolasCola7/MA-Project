@@ -292,8 +292,7 @@
                     android:layout_weight="1"
                     android:text="Viaggi Mensili"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
+                    android:textStyle="bold"/>
 
             </LinearLayout>
 
@@ -306,11 +305,11 @@
 
             <!-- Istruzioni compatte -->
             <TextView
+                android:id="@+id/instructions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tocca per dettagli"
                 android:textSize="10sp"
-                android:textColor="@color/text_secondary"
                 android:layout_gravity="center"
                 android:layout_marginBottom="8dp" />
 
