@@ -69,14 +69,9 @@ class NotesListAdapter(
             if (isSelected) {
                 // Mostra overlay di selezione (stesso stile di Trip e Photo)
                 selectionOverlay?.visibility = View.VISIBLE
-                // Mantieni lo sfondo originale ma con elevazione maggiore
-                cardView.setBackgroundResource(R.drawable.note_card_gradient)
-                cardView.cardElevation = 8f
             } else {
                 // Nascondi overlay e ripristina stato normale
                 selectionOverlay?.visibility = View.GONE
-                cardView.setBackgroundResource(R.drawable.note_card_gradient)
-                cardView.cardElevation = 6f
             }
             cardView.invalidate()
         }

@@ -96,17 +96,12 @@ class TripListAdapter(
         }
 
         private fun updateSelectionUI(isSelected: Boolean) {
-            val cardView = binding.root
             val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
 
             if (isSelected) {
                 selectionOverlay?.visibility = View.VISIBLE
-                cardView.setBackgroundResource(R.drawable.note_card_selected)
-                cardView.cardElevation = 8f
             } else {
                 selectionOverlay?.visibility = View.GONE
-                cardView.setBackgroundResource(R.drawable.note_card_gradient)
-                cardView.cardElevation = 6f
             }
         }
     }
