@@ -19,6 +19,7 @@ import com.example.travel_companion.domain.model.TripStatus
 import com.example.travel_companion.presentation.adapter.SuggestionsAdapter
 import com.example.travel_companion.presentation.viewmodel.HomeViewModel
 import com.example.travel_companion.util.Utils
+import com.example.travel_companion.util.helpers.EmptyStateHelper
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -66,13 +67,13 @@ class HomeFragment : Fragment() {
                 setupTripCard(trip)
                 // Nascondi empty state e mostra la card del viaggio
                 binding.cardTrip.visibility = View.VISIBLE
-                Utils.EmptyStateHelper.hideEmptyState(
+                EmptyStateHelper.hideEmptyState(
                     binding.emptyStateLayout.root
                 )
             } else {
                 // Nessun viaggio: nascondi card e mostra empty state
                 binding.cardTrip.visibility = View.GONE
-                Utils.EmptyStateHelper.showHomeEmptyState(
+                EmptyStateHelper.showHomeEmptyState(
                     binding.emptyStateLayout.root
                 ) {
                     navigateToNewTrip()
@@ -151,12 +152,6 @@ class HomeFragment : Fragment() {
                 binding.tvTripStatus.text = "IN CORSO"
                 binding.tvTripStatus.setTextColor(
                     ContextCompat.getColor(requireContext(), R.color.green)
-                )
-            }
-            TripStatus.PAUSED -> {
-                binding.tvTripStatus.text = "IN PAUSA"
-                binding.tvTripStatus.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.red)
                 )
             }
             TripStatus.FINISHED -> {

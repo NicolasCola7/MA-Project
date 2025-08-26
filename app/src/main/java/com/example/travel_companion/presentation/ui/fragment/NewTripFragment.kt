@@ -1,8 +1,6 @@
 package com.example.travel_companion.presentation.ui.fragment
 
 import android.annotation.SuppressLint
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -19,7 +16,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.BaseApplication
 import com.example.travel_companion.R
 import com.example.travel_companion.databinding.FragmentNewTripBinding
-import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import com.google.android.gms.common.api.Status
 import com.google.android.libraries.places.api.model.Place

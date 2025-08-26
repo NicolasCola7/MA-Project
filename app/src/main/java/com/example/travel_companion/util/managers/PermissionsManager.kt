@@ -1,8 +1,7 @@
-package com.example.travel_companion.util
+package com.example.travel_companion.util.managers
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
