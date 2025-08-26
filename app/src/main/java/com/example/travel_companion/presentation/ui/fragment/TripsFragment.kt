@@ -197,7 +197,7 @@ class TripsFragment : Fragment() {
     private fun setupAdapter() {
         adapter = TripListAdapter(
             onTripClick = { trip ->
-                if (!adapter.selectionMode) {
+                if (!adapter.isSelectionMode) {
                     navigateToTripDetail(trip.id)
                 }
             },
