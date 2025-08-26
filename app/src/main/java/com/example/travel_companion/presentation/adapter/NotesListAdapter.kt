@@ -2,6 +2,7 @@ package com.example.travel_companion.presentation.adapter
 
 import android.icu.text.SimpleDateFormat
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -47,7 +48,6 @@ class NotesListAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(note: NoteEntity, isSelected: Boolean) {
-            // Dati principali
             binding.tvNoteTitle.text = note.title
             binding.tvNoteContent.text = note.content
 
@@ -64,12 +64,18 @@ class NotesListAdapter(
 
         private fun updateSelectionUI(isSelected: Boolean) {
             val cardView = binding.root
+            val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
+
             if (isSelected) {
-                cardView.setBackgroundResource(R.drawable.note_card_selected)
+                // Mostra overlay di selezione (stesso stile di Trip e Photo)
+                selectionOverlay?.visibility = View.VISIBLE
+                // Mantieni lo sfondo originale ma con elevazione maggiore
+                cardView.setBackgroundResource(R.drawable.note_card_gradient)
                 cardView.cardElevation = 8f
             } else {
+                // Nascondi overlay e ripristina stato normale
+                selectionOverlay?.visibility = View.GONE
                 cardView.setBackgroundResource(R.drawable.note_card_gradient)
-                // Ripristina l'elevazione normale
                 cardView.cardElevation = 6f
             }
             cardView.invalidate()
