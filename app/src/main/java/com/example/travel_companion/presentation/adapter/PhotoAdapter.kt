@@ -13,7 +13,7 @@ import com.example.travel_companion.databinding.ItemPhotoBinding
 import com.example.travel_companion.databinding.ItemPhotoDateHeaderBinding
 import com.example.travel_companion.domain.model.PhotoGalleryItem
 import com.example.travel_companion.presentation.adapter.base.BaseAdapter
-import com.example.travel_companion.presentation.adapter.base.SelectionManager
+import com.example.travel_companion.util.managers.SelectionManager
 
 /*
 L'adapter gestisce due tipi di elementi nella stessa RecyclerView:

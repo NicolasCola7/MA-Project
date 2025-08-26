@@ -11,10 +11,11 @@ import androidx.navigation.fragment.findNavController
 import com.example.travel_companion.R
 import com.example.travel_companion.data.local.entity.TripEntity
 import com.example.travel_companion.databinding.FragmentTripsBinding
-import com.example.travel_companion.util.Utils
 import com.example.travel_companion.presentation.adapter.TripListAdapter
 import com.example.travel_companion.presentation.viewmodel.TripsViewModel
 import com.example.travel_companion.presentation.viewmodel.FiltersViewModel
+import com.example.travel_companion.util.helpers.EmptyStateHelper
+import com.example.travel_companion.util.helpers.SelectionHelper
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
@@ -120,7 +121,7 @@ class TripsFragment : Fragment() {
         binding.filtersOverlay.isVisible = true
 
         // Nascondi lo stato vuoto quando l'overlay è aperto
-        Utils.EmptyStateHelper.hideEmptyState(
+        EmptyStateHelper.hideEmptyState(
             binding.emptyStateLayout.root
         )
     }
@@ -138,12 +139,12 @@ class TripsFragment : Fragment() {
         val shouldShowEmptyState = filteredTrips.isEmpty()
 
         if (shouldShowEmptyState) {
-            Utils.EmptyStateHelper.showTripsEmptyState(
+            EmptyStateHelper.showTripsEmptyState(
                 binding.emptyStateLayout.root,
                 filtersViewModel.hasActiveFilters()
             )
         } else {
-            Utils.EmptyStateHelper.hideEmptyState(
+            EmptyStateHelper.hideEmptyState(
                 binding.emptyStateLayout.root
             )
         }
@@ -247,12 +248,12 @@ class TripsFragment : Fragment() {
         val shouldShowEmptyState = filteredTrips.isEmpty() && !binding.filtersOverlay.isVisible
 
         if (shouldShowEmptyState) {
-            Utils.EmptyStateHelper.showTripsEmptyState(
+            EmptyStateHelper.showTripsEmptyState(
                 binding.emptyStateLayout.root,
                 filtersViewModel.hasActiveFilters()
             )
         } else {
-            Utils.EmptyStateHelper.hideEmptyState(
+            EmptyStateHelper.hideEmptyState(
                 binding.emptyStateLayout.root
             )
         }
@@ -269,7 +270,7 @@ class TripsFragment : Fragment() {
     }
 
     private fun updateDeleteButton(selectedCount: Int) {
-        Utils.SelectionHelper.updateDeleteButton(
+        SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedTrips,
             selectedCount = selectedCount,
             baseText = "Elimina"
@@ -279,7 +280,7 @@ class TripsFragment : Fragment() {
     private fun handleMultipleDelete() {
         val selectedTrips = adapter.getSelectedTrips()
 
-        Utils.SelectionHelper.handleMultipleDelete(
+        SelectionHelper.handleMultipleDelete(
             context = requireContext(),
             selectedItems = selectedTrips,
             itemType = "viaggi",

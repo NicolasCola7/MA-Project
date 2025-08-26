@@ -3,8 +3,8 @@ package com.example.travel_companion.data.repository
 import androidx.lifecycle.asFlow
 import com.example.travel_companion.data.local.dao.TripDao
 import com.example.travel_companion.data.local.entity.TripEntity
-import com.example.travel_companion.util.TripPredictionAlgorithm
-import com.example.travel_companion.util.TripSuggestionsEngine
+import com.example.travel_companion.util.trip.TripPredictionAlgorithm
+import com.example.travel_companion.util.trip.TripSuggestionsEngine
 import com.example.travel_companion.domain.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

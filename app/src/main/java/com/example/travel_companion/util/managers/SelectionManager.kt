@@ -1,4 +1,6 @@
-package com.example.travel_companion.presentation.adapter.base
+package com.example.travel_companion.util.managers
+
+import com.example.travel_companion.presentation.adapter.base.BaseAdapter
 
 /**
  * Gestore per la selezione multipla usando composizione

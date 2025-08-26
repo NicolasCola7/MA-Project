@@ -2,6 +2,7 @@ package com.example.travel_companion.presentation.adapter.base
 
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.example.travel_companion.util.managers.SelectionManager
 
 /**
  * Adapter base per adapter che supportano la selezione

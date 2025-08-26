@@ -24,7 +24,8 @@ import com.example.travel_companion.data.local.entity.PhotoEntity
 import com.example.travel_companion.databinding.FragmentPhotoGalleryBinding
 import com.example.travel_companion.presentation.adapter.PhotoAdapter
 import com.example.travel_companion.presentation.viewmodel.PhotoGalleryViewModel
-import com.example.travel_companion.util.Utils
+import com.example.travel_companion.util.helpers.EmptyStateHelper
+import com.example.travel_companion.util.helpers.SelectionHelper
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -90,11 +91,11 @@ class PhotoGalleryFragment : Fragment() {
             // Gestisci empty state
             val shouldShowEmptyState = groupedItems.isEmpty()
             if (shouldShowEmptyState) {
-                Utils.EmptyStateHelper.showPhotosEmptyState(
+                EmptyStateHelper.showPhotosEmptyState(
                     binding.emptyStateLayout.root
                 )
             } else {
-                Utils.EmptyStateHelper.hideEmptyState(
+                EmptyStateHelper.hideEmptyState(
                     binding.emptyStateLayout.root
                 )
             }
@@ -216,7 +217,7 @@ class PhotoGalleryFragment : Fragment() {
     }
 
     private fun updateDeleteButton(selectedCount: Int) {
-        Utils.SelectionHelper.updateDeleteButton(
+        SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedPhotos,
             selectedCount = selectedCount,
             baseText = "Elimina"
@@ -228,7 +229,7 @@ class PhotoGalleryFragment : Fragment() {
 
         if (selectedPhotos.isEmpty()) return
 
-        Utils.SelectionHelper.handleMultipleDelete(
+        SelectionHelper.handleMultipleDelete(
             context = requireContext(),
             selectedItems = selectedPhotos,
             itemType = "foto",
