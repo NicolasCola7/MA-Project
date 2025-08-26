@@ -34,7 +34,7 @@ class TripsViewModel @Inject constructor(
 
     fun onCreateTripClicked(destination: String, startDateStr: String, endDateStr: String, type: String, lat: Double, long: Double) {
         // Validazioni di base
-        if (destination.isBlank() || startDateStr.isBlank() || (type == "Viaggio di più giorni" && endDateStr.isBlank())) {
+        if (destination.isBlank() || startDateStr.isBlank() || (type == "Viaggio di più giorni" && endDateStr == "Seleziona data e ora")) {
             _uiEvent.value = Event.ShowMessage("Compila i campi obbligatori")
             return
         }
@@ -86,6 +86,7 @@ class TripsViewModel @Inject constructor(
                     calendar.set(Calendar.SECOND, 59)
                     calendar.timeInMillis
                 } else {
+                    Timber.d(endDateStr)
                     val timeParts = endDateStr.split(":")
                     if (timeParts.size != 2) {
                         _uiEvent.value = Event.ShowMessage("Inserisci l'ora di fine nel formato HH:mm")

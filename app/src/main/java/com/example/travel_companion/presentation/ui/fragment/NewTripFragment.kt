@@ -191,17 +191,13 @@ class NewTripFragment : Fragment() {
                         "Viaggio di più giorni" -> {
                             binding.editEndLabel.text = "Data e ora fine viaggio"
                             binding.editEndDate.visibility = View.VISIBLE
-                            if (previousTripType != "Viaggio di più giorni") {
-                                binding.editEndDate.text = "Seleziona data e ora"
-                            }
+                            binding.editEndDate.text = "Seleziona data e ora"
                         }
 
                         "Gita Giornaliera", "Viaggio Locale" -> {
                             binding.editEndLabel.text = "Ora fine viaggio"
                             binding.editEndDate.visibility = View.VISIBLE
-                            if (previousTripType == "Viaggio di più giorni") {
-                                binding.editEndDate.text = "Seleziona ora"
-                            }
+                            binding.editEndDate.text = "23:59"
                         }
 
                         else -> {
