@@ -23,6 +23,8 @@ class SuggestionsAdapter : BaseAdapter<TripSuggestion, SuggestionsAdapter.Sugges
         return SuggestionViewHolder(binding)
     }
 
+    override fun onItemClick(item: TripSuggestion, position: Int) {}
+
     override fun bindItem(holder: SuggestionViewHolder, item: TripSuggestion, position: Int) {
         holder.bind(item)
     }

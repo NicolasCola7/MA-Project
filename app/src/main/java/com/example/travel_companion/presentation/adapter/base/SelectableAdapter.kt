@@ -20,19 +20,11 @@ abstract class SelectableAdapter<T : Any, VH : RecyclerView.ViewHolder>(
         notifyItemChanged = { position, payload -> notifyItemChanged(position, payload) }
     )
 
-    /**
-     * Deve restituire l'ID univoco dell'item
-     */
     protected abstract fun getItemId(item: T): Any
 
-    /**
-     * Bind dell'item considerando lo stato di selezione
-     */
-    protected abstract fun bindItemWithSelection(holder: VH, item: T, isSelected: Boolean, position: Int)
+    abstract fun bindItemWithSelection(holder: VH, item: T, isSelected: Boolean, position: Int)
 
-    /**
-     * Aggiorna solo la visualizzazione della selezione
-     */
+    //Aggiorna solo la visualizzazione della selezione
     protected abstract fun updateSelectionVisuals(holder: VH, isSelected: Boolean)
 
     override fun bindItem(holder: VH, item: T, position: Int) {

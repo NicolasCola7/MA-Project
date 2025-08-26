@@ -5,9 +5,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-/**
- * Classe base per tutti gli adapter
- */
 abstract class BaseAdapter<T : Any, VH : RecyclerView.ViewHolder>(
     diffCallback: DiffUtil.ItemCallback<T>
 ) : ListAdapter<T, VH>(diffCallback) {
@@ -51,26 +48,12 @@ abstract class BaseAdapter<T : Any, VH : RecyclerView.ViewHolder>(
         }
     }
 
-    /**
-     * Gestione aggiornamenti payload (può essere overridato)
-     */
     protected open fun handlePayloadUpdate(holder: VH, position: Int, payloads: MutableList<Any>) {
         // Default: nessuna gestione payload, usa bind normale
         bindItem(holder, getItem(position), position)
     }
 
-    /**
-     * Click normale sull'item
-     */
-    protected open fun onItemClick(item: T, position: Int) {
-        // Default: nessuna azione
-    }
+    protected abstract fun onItemClick(item: T, position: Int)
 
-    /**
-     * Long click sull'item
-     */
-    protected open fun onItemLongClick(item: T, position: Int): Boolean {
-        // Default: nessuna azione
-        return false
-    }
+    protected open fun onItemLongClick(item: T, position: Int): Boolean = false
 }
