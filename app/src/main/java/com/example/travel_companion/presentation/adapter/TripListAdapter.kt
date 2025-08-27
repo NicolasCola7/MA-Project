@@ -84,7 +84,7 @@ class TripListAdapter(
                 binding.ivTripImage.visibility = View.GONE
                 binding.viewImagePlaceholder.visibility = View.VISIBLE
 
-                binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.GONE
+                binding.root.findViewById<View>(R.id.overlay_view)?.visibility = View.VISIBLE
 
                 binding.tvDestination.setTextColor(
                     ContextCompat.getColor(binding.root.context, R.color.text_primary)
@@ -100,8 +100,12 @@ class TripListAdapter(
 
             if (isSelected) {
                 selectionOverlay?.visibility = View.VISIBLE
+                if(binding.ivTripImage.visibility == View.GONE)
+                    binding.viewImagePlaceholder.visibility = View.GONE
             } else {
                 selectionOverlay?.visibility = View.GONE
+                if(binding.ivTripImage.visibility == View.GONE)
+                    binding.viewImagePlaceholder.visibility = View.VISIBLE
             }
         }
     }

@@ -75,10 +75,6 @@ class NotesListAdapter(
             } else {
                 // Nascondi overlay e ripristina stato normale
                 selectionOverlay?.visibility = View.GONE
-                // Ripristina lo sfondo normale
-                cardView.setBackgroundColor(defaultBackground)
-                // Ripristina l'elevazione normale
-                cardView.cardElevation = 6f
             }
             cardView.invalidate()
         }
