@@ -115,6 +115,7 @@ class NotesListFragment : Fragment() {
     }
 
     private fun setupBottomNavigation() {
+        binding.bottomNavigationView.selectedItemId =  R.id.goToNotes
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeFragment -> {
@@ -133,6 +134,9 @@ class NotesListFragment : Fragment() {
                     findNavController().navigate(
                         NotesListFragmentDirections.actionNotesListFragmentToPhotoGalleryFragment(args.tripId)
                     )
+                    true
+                }
+                R.id.goToNotes -> {
                     true
                 }
                 else -> false

@@ -4,6 +4,10 @@
         android:title="Home"
         android:icon="@drawable/ic_home" />
 
+    <item android:id="@+id/goToTripDetails"
+        android:title="Dettagli Viaggio"
+        android:icon="@drawable/ic_detail_trip_24" />
+
     <item android:id="@+id/goToPhotoGallery"
         android:title="Galleria"
         android:icon="@drawable/ic_menu_gallery" />

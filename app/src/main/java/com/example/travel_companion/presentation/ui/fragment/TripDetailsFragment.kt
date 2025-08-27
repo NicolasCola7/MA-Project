@@ -125,6 +125,7 @@ class TripDetailsFragment: Fragment() {
      * Configures bottom navigation menu item selection and navigation actions.
      */
     private fun setupBottomNavigation() {
+        binding.bottomNavigationView.selectedItemId =  R.id.goToTripDetails
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeFragment -> {
@@ -143,6 +144,9 @@ class TripDetailsFragment: Fragment() {
                     findNavController().navigate(
                         TripDetailsFragmentDirections.actionTripDetailFragmentToNoteListFragment(args.tripId)
                     )
+                    true
+                }
+                R.id.goToTripDetails -> {
                     true
                 }
                 else -> false
