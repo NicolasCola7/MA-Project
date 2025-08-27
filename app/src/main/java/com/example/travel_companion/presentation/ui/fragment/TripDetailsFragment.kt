@@ -95,6 +95,9 @@ class TripDetailsFragment: Fragment() {
         setupClickListeners()
     }
 
+    /**
+     * Initializes the Google Map with trip data and sets up map interactions.
+     */
     private fun initializeMap(targetLocation: LatLng) {
         // only init map when the isFetching is turned to false
         isFetching.observe(viewLifecycleOwner) {
@@ -118,6 +121,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Configures bottom navigation menu item selection and navigation actions.
+     */
     private fun setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -144,6 +150,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Sets up click listeners for tracking toggle and finish trip buttons.
+     */
     private fun setupClickListeners() {
         binding.btnToggleTracking.setOnClickListener {
             toggleTracking()
@@ -154,6 +163,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Displays confirmation dialog for finishing the trip.
+     */
     private fun showFinishTripDialog() {
         val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.Theme_ProvaProgetto_PopupOverlay)
             .setTitle("Terminazione viaggio")
@@ -168,6 +180,9 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
+    /**
+     * Loads and observes trip data including coordinates, POIs, and trip information.
+     */
     @SuppressLint("SetTextI18n")
     private fun initTripData() {
         viewModel.loadCoordinates(args.tripId)
@@ -215,6 +230,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Converts coordinate entities into polylines for map display, handling time gaps.
+     */
     private fun initPathPoints(coordinates: List<CoordinateEntity>) {
         var previousTimestamp: Long = coordinates[0].timestamp
         var currentPolyline: Polyline = mutableListOf()
@@ -236,6 +254,9 @@ class TripDetailsFragment: Fragment() {
         pathPoints.add(mutableListOf())
     }
 
+    /**
+     * Sets up observers for tracking service state, path points, and timer updates.
+     */
     private fun subscribeToObservers() {
         trackingObserver = Observer { isTracking ->
             if (isResumed) {
@@ -271,6 +292,9 @@ class TripDetailsFragment: Fragment() {
         TrackingService.trackingTimeInMillis.observeForever(timerObserver!!)
     }
 
+    /**
+     * Updates the total tracked distance based on new location points.
+     */
     private fun refreshTrackedDistance() {
         if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
             val secondLastPos = pathPoints.last()[pathPoints.last().size - 2]
@@ -290,6 +314,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Saves new coordinate points to the database during tracking.
+     */
     private fun addNewCoordinate() {
         if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
             val lat = pathPoints.last().last().latitude
@@ -298,6 +325,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Updates the UI with trip information and controls visibility based on trip status.
+     */
     @SuppressLint("SetTextI18n")
     private fun showTripInfo(trip: TripEntity) {
         binding.tvDestination.text = trip.destination
@@ -321,6 +351,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Toggles location tracking by starting or pausing the tracking service.
+     */
     private fun toggleTracking() {
         if(!isTracking) {
             sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
@@ -331,13 +364,16 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Updates UI elements and button states based on current tracking status.
+     */
     @SuppressLint("SetTextI18n")
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
         if(!isTracking) {
             binding.btnToggleTracking.text = "Traccia"
             binding.btnFinishTrip.visibility = View.VISIBLE
-        } else if(isTracking && viewModel.trip.value!!.status == TripStatus.FINISHED){
+        } else if(isTracking && viewModel.trip.value!!.status == TripStatus.FINISHED){ // when the trip get finished by the alarm manager at the enddate
             binding.btnFinishTrip.visibility = View.GONE
             binding.btnToggleTracking.visibility = View.GONE
         } else {
@@ -347,6 +383,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Adjusts map camera to display the entire tracked path.
+     */
     private fun zoomToSeeWholeTrack() {
         var hasPoints = false
         val bounds = LatLngBounds.Builder()
@@ -371,6 +410,9 @@ class TripDetailsFragment: Fragment() {
         )
     }
 
+    /**
+     * Renders all tracked polylines on the map.
+     */
     private fun addAllPolylines() {
         for(polyline in pathPoints) {
             val polylineOptions = PolylineOptions()
@@ -381,6 +423,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Adds the most recent polyline segment to the map during active tracking.
+     */
     private fun addLatestPolyline() {
         if(pathPoints.isNotEmpty() && pathPoints.last().size > 1) {
             val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2] // second-last coordinate in the last polyline
@@ -394,6 +439,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Stores the current timestamp for tracking session management.
+     */
     private fun updateLastTrackingTime() {
         val sharedPrefs = requireContext().getSharedPreferences("app_tracking", Context.MODE_PRIVATE)
         sharedPrefs.edit()
@@ -401,12 +449,18 @@ class TripDetailsFragment: Fragment() {
             .apply()
     }
 
+    /**
+     * Sends action commands to the tracking service.
+     */
     private fun sendCommandToService(action: String) =
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action
             requireContext().startService(it)
         }
 
+    /**
+     * Creates a geofence for a specific location with entry and exit monitoring.
+     */
     private fun addGeofence(pos: LatLng, placeName: String) {
         val geofence = Geofence.Builder()
             .setRequestId(placeName)
@@ -421,6 +475,9 @@ class TripDetailsFragment: Fragment() {
         geofenceList.add(geofence)
     }
 
+    /**
+     * Generates geofences for all points of interest in the current trip.
+     */
     private fun populateGeofenceList(pois: List<POIEntity>) {
         geofenceList.clear()
 
@@ -430,6 +487,10 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Configures map interaction listeners for POI creation and marker management.
+     */
+    @SuppressLint("PotentialBehaviorOverride")
     private fun setMapClickListeners() {
         map!!.setOnMapLongClickListener { latlng ->
             showPOIInputDialog(latlng)
@@ -445,6 +506,9 @@ class TripDetailsFragment: Fragment() {
         }
     }
 
+    /**
+     * Displays dialog to save a Google Maps point of interest.
+     */
     private fun showAddPOIDialog(poi: PointOfInterest) {
         AlertDialog.Builder(requireContext())
             .setTitle("Salva Punto di Interesse")
@@ -459,6 +523,9 @@ class TripDetailsFragment: Fragment() {
             .show()
     }
 
+    /**
+     * Shows input dialog for creating custom points of interest at map coordinates.
+     */
     private fun showPOIInputDialog(latlng: LatLng) {
         val layout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -501,6 +568,9 @@ class TripDetailsFragment: Fragment() {
         dialog.show()
     }
 
+    /**
+     * Places a point of interest marker on the map.
+     */
     private fun addPOIMarker(poiName: String, poiPosition: LatLng) {
         map!!.addMarker(
             MarkerOptions()
@@ -510,6 +580,9 @@ class TripDetailsFragment: Fragment() {
         )
     }
 
+    /**
+     * Displays dialog for point of interest marker interactions and deletion.
+     */
     private fun showMarkerDialog(marker: Marker) {
         AlertDialog.Builder(requireContext())
             .setTitle("Punto di Interesse")
@@ -524,6 +597,9 @@ class TripDetailsFragment: Fragment() {
             .show()
     }
 
+    /**
+     * Removes a geofence from the active monitoring list by name.
+     */
     private fun deleteGeofence(poiName: String) {
         for(geofence in geofenceList) {
             if(geofence.requestId == poiName) {
@@ -561,6 +637,9 @@ class TripDetailsFragment: Fragment() {
         _binding?.mapView?.onSaveInstanceState(outState)
     }
 
+    /**
+     * Cleans up observers, stops tracking service, and destroys the view.
+     */
     override fun onDestroyView() {
         trackingObserver?.let {
             TrackingService.isTracking.removeObserver(it)
