@@ -20,6 +20,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Geofence"
     }
 
+    /**
+     * Processes geofence transition events and triggers appropriate notifications.
+     */
     override fun onReceive(context: Context, intent: Intent) {
         Timber.d("GEO - Intent received: ${intent.action}")
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
@@ -53,6 +56,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
+    /**
+     * Creates and displays a notification for geofence entry or exit events.
+     */
     private fun sendNotification(context: Context, geofenceTransition: Int, geofence: Geofence) {
         if (!hasNotificationPermissions(context)) {
             return

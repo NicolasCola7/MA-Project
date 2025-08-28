@@ -31,12 +31,12 @@ abstract class BaseAdapter<T : Any, VH : RecyclerView.ViewHolder>(
     }
 
     /**
-     * Bind dell'item nel ViewHolder
+     * Bind the item to the ViewHolder
      */
     protected abstract fun bindItem(holder: VH, item: T, position: Int)
 
     /**
-     * Setup dei click listener (può essere overridato per comportamenti custom)
+     * Setup click listeners (can be overridden for custom behavior)
      */
     protected open fun setupClickListeners(holder: VH, item: T, position: Int) {
         holder.itemView.setOnClickListener {
@@ -48,12 +48,20 @@ abstract class BaseAdapter<T : Any, VH : RecyclerView.ViewHolder>(
         }
     }
 
+    /**
+     * Handle payload updates (default behavior: rebind normally)
+     */
     protected open fun handlePayloadUpdate(holder: VH, position: Int, payloads: MutableList<Any>) {
-        // Default: nessuna gestione payload, usa bind normale
         bindItem(holder, getItem(position), position)
     }
 
+    /**
+     * Called when an item is clicked
+     */
     protected abstract fun onItemClick(item: T, position: Int)
 
+    /**
+     * Called when an item is long-clicked (default: do nothing and return false)
+     */
     protected open fun onItemLongClick(item: T, position: Int): Boolean = false
 }

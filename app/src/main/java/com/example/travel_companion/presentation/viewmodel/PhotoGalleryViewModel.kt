@@ -29,23 +29,29 @@ class PhotoGalleryViewModel @Inject constructor(
     private val photoRepository: PhotoRepository
 ) : ViewModel() {
 
-    // Trip ID corrente
+    // Current trip ID
     private val _currentTripId = MutableLiveData<Long>()
 
-    // LiveData delle foto grezze dal repository
+    // LiveData of raw photos from the repository
     private val rawPhotos: LiveData<List<PhotoEntity>> = _currentTripId.switchMap { tripId ->
         photoRepository.getPhotosByTripId(tripId)
     }
 
-    // LiveData delle foto raggruppate per data
+    // LiveData of photos grouped by date
     val groupedPhotos: LiveData<List<PhotoGalleryItem>> = rawPhotos.map { photos ->
         groupPhotosByDate(photos)
     }
 
+    /**
+     * Sets the current trip ID to load its photos.
+     */
     fun loadPhotos(tripId: Long) {
         _currentTripId.value = tripId
     }
 
+    /**
+     * Inserts a new photo for a trip.
+     */
     fun insertPhoto(tripId: Long, uri: String) {
         viewModelScope.launch {
             try {
@@ -63,6 +69,9 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deletes photos both from repository and system gallery.
+     */
     fun deletePhotosWithSystemSync(context: Context, photoIds: List<Long>) {
         viewModelScope.launch {
             try {
@@ -75,6 +84,9 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Syncs repository photos with the system gallery to remove missing files.
+     */
     fun syncWithSystemGallery(context: Context) {
         val tripId = _currentTripId.value ?: return
 
@@ -90,19 +102,16 @@ class PhotoGalleryViewModel @Inject constructor(
     }
 
     /**
-     * Raggruppa le foto per data e crea la lista di PhotoGalleryItem
+     * Groups photos by date and creates a list of PhotoGalleryItem.
      */
     private fun groupPhotosByDate(photos: List<PhotoEntity>): List<PhotoGalleryItem> {
         if (photos.isEmpty()) return emptyList()
 
-        // Raggruppa per data usando Calendar
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
         val groups = photos
             .sortedByDescending { it.timestamp }
-            .groupBy { photo ->
-                dateFormat.format(Date(photo.timestamp))
-            }
+            .groupBy { photo -> dateFormat.format(Date(photo.timestamp)) }
             .map { (dateKey, photosInDate) ->
                 val firstPhoto = photosInDate.first()
                 PhotoGroup(
@@ -114,10 +123,10 @@ class PhotoGalleryViewModel @Inject constructor(
             }
             .sortedByDescending { it.timestamp }
 
-        // Converte in lista di PhotoGalleryItem
+        // Convert groups into PhotoGalleryItem list
         val result = mutableListOf<PhotoGalleryItem>()
         groups.forEach { group ->
-            // Aggiungi l'intestazione della data
+            // Add date header
             result.add(
                 PhotoGalleryItem.DateHeader(
                     date = group.dateKey,
@@ -125,7 +134,7 @@ class PhotoGalleryViewModel @Inject constructor(
                     photoCount = group.photos.size
                 )
             )
-            // Aggiungi le foto del gruppo
+            // Add photos in the group
             group.photos.forEach { photo ->
                 result.add(PhotoGalleryItem.Photo(photo))
             }
@@ -135,17 +144,16 @@ class PhotoGalleryViewModel @Inject constructor(
     }
 
     /**
-     * Formatta la data in modo user-friendly
+     * Formats the timestamp into a user-friendly date.
      */
-    // Alternativa per compatibilità
     private fun formatDate(timestamp: Long): String {
         val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
         val today = Calendar.getInstance()
         val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
 
         return when {
-            isSameDay(calendar, today) -> "Oggi"
-            isSameDay(calendar, yesterday) -> "Ieri"
+            isSameDay(calendar, today) -> "Today"
+            isSameDay(calendar, yesterday) -> "Yesterday"
             else -> SimpleDateFormat("d MMMM yyyy", Locale.getDefault()).format(Date(timestamp))
         }
     }
@@ -155,7 +163,11 @@ class PhotoGalleryViewModel @Inject constructor(
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
-    // Private helper methods
+    // ---------------- Private helper methods ----------------
+
+    /**
+     * Deletes photos from both repository and system.
+     */
     private suspend fun deletePhotosInternal(
         context: Context,
         photoIds: List<Long>
@@ -169,13 +181,14 @@ class PhotoGalleryViewModel @Inject constructor(
         photoRepository.deletePhotos(photoIds)
     }
 
+    /**
+     * Deletes a single photo from the system gallery.
+     */
     private fun deletePhotoFromSystem(context: Context, uriString: String): Boolean {
         return try {
             val uri = Uri.parse(uriString)
             val rowsDeleted = context.contentResolver.delete(uri, null, null)
-            val success = rowsDeleted > 0
-
-            success
+            rowsDeleted > 0
         } catch (e: SecurityException) {
             Timber.w(e, "SecurityException deleting from system gallery: $uriString")
             false
@@ -185,12 +198,15 @@ class PhotoGalleryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Checks which photos are missing from system gallery and deletes them from repository.
+     */
     private suspend fun syncPhotosWithSystemInternal(context: Context, tripId: Long): Int {
         val currentPhotos = photoRepository.getPhotosByTripIdSync(tripId)
         val orphanedPhotoIds = mutableListOf<Long>()
 
         currentPhotos.forEach { photo ->
-            //controllo se la foto è presente nella galleria di sistema
+            // Check if photo is accessible in system gallery
             val isAccessible = try {
                 val uri = Uri.parse(photo.uri)
                 context.contentResolver.openInputStream(uri)?.use { true } ?: false
@@ -203,13 +219,13 @@ class PhotoGalleryViewModel @Inject constructor(
                 }
             }
 
-            //se non è accessibile, aggiungo alle foto alla lista di foto "orfane"
+            // If not accessible, add to orphaned photos list
             if (!isAccessible) {
                 orphanedPhotoIds.add(photo.id)
             }
         }
 
-        //elimino le foto orfane: quindi quelle foto che sono state cancellate dalla galleria di sistema
+        // Delete orphaned photos from repository
         if (orphanedPhotoIds.isNotEmpty()) {
             photoRepository.deletePhotos(orphanedPhotoIds)
         }

@@ -43,7 +43,14 @@ class NewTripFragment : Fragment() {
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
 
-
+    /**
+     * Inflates the layout for this fragment and initializes data binding.
+     *
+     * @param inflater LayoutInflater used to inflate views
+     * @param container Optional parent view group
+     * @param savedInstanceState Previously saved state
+     * @return The root view of the fragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -57,6 +64,12 @@ class NewTripFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called after the view is created. Initializes autocomplete, listeners, and observers.
+     *
+     * @param view The created view
+     * @param savedInstanceState Previously saved state
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -65,7 +78,9 @@ class NewTripFragment : Fragment() {
         observeViewModel()
     }
 
-    //inizializzazione fragment google
+    /**
+     * Initializes the Google Places autocomplete fragment and handles selection events.
+     */
     private fun initPlacesAutocomplete() {
         val app = requireActivity().application as BaseApplication
         placesClient = app.placesClient
@@ -90,7 +105,6 @@ class NewTripFragment : Fragment() {
                 latitude = place.location?.latitude!!
                 longitude = place.location?.longitude!!
 
-
                 Timber.i("Luogo selezionato: $placeName, $placeAddress")
                 viewModel.selectedDestinationName = placeName
 
@@ -109,11 +123,16 @@ class NewTripFragment : Fragment() {
         })
     }
 
+    /**
+     * Loads and displays a photo for the given place if available,
+     * and stores it in the ViewModel.
+     *
+     * @param place The selected place
+     */
     private fun loadPlacePhoto(place: Place) {
         val photoMetadatas = place.photoMetadatas
         if (photoMetadatas.isNullOrEmpty()) {
             Timber.d("Nessuna foto disponibile per questo luogo")
-            // Gestisci il caso in cui gli elementi UI non esistono ancora
             try {
                 binding.cardPlaceImage.visibility = View.GONE
             } catch (e: Exception) {
@@ -123,20 +142,17 @@ class NewTripFragment : Fragment() {
             return
         }
 
-        // Prendi la prima foto disponibile
         val photoMetadata = photoMetadatas[0]
 
-        // Crea la richiesta per scaricare la foto
         val photoRequest = FetchPhotoRequest.builder(photoMetadata)
-            .setMaxWidth(800) // Larghezza massima in pixel
-            .setMaxHeight(600) // Altezza massima in pixel
+            .setMaxWidth(800)
+            .setMaxHeight(600)
             .build()
 
         placesClient.fetchPhoto(photoRequest)
             .addOnSuccessListener { fetchPhotoResponse ->
                 val bitmap: Bitmap = fetchPhotoResponse.bitmap
 
-                // Gestisci il caso in cui gli elementi UI potrebbero non esistere
                 try {
                     binding.imagePlace.setImageBitmap(bitmap)
                     binding.cardPlaceImage.visibility = View.VISIBLE
@@ -144,7 +160,6 @@ class NewTripFragment : Fragment() {
                     Timber.d("Elementi UI per l'immagine non presenti nel layout, ma l'immagine è stata comunque salvata")
                 }
 
-                // Salva l'immagine nel ViewModel per poi salvarla nel database
                 viewModel.setPlaceImage(bitmap)
 
                 Timber.d("Foto del luogo caricata con successo")
@@ -160,7 +175,10 @@ class NewTripFragment : Fragment() {
             }
     }
 
-    //inizializza i listener degli altri elementi del fragment
+    /**
+     * Initializes listeners for date/time pickers, trip type spinner,
+     * and trip creation button.
+     */
     private fun initListeners() {
         binding.editStartDate.setOnClickListener {
             showDateTimePicker(binding.editStartDate, onlyTime = false)
@@ -220,7 +238,10 @@ class NewTripFragment : Fragment() {
         }
     }
 
-    //osserva i dati dal view model
+    /**
+     * Observes LiveData from the ViewModel to handle UI events such as
+     * showing messages and navigation.
+     */
     private fun observeViewModel() {
         viewModel.uiEvent.observe(viewLifecycleOwner) { event ->
             when (event) {
@@ -235,16 +256,19 @@ class NewTripFragment : Fragment() {
         }
     }
 
-    //imposta lo stile del picker a seconda del tipo di viaggio
+    /**
+     * Displays a date/time picker depending on the trip type.
+     *
+     * @param button The button to update with the result
+     * @param onlyTime Whether only the time should be selected
+     */
     @SuppressLint("DefaultLocale")
     private fun showDateTimePicker(button: Button, onlyTime: Boolean) {
         if (onlyTime) {
-            // Mostra solo il time picker
             showTimePicker { time ->
                 button.text = time
             }
         } else {
-            // Mostra prima il date picker, poi il time picker
             showDatePicker { date ->
                 showTimePicker { time ->
                     button.text = "$date $time"
@@ -253,6 +277,11 @@ class NewTripFragment : Fragment() {
         }
     }
 
+    /**
+     * Displays a date picker dialog and invokes a callback with the selected date.
+     *
+     * @param onDateSelected Callback with formatted date string
+     */
     private fun showDatePicker(onDateSelected: (String) -> Unit) {
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText("Seleziona data")
@@ -267,6 +296,11 @@ class NewTripFragment : Fragment() {
         datePicker.show(childFragmentManager, "DATE_PICKER")
     }
 
+    /**
+     * Displays a time picker dialog and invokes a callback with the selected time.
+     *
+     * @param onTimeSelected Callback with formatted time string
+     */
     private fun showTimePicker(onTimeSelected: (String) -> Unit) {
         val timePicker = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -286,11 +320,12 @@ class NewTripFragment : Fragment() {
         timePicker.show(childFragmentManager, "TIME_PICKER")
     }
 
+    /**
+     * Cleans up binding and resets ViewModel data when the view is destroyed.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
-        // Reset dei dati quando si esce dal fragment
         viewModel.resetData()
         _binding = null
     }
-
 }

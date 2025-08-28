@@ -42,6 +42,9 @@ class PhotoGalleryFragment : Fragment() {
     private val viewModel: PhotoGalleryViewModel by viewModels()
     private lateinit var currentPhotoUri: Uri
 
+    /**
+     * Inflates the layout and initializes data binding.
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -57,6 +60,10 @@ class PhotoGalleryFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called when the view is created.
+     * Sets up adapter, RecyclerView, navigation, click listeners and observers.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -67,28 +74,35 @@ class PhotoGalleryFragment : Fragment() {
         observeData()
     }
 
+    /**
+     * Syncs photos with the system gallery whenever the fragment resumes.
+     */
     override fun onResume() {
         super.onResume()
-        // Sincronizza automaticamente quando si torna al fragment
         viewModel.syncWithSystemGallery(requireContext())
     }
 
+    /**
+     * Sets up the RecyclerView with a GridLayoutManager and span size lookup.
+     */
     private fun setupRecyclerView() {
         val gridLayoutManager = GridLayoutManager(requireContext(), PhotoAdapter.SPAN_COUNT)
         gridLayoutManager.spanSizeLookup = PhotoAdapter.PhotoSpanSizeLookup(adapter)
         binding.recyclerView.layoutManager = gridLayoutManager
     }
 
+    /**
+     * Observes photo data and updates the adapter accordingly.
+     * Also manages the empty state UI.
+     */
     private fun observeData() {
         viewModel.loadPhotos(args.tripId)
 
-        // Osserva le foto raggruppate invece delle foto raw
         viewModel.groupedPhotos.observe(viewLifecycleOwner) { groupedItems ->
             adapter.submitList(groupedItems) {
                 adapter.updateSelectionAfterListChange()
             }
 
-            // Gestisci empty state
             val shouldShowEmptyState = groupedItems.isEmpty()
             if (shouldShowEmptyState) {
                 EmptyStateHelper.showPhotosEmptyState(
@@ -102,8 +116,11 @@ class PhotoGalleryFragment : Fragment() {
         }
     }
 
+    /**
+     * Configures bottom navigation to handle navigation between fragments.
+     */
     private fun setupBottomNavigation() {
-        binding.bottomNavigationView.selectedItemId =  R.id.goToPhotoGallery
+        binding.bottomNavigationView.selectedItemId = R.id.goToPhotoGallery
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeFragment -> {
@@ -132,6 +149,9 @@ class PhotoGalleryFragment : Fragment() {
         }
     }
 
+    /**
+     * Sets up click listeners for taking a picture and deleting selected photos.
+     */
     private fun setupClickListeners() {
         binding.takePicture.setOnClickListener {
             handleTakePhoto()
@@ -142,6 +162,9 @@ class PhotoGalleryFragment : Fragment() {
         }
     }
 
+    /**
+     * Initializes the photo adapter with selection handling and photo click navigation.
+     */
     private fun setupAdapter() {
         adapter = PhotoAdapter(
             onSelectionChanged = { count ->
@@ -154,6 +177,9 @@ class PhotoGalleryFragment : Fragment() {
         binding.recyclerView.adapter = adapter
     }
 
+    /**
+     * Handles photo click by navigating to the full-screen photo fragment.
+     */
     private fun handlePhotoClick(photo: PhotoEntity) {
         findNavController().navigate(
             PhotoGalleryFragmentDirections.actionPhotoGalleryFragmentToPhotoFullScreenFragment(
@@ -163,6 +189,9 @@ class PhotoGalleryFragment : Fragment() {
         )
     }
 
+    /**
+     * Handles camera permission check before launching the camera.
+     */
     private fun handleTakePhoto() {
         val hasCamera = checkSelfPermission(
             requireContext(),
@@ -176,6 +205,9 @@ class PhotoGalleryFragment : Fragment() {
         }
     }
 
+    /**
+     * Launches the camera and creates a new file entry for the photo in MediaStore.
+     */
     private fun launchCamera() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val contentValues = ContentValues().apply {
@@ -190,6 +222,53 @@ class PhotoGalleryFragment : Fragment() {
 
         takePictureLauncher.launch(currentPhotoUri)
     }
+
+    /**
+     * Updates the delete button text and state based on selection count.
+     */
+    private fun updateDeleteButton(selectedCount: Int) {
+        SelectionHelper.updateDeleteButton(
+            button = binding.deleteSelectedPhotos,
+            selectedCount = selectedCount,
+            baseText = "Elimina"
+        )
+    }
+
+    /**
+     * Handles deletion of multiple selected photos.
+     */
+    private fun handleMultipleDelete() {
+        val selectedPhotos = adapter.getSelectedPhotos()
+
+        if (selectedPhotos.isEmpty()) return
+
+        SelectionHelper.handleMultipleDelete(
+            context = requireContext(),
+            selectedItems = selectedPhotos,
+            itemType = "foto",
+            onDelete = { photos -> deleteSelectedPhotos(photos) },
+            onClearSelection = { adapter.clearSelection() },
+            onUpdateButton = { count -> updateDeleteButton(count) }
+        )
+    }
+
+    /**
+     * Deletes selected photos and syncs the system gallery.
+     */
+    private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
+        val photoIds = photos.map { it.id }
+        viewModel.deletePhotosWithSystemSync(requireContext(), photoIds)
+    }
+
+    /**
+     * Cleans up the binding when the view is destroyed.
+     */
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    // --- Launchers ---
 
     private val permissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -218,38 +297,5 @@ class PhotoGalleryFragment : Fragment() {
                 Toast.LENGTH_SHORT
             ).show()
         }
-    }
-
-    private fun updateDeleteButton(selectedCount: Int) {
-        SelectionHelper.updateDeleteButton(
-            button = binding.deleteSelectedPhotos,
-            selectedCount = selectedCount,
-            baseText = "Elimina"
-        )
-    }
-
-    private fun handleMultipleDelete() {
-        val selectedPhotos = adapter.getSelectedPhotos()
-
-        if (selectedPhotos.isEmpty()) return
-
-        SelectionHelper.handleMultipleDelete(
-            context = requireContext(),
-            selectedItems = selectedPhotos,
-            itemType = "foto",
-            onDelete = { photos -> deleteSelectedPhotos(photos) },
-            onClearSelection = { adapter.clearSelection() },
-            onUpdateButton = { count -> updateDeleteButton(count) }
-        )
-    }
-
-    private fun deleteSelectedPhotos(photos: List<PhotoEntity>) {
-        val photoIds = photos.map { it.id }
-        viewModel.deletePhotosWithSystemSync(requireContext(), photoIds)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

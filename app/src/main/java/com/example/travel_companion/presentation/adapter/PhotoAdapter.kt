@@ -15,17 +15,20 @@ import com.example.travel_companion.domain.model.PhotoGalleryItem
 import com.example.travel_companion.presentation.adapter.base.BaseAdapter
 import com.example.travel_companion.util.managers.SelectionManager
 
-/*
-L'adapter gestisce due tipi di elementi nella stessa RecyclerView:
-    - DateHeader: Intestazioni con data e conteggio foto
-    - Photo: Le foto vere e proprie
+/**
+ * Adapter for displaying a photo gallery with date headers and selectable photos.
+ *
+ * Supports selection mode for photos using [SelectionManager].
+ *
+ * @param onSelectionChanged Callback invoked when the selection count changes.
+ * @param onPhotoClick Callback invoked when a photo is clicked outside selection mode.
  */
 class PhotoAdapter(
     onSelectionChanged: (Int) -> Unit = {},
     private val onPhotoClick: (PhotoEntity) -> Unit = {}
 ) : BaseAdapter<PhotoGalleryItem, RecyclerView.ViewHolder>(PhotoGalleryDiffCallback()) {
 
-    // Uso SelectionManager con composizione solo per le foto
+    // Selection manager for handling photo selection
     private val photoSelectionManager = SelectionManager<PhotoEntity>(
         getItemId = { it.id },
         onSelectionChanged = onSelectionChanged,
@@ -42,7 +45,9 @@ class PhotoAdapter(
         const val SPAN_COUNT = 3
     }
 
-    //decide quale layout usare per ogni posizione
+    /**
+     * Determines the view type for a given position in the list.
+     */
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is PhotoGalleryItem.DateHeader -> VIEW_TYPE_DATE_HEADER
@@ -50,7 +55,9 @@ class PhotoAdapter(
         }
     }
 
-    //creo un viewHolder diverso in base al tipo
+    /**
+     * Creates a ViewHolder based on the view type.
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             VIEW_TYPE_DATE_HEADER -> {
@@ -69,23 +76,28 @@ class PhotoAdapter(
         }
     }
 
+    /**
+     * Bind the item at the given position to its ViewHolder.
+     */
     override fun bindItem(holder: RecyclerView.ViewHolder, item: PhotoGalleryItem, position: Int) {
         when (item) {
-            is PhotoGalleryItem.DateHeader -> {
-                (holder as DateHeaderViewHolder).bind(item)
-            }
-            is PhotoGalleryItem.Photo -> {
-                (holder as PhotoViewHolder).bind(
-                    item.photoEntity,
-                    photoSelectionManager.isSelected(item.photoEntity),
-                    photoSelectionManager.isSelectionMode
-                )
-            }
+            is PhotoGalleryItem.DateHeader -> (holder as DateHeaderViewHolder).bind(item)
+            is PhotoGalleryItem.Photo -> (holder as PhotoViewHolder).bind(
+                item.photoEntity,
+                photoSelectionManager.isSelected(item.photoEntity),
+                photoSelectionManager.isSelectionMode
+            )
         }
     }
 
-    //aggiorno solo ciò che è cambiato (le foto), evitando di ricaricare tutto il viewHolder
-    override fun handlePayloadUpdate(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+    /**
+     * Handles payload updates to optimize partial UI refresh (e.g., selection changes).
+     */
+    override fun handlePayloadUpdate(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
         if (payloads.isNotEmpty() && holder is PhotoViewHolder) {
             val item = getItem(position) as PhotoGalleryItem.Photo
             val photo = item.photoEntity
@@ -97,7 +109,10 @@ class PhotoAdapter(
                     )
                 }
                 PAYLOAD_SELECTION_MODE_CHANGED -> {
-                    holder.updateSelectionMode(photoSelectionManager.isSelectionMode, photoSelectionManager.isSelected(photo))
+                    holder.updateSelectionMode(
+                        photoSelectionManager.isSelectionMode,
+                        photoSelectionManager.isSelected(photo)
+                    )
                 }
             }
         } else {
@@ -105,6 +120,9 @@ class PhotoAdapter(
         }
     }
 
+    /**
+     * Handles a click on an item.
+     */
     override fun onItemClick(item: PhotoGalleryItem, position: Int) {
         if (item is PhotoGalleryItem.Photo) {
             if (!photoSelectionManager.isSelectionMode) {
@@ -115,6 +133,9 @@ class PhotoAdapter(
         }
     }
 
+    /**
+     * Handles a long click on an item, used to enter selection mode.
+     */
     override fun onItemLongClick(item: PhotoGalleryItem, position: Int): Boolean {
         return if (item is PhotoGalleryItem.Photo) {
             if (!photoSelectionManager.isSelectionMode) {
@@ -125,11 +146,12 @@ class PhotoAdapter(
                 photoSelectionManager.toggleSelection(item.photoEntity, position)
             }
             true
-        } else {
-            false
-        }
+        } else false
     }
 
+    /**
+     * Notify all photo items of a partial update payload.
+     */
     private fun notifyPhotoItemsChanged(payload: Any) {
         currentList.forEachIndexed { index, item ->
             if (item is PhotoGalleryItem.Photo) {
@@ -138,7 +160,7 @@ class PhotoAdapter(
         }
     }
 
-    // Metodi pubblici per gestire la selezione delle foto
+    /** Clear current photo selection. */
     fun clearSelection() {
         if (photoSelectionManager.getSelectedCount() > 0 || photoSelectionManager.isSelectionMode) {
             photoSelectionManager.clearSelection { payload ->
@@ -147,8 +169,10 @@ class PhotoAdapter(
         }
     }
 
+    /** Return currently selected photos. */
     fun getSelectedPhotos(): List<PhotoEntity> = photoSelectionManager.getSelectedItems()
 
+    /** Update selection after list changes  */
     fun updateSelectionAfterListChange() {
         if (!photoSelectionManager.isSelectionMode) return
 
@@ -160,18 +184,22 @@ class PhotoAdapter(
         }
     }
 
+    /** ViewHolder for date headers. */
     inner class DateHeaderViewHolder(private val binding: ItemPhotoDateHeaderBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        /** Bind date header data to the UI. */
         fun bind(dateHeader: PhotoGalleryItem.DateHeader) {
             binding.dateText.text = dateHeader.formattedDate
             binding.photoCountText.text = "${dateHeader.photoCount} foto"
         }
     }
 
+    /** ViewHolder for individual photos. */
     inner class PhotoViewHolder(private val binding: ItemPhotoBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        /** Bind photo data and update selection UI. */
         fun bind(photo: PhotoEntity, isSelected: Boolean, isSelectionMode: Boolean) {
             Glide.with(binding.root.context)
                 .load(photo.uri)
@@ -182,16 +210,22 @@ class PhotoAdapter(
             updateSelectionVisuals(isSelected, isSelectionMode)
         }
 
+        /** Update selection overlay visibility. */
         fun updateSelectionVisuals(isSelected: Boolean, isSelectionMode: Boolean) {
             val selectionOverlay = binding.root.findViewById<View>(R.id.selection_overlay)
             selectionOverlay?.visibility = if (isSelected && isSelectionMode) View.VISIBLE else View.GONE
         }
 
+        /** Update selection mode and visuals together. */
         fun updateSelectionMode(isSelectionMode: Boolean, isSelected: Boolean) {
             updateSelectionVisuals(isSelected, isSelectionMode)
         }
     }
 
+    /**
+     * GridLayoutManager SpanSizeLookup for photo grid.
+     * Date headers occupy full span, photos occupy 1 span.
+     */
     class PhotoSpanSizeLookup(private val adapter: PhotoAdapter) : GridLayoutManager.SpanSizeLookup() {
         override fun getSpanSize(position: Int): Int {
             return when (adapter.getItemViewType(position)) {
@@ -202,7 +236,11 @@ class PhotoAdapter(
         }
     }
 }
+
+/** DiffUtil callback for efficiently updating photo gallery items. */
 class PhotoGalleryDiffCallback : DiffUtil.ItemCallback<PhotoGalleryItem>() {
+
+    /** Check if two items represent the same entity. */
     override fun areItemsTheSame(oldItem: PhotoGalleryItem, newItem: PhotoGalleryItem): Boolean {
         return when {
             oldItem is PhotoGalleryItem.DateHeader && newItem is PhotoGalleryItem.DateHeader ->
@@ -213,19 +251,20 @@ class PhotoGalleryDiffCallback : DiffUtil.ItemCallback<PhotoGalleryItem>() {
         }
     }
 
+    /** Check if contents of two items are identical. */
     override fun areContentsTheSame(oldItem: PhotoGalleryItem, newItem: PhotoGalleryItem): Boolean {
         return when {
-            oldItem is PhotoGalleryItem.DateHeader && newItem is PhotoGalleryItem.DateHeader ->
-                oldItem == newItem
-            oldItem is PhotoGalleryItem.Photo && newItem is PhotoGalleryItem.Photo ->
-                oldItem.photoEntity == newItem.photoEntity
+            oldItem is PhotoGalleryItem.DateHeader && newItem is PhotoGalleryItem.DateHeader -> oldItem == newItem
+            oldItem is PhotoGalleryItem.Photo && newItem is PhotoGalleryItem.Photo -> oldItem.photoEntity == newItem.photoEntity
             else -> false
         }
     }
 
+    /** Provide partial update payload for selection changes. */
     override fun getChangePayload(oldItem: PhotoGalleryItem, newItem: PhotoGalleryItem): Any? {
         return if (oldItem is PhotoGalleryItem.Photo && newItem is PhotoGalleryItem.Photo &&
-            oldItem.photoEntity.id == newItem.photoEntity.id && oldItem != newItem) {
+            oldItem.photoEntity.id == newItem.photoEntity.id && oldItem != newItem
+        ) {
             BaseAdapter.PAYLOAD_SELECTION_CHANGED
         } else null
     }

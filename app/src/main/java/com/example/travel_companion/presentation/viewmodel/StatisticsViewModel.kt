@@ -21,22 +21,28 @@ class StatisticsViewModel @Inject constructor(
     private val coordinateDao: CoordinateDao
 ) : ViewModel() {
 
+    // Holds the list of completed trips
     private val _completedTrips = MutableStateFlow<List<TripEntity>>(emptyList())
     val completedTrips: StateFlow<List<TripEntity>> = _completedTrips.asStateFlow()
 
+    // Loading state
     private val _isLoading = MutableStateFlow(false)
 
+    // Observer for live updates from the repository
     private var tripsObserver: Observer<List<TripEntity>>? = null
 
+    /**
+     * Loads statistics by observing all trips and filtering only the completed ones
+     */
     fun loadStatistics() {
         _isLoading.value = true
 
-        // Rimuovi il precedente observer se esiste
+        // Remove previous observer if it exists
         tripsObserver?.let { observer ->
             tripRepository.getAllTrips().removeObserver(observer)
         }
 
-        // Crea un nuovo observer
+        // Create a new observer
         tripsObserver = Observer { allTrips ->
             _completedTrips.value = allTrips.filter { trip ->
                 trip.status == TripStatus.FINISHED &&
@@ -46,12 +52,12 @@ class StatisticsViewModel @Inject constructor(
             _isLoading.value = false
         }
 
-        // Osserva i cambiamenti
+        // Observe changes forever
         tripRepository.getAllTrips().observeForever(tripsObserver!!)
     }
 
     /**
-     * Recupera tutte le coordinate per i viaggi completati
+     * Retrieves all coordinates for completed trips
      */
     suspend fun getAllCoordinatesForCompletedTrips(): List<CoordinateEntity> {
         return withContext(Dispatchers.IO) {
@@ -68,7 +74,7 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /**
-     * Campiona le coordinate per ridurre il carico se necessario
+     * Samples coordinates to reduce processing load if necessary
      */
     fun sampleCoordinates(coordinates: List<CoordinateEntity>, sampleRate: Int = 5): List<CoordinateEntity> {
         return if (coordinates.size > 1000) {
@@ -80,7 +86,7 @@ class StatisticsViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // Rimuovi l'observer quando il ViewModel viene distrutto
+        // Remove the observer when the ViewModel is destroyed
         tripsObserver?.let { observer ->
             tripRepository.getAllTrips().removeObserver(observer)
         }

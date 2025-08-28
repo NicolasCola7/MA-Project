@@ -13,10 +13,20 @@ import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
+/**
+ * Base application class for Travel Companion app.
+ * Initializes logging, Google Places API, and schedules periodic inactivity checks.
+ */
 @HiltAndroidApp
-class BaseApplication: Application() {
+class BaseApplication : Application() {
+
+    /** Client for accessing Google Places API. */
     lateinit var placesClient: PlacesClient
 
+    /**
+     * Called when the application is starting, before any other application objects have been created.
+     * Initializes Timber logging, Google Places API, and schedules inactivity checks.
+     */
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
@@ -29,9 +39,13 @@ class BaseApplication: Application() {
         scheduleInactivityCheck()
     }
 
+    /**
+     * Schedules a periodic worker to check for user inactivity.
+     * The worker runs once every 7 days and requires network connectivity.
+     */
     private fun scheduleInactivityCheck() {
         val workRequest = PeriodicWorkRequestBuilder<InactivityCheckWorker>(
-            7, TimeUnit.DAYS  // Check weekly
+            7, TimeUnit.DAYS // Check weekly
         ).setConstraints(
             Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

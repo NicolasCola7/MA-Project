@@ -26,77 +26,96 @@ object PermissionsManager {
     private const val KEY_ANY_PERMISSION_DENIED = "any_permission_denied"
 
     /**
-     * Punto di ingresso principale per richiedere tutti i permessi in sequenza
+     * Initiates the sequential request of all required permissions.
+     * If any permission has been previously denied, prompts the user to open app settings.
+     *
+     * @param context The activity from which to request permissions.
      */
     fun requestAllPermissionsSequentially(context: Activity) {
         if (hasAnyPermissionBeenDenied(context)) {
-            // Se qualche permesso è già stato negato in passato,
-            // vai direttamente alle impostazioni
             showGoToSettingsDialog(context)
         } else {
-            // Prima volta o tutti i permessi non sono mai stati negati
             startPermissionSequence(context)
         }
     }
 
     /**
-     * Inizia la sequenza di richiesta permessi
+     * Begins the sequence of permission requests in a logical order.
+     *
+     * @param context The activity from which to request permissions.
      */
     private fun startPermissionSequence(context: Activity) {
         when {
-            !hasLocationPermissions(context) -> {
-                requestLocationPermission(context)
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundLocationPermission(context) -> {
+            !hasLocationPermissions(context) -> requestLocationPermission(context)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundLocationPermission(context) ->
                 requestBackgroundLocationPermission(context)
-            }
-            !hasCameraPermission(context) -> {
-                requestCameraPermission(context)
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermissions(context) -> {
+            !hasCameraPermission(context) -> requestCameraPermission(context)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermissions(context) ->
                 requestNotificationPermission(context)
-            }
-            else -> {
-                // Tutti i permessi sono concessi
-                clearDeniedFlag(context)
-            }
+            else -> clearDeniedFlag(context)
         }
     }
 
     // === LOCATION PERMISSIONS ===
 
+    /**
+     * Checks if both coarse and fine location permissions are granted.
+     *
+     * @param context The context to check permissions for.
+     * @return True if both location permissions are granted, false otherwise.
+     */
     private fun hasLocationPermissions(context: Context): Boolean {
         val coarse = checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val fine = checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return coarse && fine
     }
 
+    /**
+     * Checks if background location permission is granted (Android Q and above).
+     *
+     * @param context The context to check permission for.
+     * @return True if background location permission is granted, false otherwise.
+     */
     private fun hasBackgroundLocationPermission(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
         } else true
     }
 
+    /**
+     * Requests location permissions from the user.
+     * Shows a rationale dialog if necessary.
+     *
+     * @param context The activity from which to request permissions.
+     */
     private fun requestLocationPermission(context: Activity) {
         if (shouldShowLocationRationale(context)) {
             showLocationPermissionDialog(context)
         } else {
             requestPermissions(
                 context,
-                arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ),
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSIONS_REQUEST
             )
         }
     }
 
+    /**
+     * Determines if a rationale should be shown for location permissions.
+     *
+     * @param context The activity to check.
+     * @return True if a rationale should be shown, false otherwise.
+     */
     private fun shouldShowLocationRationale(context: Activity): Boolean {
         return shouldShowRequestPermissionRationale(context, Manifest.permission.ACCESS_COARSE_LOCATION) ||
                 shouldShowRequestPermissionRationale(context, Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
+    /**
+     * Displays a dialog explaining why location permissions are required.
+     *
+     * @param context The activity to show the dialog in.
+     */
     private fun showLocationPermissionDialog(context: Activity) {
         AlertDialog.Builder(context)
             .setTitle("Permessi Localizzazione Richiesti")
@@ -104,22 +123,22 @@ object PermissionsManager {
             .setPositiveButton("Concedi") { _, _ ->
                 requestPermissions(
                     context,
-                    arrayOf(
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ),
+                    arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
                     LOCATION_PERMISSIONS_REQUEST
                 )
             }
-            .setNegativeButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
+            .setNegativeButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
             .setCancelable(false)
             .show()
     }
 
     // === BACKGROUND LOCATION PERMISSION ===
 
+    /**
+     * Requests background location permission (Android Q and above).
+     *
+     * @param context The activity from which to request permission.
+     */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun requestBackgroundLocationPermission(context: Activity) {
         if (shouldShowRequestPermissionRationale(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
@@ -133,6 +152,11 @@ object PermissionsManager {
         }
     }
 
+    /**
+     * Displays a dialog explaining why background location permission is required.
+     *
+     * @param context The activity to show the dialog in.
+     */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun showBackgroundLocationPermissionDialog(context: Activity) {
         AlertDialog.Builder(context)
@@ -145,91 +169,110 @@ object PermissionsManager {
                     BACKGROUND_LOCATION_PERMISSIONS_REQUEST
                 )
             }
-            .setNegativeButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
+            .setNegativeButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
             .setCancelable(false)
             .show()
     }
 
     // === CAMERA PERMISSION ===
 
+    /**
+     * Checks if camera permission is granted.
+     *
+     * @param context The context to check permission for.
+     * @return True if camera permission is granted, false otherwise.
+     */
     private fun hasCameraPermission(context: Context): Boolean {
         return checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Requests camera permission from the user.
+     *
+     * @param context The activity from which to request permission.
+     */
     private fun requestCameraPermission(context: Activity) {
         if (shouldShowRequestPermissionRationale(context, Manifest.permission.CAMERA)) {
             showCameraPermissionDialog(context)
         } else {
-            requestPermissions(
-                context,
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSIONS_REQUEST
-            )
+            requestPermissions(context, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSIONS_REQUEST)
         }
     }
 
+    /**
+     * Displays a dialog explaining why camera permission is required.
+     *
+     * @param context The activity to show the dialog in.
+     */
     private fun showCameraPermissionDialog(context: Activity) {
         AlertDialog.Builder(context)
             .setTitle("Permesso Camera Richiesto")
             .setMessage("Questa app richiede il permesso camera per scattare foto durante i viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
             .setPositiveButton("Concedi") { _, _ ->
-                requestPermissions(
-                    context,
-                    arrayOf(Manifest.permission.CAMERA),
-                    CAMERA_PERMISSIONS_REQUEST
-                )
+                requestPermissions(context, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSIONS_REQUEST)
             }
-            .setNegativeButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
+            .setNegativeButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
             .setCancelable(false)
             .show()
     }
 
     // === NOTIFICATION PERMISSION ===
 
+    /**
+     * Checks if notification permission is granted (Android Tiramisu and above).
+     *
+     * @param context The context to check permission for.
+     * @return True if notification permission is granted, false otherwise.
+     */
     fun hasNotificationPermissions(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         } else true
     }
 
+    /**
+     * Requests notification permission from the user (Android Tiramisu and above).
+     *
+     * @param context The activity from which to request permission.
+     */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermission(context: Activity) {
         if (shouldShowRequestPermissionRationale(context, Manifest.permission.POST_NOTIFICATIONS)) {
             showNotificationPermissionDialog(context)
         } else {
-            requestPermissions(
-                context,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                POST_NOTIFICATION_PERMISSIONS_REQUEST
-            )
+            requestPermissions(context, arrayOf(Manifest.permission.POST_NOTIFICATIONS), POST_NOTIFICATION_PERMISSIONS_REQUEST)
         }
     }
 
+    /**
+     * Displays a dialog explaining why notification permission is required.
+     *
+     * @param context The activity to show the dialog in.
+     */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showNotificationPermissionDialog(context: Activity) {
         AlertDialog.Builder(context)
             .setTitle("Permesso Notifiche Richiesto")
             .setMessage("Questa app richiede il permesso per inviare notifiche per tenerti aggiornato sui tuoi viaggi. Senza questo permesso non potrai utilizzare tutte le funzionalità dell'app.")
             .setPositiveButton("Concedi") { _, _ ->
-                requestPermissions(
-                    context,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    POST_NOTIFICATION_PERMISSIONS_REQUEST
-                )
+                requestPermissions(context, arrayOf(Manifest.permission.POST_NOTIFICATIONS), POST_NOTIFICATION_PERMISSIONS_REQUEST)
             }
-            .setNegativeButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
+            .setNegativeButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
             .setCancelable(false)
             .show()
     }
 
     // === PERMISSION RESULT HANDLING ===
 
+    /**
+     * Handles the result of permission requests.
+     * Continues the permission sequence if granted or shows a denied dialog if rejected.
+     *
+     * @param context The activity that received the permission result.
+     * @param requestCode The request code passed in requestPermissions().
+     * @param grantResults The grant results for the corresponding permissions.
+     * @param onAllPermissionsGranted Callback invoked when all essential permissions are granted.
+     */
     fun handlePermissionResult(
         context: Activity,
         requestCode: Int,
@@ -239,10 +282,8 @@ object PermissionsManager {
         val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
 
         if (allGranted) {
-            // Permesso corrente concesso, continua con il prossimo
             continuePermissionSequence(context, onAllPermissionsGranted)
         } else {
-            // Permesso negato, segna il flag e mostra dialog per andare alle impostazioni
             markPermissionDenied(context)
 
             val message = when (requestCode) {
@@ -257,12 +298,17 @@ object PermissionsManager {
         }
     }
 
+    /**
+     * Continues requesting remaining permissions or calls the callback if all are granted.
+     *
+     * @param context The activity to continue requesting permissions.
+     * @param onAllPermissionsGranted Callback invoked when all essential permissions are granted.
+     */
     private fun continuePermissionSequence(context: Activity, onAllPermissionsGranted: () -> Unit) {
         if (areAllEssentialPermissionsGranted(context)) {
             clearDeniedFlag(context)
             onAllPermissionsGranted()
         } else {
-            // Continua con il prossimo permesso mancante
             context.runOnUiThread {
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     startPermissionSequence(context)
@@ -273,6 +319,12 @@ object PermissionsManager {
 
     // === UTILITY METHODS ===
 
+    /**
+     * Checks if all essential permissions are granted.
+     *
+     * @param context The context to check permissions for.
+     * @return True if all essential permissions are granted, false otherwise.
+     */
     fun areAllEssentialPermissionsGranted(context: Context): Boolean {
         return hasLocationPermissions(context) &&
                 hasBackgroundLocationPermission(context) &&
@@ -280,16 +332,32 @@ object PermissionsManager {
                 hasNotificationPermissions(context)
     }
 
+    /**
+     * Returns true if any permission has been denied in the past.
+     *
+     * @param context The context to check.
+     * @return True if any permission has been denied, false otherwise.
+     */
     private fun hasAnyPermissionBeenDenied(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_ANY_PERMISSION_DENIED, false)
     }
 
+    /**
+     * Marks that a permission was denied by the user.
+     *
+     * @param context The context to store the flag in.
+     */
     private fun markPermissionDenied(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_ANY_PERMISSION_DENIED, true).apply()
     }
 
+    /**
+     * Clears the permission denied flag.
+     *
+     * @param context The context to clear the flag from.
+     */
     private fun clearDeniedFlag(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_ANY_PERMISSION_DENIED, false).apply()
@@ -297,43 +365,46 @@ object PermissionsManager {
 
     // === DIALOG METHODS ===
 
+    /**
+     * Shows a dialog informing the user that a permission was denied and directs them to settings.
+     *
+     * @param context The activity to show the dialog in.
+     * @param message The message to display in the dialog.
+     */
     private fun showPermissionDeniedDialog(context: Activity, message: String) {
         AlertDialog.Builder(context)
             .setTitle("Permesso Negato")
             .setMessage("$message\n\nPer utilizzare l'app, concedi tutti i permessi dalle impostazioni.")
-            .setPositiveButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
-            .setNegativeButton("Esci dall'App") { _, _ ->
-                context.finish()
-            }
+            .setPositiveButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
+            .setNegativeButton("Esci dall'App") { _, _ -> context.finish() }
             .setCancelable(false)
             .show()
     }
 
+    /**
+     * Shows a dialog prompting the user to go to settings to grant all required permissions.
+     *
+     * @param context The activity to show the dialog in.
+     */
     private fun showGoToSettingsDialog(context: Activity) {
         AlertDialog.Builder(context)
             .setTitle("Permessi Richiesti")
             .setMessage("Per utilizzare l'app, devi concedere tutti i permessi richiesti dalle impostazioni.")
-            .setPositiveButton("Apri Impostazioni") { _, _ ->
-                openAppSettings(context)
-            }
-            .setNegativeButton("Esci dall'App") { _, _ ->
-                context.finish()
-            }
+            .setPositiveButton("Apri Impostazioni") { _, _ -> openAppSettings(context) }
+            .setNegativeButton("Esci dall'App") { _, _ -> context.finish() }
             .setCancelable(false)
             .show()
     }
 
-    private fun openAppSettings(context: Context) {
-        try {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "Impossibile aprire le impostazioni", Toast.LENGTH_LONG).show()
-        }
+    /**
+     * Opens the app's settings page for the user to manage permissions.
+     *
+     * @param context The activity from which to open settings.
+     */
+    private fun openAppSettings(context: Activity) {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", context.packageName, null)
+        intent.data = uri
+        context.startActivity(intent)
     }
 }

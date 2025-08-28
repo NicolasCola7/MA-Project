@@ -11,12 +11,12 @@ import javax.inject.Inject
 @HiltViewModel
 class FiltersViewModel @Inject constructor() : ViewModel() {
 
-    // Filtri applicati (quelli effettivamente in uso)
+    // Applied filters (currently active filters)
     private val _appliedStartDate = MutableLiveData<Long?>()
     private val _appliedEndDate = MutableLiveData<Long?>()
     private val _appliedDestination = MutableLiveData<String>()
 
-    // Filtri temporanei (in fase di modifica nell'overlay)
+    // Temporary filters (being edited in the overlay)
     private val _tempStartDate = MutableLiveData<Long?>()
     val tempStartDate: LiveData<Long?> get() = _tempStartDate
 
@@ -26,7 +26,7 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
     private val _tempDestination = MutableLiveData<String>()
     val tempDestination: LiveData<String> get() = _tempDestination
 
-    // Eventi per la UI
+    // UI events
     private val _filtersEvent = MutableLiveData<FiltersEvent>()
     val filtersEvent: LiveData<FiltersEvent> get() = _filtersEvent
 
@@ -37,34 +37,53 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
         resetTempFilters()
     }
 
-    // Gestione filtri temporanei
+    /**
+     * Sets the temporary start date filter.
+     * @param date Date in milliseconds, or null to remove the filter.
+     */
     fun setTempStartDate(date: Long?) {
         _tempStartDate.value = date
     }
 
+    /**
+     * Sets the temporary end date filter.
+     * @param date Date in milliseconds, or null to remove the filter.
+     */
     fun setTempEndDate(date: Long?) {
         _tempEndDate.value = date
     }
 
+    /**
+     * Sets the temporary destination filter.
+     * @param destination Destination string.
+     */
     fun setTempDestination(destination: String) {
         _tempDestination.value = destination
     }
 
-    // Carica i filtri applicati nei temporanei (quando si apre l'overlay)
+    /**
+     * Loads applied filters into temporary filters.
+     * Useful for showing current values when opening the filter overlay.
+     */
     fun loadAppliedFiltersToTemp() {
         _tempStartDate.value = _appliedStartDate.value
         _tempEndDate.value = _appliedEndDate.value
         _tempDestination.value = _appliedDestination.value
     }
 
-    // Reset dei filtri temporanei
+    /**
+     * Resets all temporary filters to null or empty values.
+     */
     fun resetTempFilters() {
         _tempStartDate.value = null
         _tempEndDate.value = null
         _tempDestination.value = ""
     }
 
-    // Applica i filtri temporanei come definitivi
+    /**
+     * Applies temporary filters as the definitive applied filters.
+     * Emits a FiltersApplied event with the updated values.
+     */
     fun applyFilters() {
         _appliedStartDate.value = _tempStartDate.value
         _appliedEndDate.value = _tempEndDate.value
@@ -77,7 +96,10 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
         )
     }
 
-    // Pulisce tutti i filtri
+    /**
+     * Clears all applied and temporary filters.
+     * Emits a FiltersCleared event to notify the UI.
+     */
     fun clearAllFilters() {
         _appliedStartDate.value = null
         _appliedEndDate.value = null
@@ -87,14 +109,21 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
         _filtersEvent.value = FiltersEvent.FiltersCleared
     }
 
-    // Verifica se ci sono filtri attivi
+    /**
+     * Checks if there are any active filters.
+     * @return true if at least one filter is applied, false otherwise.
+     */
     fun hasActiveFilters(): Boolean {
         return _appliedStartDate.value != null ||
                 _appliedEndDate.value != null ||
                 !_appliedDestination.value.isNullOrEmpty()
     }
 
-    // Metodo per filtrare i viaggi
+    /**
+     * Filters a list of trips based on the applied filters.
+     * @param allTrips Full list of TripEntity.
+     * @return Filtered list of trips matching the criteria.
+     */
     fun filterTrips(allTrips: List<TripEntity>): List<TripEntity> {
         val startDate = _appliedStartDate.value
         val endDate = _appliedEndDate.value
@@ -103,7 +132,7 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
         return allTrips.filter { trip ->
             var includeTrip = true
 
-            // Filtro per data inizio
+            // Filter by start date
             if (startDate != null) {
                 val tripStartDate = Calendar.getInstance().apply {
                     timeInMillis = trip.startDate
@@ -122,7 +151,7 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
                 includeTrip = tripStartDate.timeInMillis >= filterStartDate.timeInMillis
             }
 
-            // Filtro per data fine
+            // Filter by end date
             if (endDate != null) {
                 val tripStartDate = Calendar.getInstance().apply {
                     timeInMillis = trip.startDate
@@ -141,7 +170,7 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
                 includeTrip = includeTrip && tripStartDate.timeInMillis <= filterEndDate.timeInMillis
             }
 
-            // Filtro per destinazione (case-insensitive, startsWith match)
+            // Filter by destination (case-insensitive, startsWith match)
             if (destination.isNotBlank()) {
                 includeTrip = includeTrip && trip.destination.lowercase().startsWith(destination.lowercase())
             }
@@ -150,13 +179,25 @@ class FiltersViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    /**
+     * Filter events for notifying the UI.
+     */
     sealed class FiltersEvent {
+        /**
+         * Event emitted when filters are applied.
+         * @param startDate Applied start date, or null.
+         * @param endDate Applied end date, or null.
+         * @param destination Applied destination string.
+         */
         data class FiltersApplied(
             val startDate: Long?,
             val endDate: Long?,
             val destination: String
         ) : FiltersEvent()
 
+        /**
+         * Event emitted when all filters are cleared.
+         */
         object FiltersCleared : FiltersEvent()
     }
 }

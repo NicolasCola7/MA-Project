@@ -39,7 +39,6 @@ typealias Polylines = MutableList<Polyline>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
-    @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private lateinit var geofencingClient: GeofencingClient

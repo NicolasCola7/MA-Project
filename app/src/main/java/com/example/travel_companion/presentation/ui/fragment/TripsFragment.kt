@@ -32,6 +32,9 @@ class TripsFragment : Fragment() {
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
+    /**
+     * Inflates the fragment layout and initializes view setup.
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -42,11 +45,17 @@ class TripsFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Observes data and initializes UI behavior after view creation.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         observeData()
     }
 
+    /**
+     * Sets up view interactions, adapters, and RecyclerView.
+     */
     private fun setupViews() {
         binding.addTrip.setOnClickListener {
             navigateToNewTrip()
@@ -61,23 +70,14 @@ class TripsFragment : Fragment() {
         binding.lifecycleOwner = viewLifecycleOwner
     }
 
+    /**
+     * Configures the filters overlay UI and interactions.
+     */
     private fun setupFiltersOverlay() {
-        // Bottone per aprire l'overlay
-        binding.filterButton.setOnClickListener {
-            showFiltersOverlay()
-        }
+        binding.filterButton.setOnClickListener { showFiltersOverlay() }
+        binding.closeFiltersButton.setOnClickListener { hideFiltersOverlay() }
+        binding.filtersCard.setOnClickListener { }
 
-        // Freccia per chiudere l'overlay
-        binding.closeFiltersButton.setOnClickListener {
-            hideFiltersOverlay()
-        }
-
-        // Evita che il click sulla card chiuda l'overlay
-        binding.filtersCard.setOnClickListener {
-            // Non fare nulla, evita la propagazione del click
-        }
-
-        // Setup filtro destinazione nell'overlay - collegato al FiltersViewModel
         binding.searchDestination.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -86,16 +86,9 @@ class TripsFragment : Fragment() {
             }
         })
 
-        // Setup filtri data nell'overlay
-        binding.filterStartDate.setOnClickListener {
-            showDatePicker(isStartDate = true)
-        }
+        binding.filterStartDate.setOnClickListener { showDatePicker(isStartDate = true) }
+        binding.filterEndDate.setOnClickListener { showDatePicker(isStartDate = false) }
 
-        binding.filterEndDate.setOnClickListener {
-            showDatePicker(isStartDate = false)
-        }
-
-        // Setup pulsanti azione
         binding.clearFilters.setOnClickListener {
             filtersViewModel.resetTempFilters()
             updateFiltersUI()
@@ -106,7 +99,6 @@ class TripsFragment : Fragment() {
             hideFiltersOverlay()
         }
 
-        // Long click per pulire tutti i filtri
         binding.clearFilters.setOnLongClickListener {
             filtersViewModel.clearAllFilters()
             updateFiltersUI()
@@ -114,26 +106,23 @@ class TripsFragment : Fragment() {
         }
     }
 
+    /**
+     * Shows the filters overlay and updates the UI accordingly.
+     */
     private fun showFiltersOverlay() {
-        // Carica i filtri applicati nei temporanei
         filtersViewModel.loadAppliedFiltersToTemp()
         updateFiltersUI()
         binding.filtersOverlay.isVisible = true
-
-        // Nascondi lo stato vuoto quando l'overlay è aperto
-        EmptyStateHelper.hideEmptyState(
-            binding.emptyStateLayout.root
-        )
+        EmptyStateHelper.hideEmptyState(binding.emptyStateLayout.root)
     }
 
+    /**
+     * Hides the filters overlay and updates empty state visibility.
+     */
     private fun hideFiltersOverlay() {
-        // Nascondi sempre la tastiera quando si chiude l'overlay
         hideKeyboard()
-
         binding.filtersOverlay.isVisible = false
 
-        // Rimostra lo stato vuoto se necessario dopo la chiusura dell'overlay
-        // Applica i filtri tramite FiltersViewModel per ottenere i risultati corretti
         val allTrips = tripsViewModel.trips.value ?: emptyList()
         val filteredTrips = filtersViewModel.filterTrips(allTrips)
         val shouldShowEmptyState = filteredTrips.isEmpty()
@@ -144,29 +133,27 @@ class TripsFragment : Fragment() {
                 filtersViewModel.hasActiveFilters()
             )
         } else {
-            EmptyStateHelper.hideEmptyState(
-                binding.emptyStateLayout.root
-            )
+            EmptyStateHelper.hideEmptyState(binding.emptyStateLayout.root)
         }
     }
 
+    /**
+     * Updates the filters UI based on temporary filter values.
+     */
     private fun updateFiltersUI() {
-        // Aggiorna UI basandosi sui filtri temporanei
         binding.searchDestination.setText(filtersViewModel.tempDestination.value ?: "")
-
-        binding.filterStartDate.text = if (filtersViewModel.tempStartDate.value != null) {
-            "Da: ${dateFormat.format(Date(filtersViewModel.tempStartDate.value!!))}"
-        } else {
-            "Data inizio"
-        }
-
-        binding.filterEndDate.text = if (filtersViewModel.tempEndDate.value != null) {
-            "A: ${dateFormat.format(Date(filtersViewModel.tempEndDate.value!!))}"
-        } else {
-            "Data fine"
-        }
+        binding.filterStartDate.text = filtersViewModel.tempStartDate.value?.let {
+            "Da: ${dateFormat.format(Date(it))}"
+        } ?: "Data inizio"
+        binding.filterEndDate.text = filtersViewModel.tempEndDate.value?.let {
+            "A: ${dateFormat.format(Date(it))}"
+        } ?: "Data fine"
     }
 
+    /**
+     * Displays a date picker for selecting start or end date.
+     * @param isStartDate True for start date picker, false for end date picker.
+     */
     @SuppressLint("SetTextI18n")
     private fun showDatePicker(isStartDate: Boolean) {
         val title = if (isStartDate) "Seleziona data inizio" else "Seleziona data fine"
@@ -190,11 +177,17 @@ class TripsFragment : Fragment() {
         datePicker.show(childFragmentManager, tag)
     }
 
+    /**
+     * Hides the soft keyboard if visible.
+     */
     private fun hideKeyboard() {
         val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchDestination.windowToken, 0)
     }
 
+    /**
+     * Initializes the RecyclerView adapter with click and selection listeners.
+     */
     private fun setupAdapter() {
         adapter = TripListAdapter(
             onTripClick = { trip ->
@@ -208,30 +201,35 @@ class TripsFragment : Fragment() {
         )
     }
 
+    /**
+     * Binds the adapter to the RecyclerView.
+     */
     private fun setupRecyclerView() {
         binding.recyclerView.adapter = adapter
     }
 
+    /**
+     * Sets up the delete button behavior for selected trips.
+     */
     private fun setupDeleteButton() {
         binding.deleteSelectedTrips.setOnClickListener {
             handleMultipleDelete()
         }
     }
 
+    /**
+     * Observes trips and filter events to update the displayed list.
+     */
     private fun observeData() {
-        // Osserva i viaggi dal repository
         tripsViewModel.trips.observe(viewLifecycleOwner) { allTrips ->
-            // Applica i filtri tramite FiltersViewModel
             val filteredTrips = filtersViewModel.filterTrips(allTrips)
             updateTripsList(filteredTrips)
         }
 
-        // Osserva gli eventi dei filtri per riapplicare i filtri quando cambiano
         filtersViewModel.filtersEvent.observe(viewLifecycleOwner) { event ->
             when (event) {
                 is FiltersViewModel.FiltersEvent.FiltersApplied,
                 FiltersViewModel.FiltersEvent.FiltersCleared -> {
-                    // Riapplica i filtri quando cambiano
                     val allTrips = tripsViewModel.trips.value ?: emptyList()
                     val filteredTrips = filtersViewModel.filterTrips(allTrips)
                     updateTripsList(filteredTrips)
@@ -240,35 +238,43 @@ class TripsFragment : Fragment() {
         }
     }
 
+    /**
+     * Updates the RecyclerView with a filtered list of trips.
+     * @param filteredTrips List of trips to display.
+     */
     private fun updateTripsList(filteredTrips: List<TripEntity>) {
-        adapter.submitList(filteredTrips) {
-            adapter.updateSelectionAfterListChange()
-        }
+        adapter.submitList(filteredTrips) { adapter.updateSelectionAfterListChange() }
 
         val shouldShowEmptyState = filteredTrips.isEmpty() && !binding.filtersOverlay.isVisible
 
         if (shouldShowEmptyState) {
-            EmptyStateHelper.showTripsEmptyState(
-                binding.emptyStateLayout.root,
-                filtersViewModel.hasActiveFilters()
-            )
+            EmptyStateHelper.showTripsEmptyState(binding.emptyStateLayout.root, filtersViewModel.hasActiveFilters())
         } else {
-            EmptyStateHelper.hideEmptyState(
-                binding.emptyStateLayout.root
-            )
+            EmptyStateHelper.hideEmptyState(binding.emptyStateLayout.root)
         }
     }
 
+    /**
+     * Navigates to the fragment for creating a new trip.
+     */
     private fun navigateToNewTrip() {
         val action = TripsFragmentDirections.actionTripsFragmentToNewTripFragment()
         findNavController().navigate(action)
     }
 
+    /**
+     * Navigates to the detail fragment for a specific trip.
+     * @param tripId ID of the trip to view.
+     */
     private fun navigateToTripDetail(tripId: Long) {
         val action = TripsFragmentDirections.actionTripsFragmentToTripDetailFragment(tripId)
         findNavController().navigate(action)
     }
 
+    /**
+     * Updates the delete button text based on selected count.
+     * @param selectedCount Number of selected items.
+     */
     private fun updateDeleteButton(selectedCount: Int) {
         SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedTrips,
@@ -277,9 +283,11 @@ class TripsFragment : Fragment() {
         )
     }
 
+    /**
+     * Handles deletion of multiple selected trips.
+     */
     private fun handleMultipleDelete() {
         val selectedTrips = adapter.getSelectedTrips()
-
         SelectionHelper.handleMultipleDelete(
             context = requireContext(),
             selectedItems = selectedTrips,
@@ -290,11 +298,18 @@ class TripsFragment : Fragment() {
         )
     }
 
+    /**
+     * Deletes a list of trips via the ViewModel.
+     * @param trips List of trips to delete.
+     */
     private fun deleteSelectedTrips(trips: List<TripEntity>) {
         val tripIds = trips.map { it.id }
         tripsViewModel.deleteTrips(tripIds)
     }
 
+    /**
+     * Cleans up the binding when the view is destroyed.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

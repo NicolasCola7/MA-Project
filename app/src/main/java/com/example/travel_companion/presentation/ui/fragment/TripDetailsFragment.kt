@@ -97,6 +97,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Initializes the Google Map with trip data and sets up map interactions.
+     *
+     * @param targetLocation the destination of the trip where the map should be zoomed
      */
     private fun initializeMap(targetLocation: LatLng) {
         // only init map when the isFetching is turned to false
@@ -236,6 +238,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Converts coordinate entities into polylines for map display, handling time gaps.
+     *
+     * @param coordinates list of coordinates from which the polylines should be created
      */
     private fun initPathPoints(coordinates: List<CoordinateEntity>) {
         var previousTimestamp: Long = coordinates[0].timestamp
@@ -331,6 +335,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Updates the UI with trip information and controls visibility based on trip status.
+     *
+     * @param trip the trip the fragment refers to
      */
     @SuppressLint("SetTextI18n")
     private fun showTripInfo(trip: TripEntity) {
@@ -370,6 +376,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Updates UI elements and button states based on current tracking status.
+     *
+     * @param isTracking the traking state
      */
     @SuppressLint("SetTextI18n")
     private fun updateTracking(isTracking: Boolean) {
@@ -464,6 +472,9 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Creates a geofence for a specific location with entry and exit monitoring.
+     *
+     * @param pos the coordinates of the point of interest
+     * @param placeName the name of the point of interest
      */
     private fun addGeofence(pos: LatLng, placeName: String) {
         val geofence = Geofence.Builder()
@@ -481,6 +492,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Generates geofences for all points of interest in the current trip.
+     *
+     * @param pois a list of POI
      */
     private fun populateGeofenceList(pois: List<POIEntity>) {
         geofenceList.clear()
@@ -512,6 +525,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Displays dialog to save a Google Maps point of interest.
+     *
+     * @param poi the point of interest to be added
      */
     private fun showAddPOIDialog(poi: PointOfInterest) {
         AlertDialog.Builder(requireContext())
@@ -529,6 +544,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Shows input dialog for creating custom points of interest at map coordinates.
+     *
+     * @param latlng the coordinates of the point of interest to be added
      */
     private fun showPOIInputDialog(latlng: LatLng) {
         val layout = LinearLayout(requireContext()).apply {
@@ -574,6 +591,9 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Places a point of interest marker on the map.
+     *
+     * @param poiName the point of interest name
+     * @param poiPosition the point of interest coordinates
      */
     private fun addPOIMarker(poiName: String, poiPosition: LatLng) {
         map!!.addMarker(
@@ -586,6 +606,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Displays dialog for point of interest marker interactions and deletion.
+     *
+     * @param marker the point of interest marker selected
      */
     private fun showMarkerDialog(marker: Marker) {
         AlertDialog.Builder(requireContext())
@@ -603,6 +625,8 @@ class TripDetailsFragment: Fragment() {
 
     /**
      * Removes a geofence from the active monitoring list by name.
+     *
+     * @param poiName the point of interest name
      */
     private fun deleteGeofence(poiName: String) {
         for(geofence in geofenceList) {
