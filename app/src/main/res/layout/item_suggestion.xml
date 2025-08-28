@@ -36,7 +36,6 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Destinazione"
-                    android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     tools:text="Roma" />
@@ -50,7 +49,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Titolo suggerimento"
-                android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 tools:text="Scopri la Città Eterna" />
 
@@ -95,7 +93,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Motivo"
-                    android:textColor="@color/text_tertiary"
                     android:textSize="12sp"
                     android:textStyle="italic"
                     android:maxLines="1"

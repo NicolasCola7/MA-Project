@@ -31,6 +31,14 @@ class NoteDetailsFragment : Fragment() {
     private var currentNote: NoteEntity? = null
     private var isEditMode = false
 
+    /**
+     * Inflates the layout and initializes data binding.
+     *
+     * @param inflater LayoutInflater used to inflate views
+     * @param container Optional parent view group
+     * @param savedInstanceState Previously saved state
+     * @return The root view of the fragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -42,6 +50,13 @@ class NoteDetailsFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called when the view is created.
+     * Sets up listeners, observers, and the initial state.
+     *
+     * @param view The created view
+     * @param savedInstanceState Previously saved state
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -50,6 +65,9 @@ class NoteDetailsFragment : Fragment() {
         setupInitialState()
     }
 
+    /**
+     * Sets up button click listeners for edit, cancel, and delete actions.
+     */
     private fun setupClickListeners() {
         binding.editButton.setOnClickListener {
             if (isEditMode) {
@@ -72,6 +90,9 @@ class NoteDetailsFragment : Fragment() {
         }
     }
 
+    /**
+     * Observes the note from the ViewModel by its ID and updates UI when changed.
+     */
     private fun observeNote() {
         viewModel.getNoteById(args.noteId).observe(viewLifecycleOwner) { note ->
             currentNote = note
@@ -81,10 +102,18 @@ class NoteDetailsFragment : Fragment() {
         }
     }
 
+    /**
+     * Configures the initial UI state when the fragment is first shown.
+     */
     private fun setupInitialState() {
         setEditMode(false)
     }
 
+    /**
+     * Displays the note data in the UI.
+     *
+     * @param note The note entity to display
+     */
     private fun displayNote(note: NoteEntity) {
         binding.titleText.text = note.title
         binding.contentText.text = note.content
@@ -92,38 +121,52 @@ class NoteDetailsFragment : Fragment() {
         binding.contentEditText.setText(note.content)
     }
 
+    /**
+     * Switches the UI into edit mode and focuses on the title field.
+     */
     private fun enterEditMode() {
         setEditMode(true)
 
-        // Focus sul primo campo di testo
+        // Focus on the first text field
         binding.titleEditText.requestFocus()
         showKeyboard()
     }
 
+    /**
+     * Exits edit mode, restoring original note data and hiding the keyboard.
+     */
     private fun exitEditMode() {
         setEditMode(false)
 
-        // Ripristina i valori originali
+        // Restore original values
         currentNote?.let { displayNote(it) }
         hideKeyboard()
     }
 
+    /**
+     * Updates the UI to reflect edit mode or view mode.
+     *
+     * @param editMode Whether the fragment is in edit mode
+     */
     private fun setEditMode(editMode: Boolean) {
         isEditMode = editMode
 
-        // Gestisci visibilità TextView vs EditText
+        // Toggle visibility of text vs editable fields
         binding.titleText.visibility = if (editMode) View.GONE else View.VISIBLE
         binding.contentText.visibility = if (editMode) View.GONE else View.VISIBLE
         binding.titleEditText.visibility = if (editMode) View.VISIBLE else View.GONE
         binding.contentEditText.visibility = if (editMode) View.VISIBLE else View.GONE
 
-        // Aggiorna testi dei bottoni
+        // Update button text
         binding.editButton.text = if (editMode) "Salva" else "Modifica"
 
-        // Gestisci visibilità bottone elimina
+        // Hide delete button while editing
         binding.deleteButton.visibility = if (editMode) View.GONE else View.VISIBLE
     }
 
+    /**
+     * Saves the edited note, validates input, and updates it in the database.
+     */
     private fun saveNote() {
         val title = binding.titleEditText.text.toString().trim()
         val content = binding.contentEditText.text.toString().trim()
@@ -146,6 +189,9 @@ class NoteDetailsFragment : Fragment() {
         }
     }
 
+    /**
+     * Shows a confirmation dialog to delete the current note.
+     */
     private fun deleteNote() {
         currentNote?.let { note ->
             AlertDialog.Builder(requireContext())
@@ -160,16 +206,25 @@ class NoteDetailsFragment : Fragment() {
         }
     }
 
+    /**
+     * Shows the soft keyboard for the title field.
+     */
     private fun showKeyboard() {
         val imm = getSystemService(requireContext(), InputMethodManager::class.java)
         imm?.showSoftInput(binding.titleEditText, InputMethodManager.SHOW_IMPLICIT)
     }
 
+    /**
+     * Hides the soft keyboard.
+     */
     private fun hideKeyboard() {
         val imm = getSystemService(requireContext(), InputMethodManager::class.java)
         imm?.hideSoftInputFromWindow(binding.root.windowToken, 0)
     }
 
+    /**
+     * Cleans up binding when the view is destroyed.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

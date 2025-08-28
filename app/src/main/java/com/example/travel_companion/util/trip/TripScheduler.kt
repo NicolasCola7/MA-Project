@@ -10,19 +10,10 @@ import com.example.travel_companion.receiver.TripStatusReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-/*
-    CLASSE DEDICATA ALLA SCHEDULAZIONE DI VIAGGI. Ciò serve per ottimizzare la soluzione rispetto all'utilizzo
-    di un semplice polling. Facendo così infatti, l’app sa già quando dovrà aggiornare lo stato, e lo dice ad Android subito.
 
-    Il metodo scheduleTrip, chiamato dalla classe TripManagerservice, ha il compito di schedulare un viaggio.
-    La schedulazione viene svolta tramite la creazione di due allarmi:
-        - uno per l'inizio
-        - uno per la fine
-    Gli allarmi sono gestiti tramite AlertManager. In particolare l'allarme scatta alla data e ora precisa
-    anche se il telefono è in modalità Doze (risparmio energetico).
-    Per ogni viaggio vengono creati Intent differenti per inizio e fine.
-    Nel momento in cui scatta l'allarme, Android invia un broadcast a TripStatusReceiver svegliando così l’app esattamente
-    al momento giusto, senza bisogno di fare polling.
+/**
+ * Utility class for scheduling and managing trip status updates using AlarmManager.
+ * Handles automatic transition of trips to STARTED or FINISHED states at specified times.
  */
 @Singleton
 class TripScheduler @Inject constructor(
@@ -36,31 +27,39 @@ class TripScheduler @Inject constructor(
         const val EXTRA_NEW_STATUS = "new_status"
     }
 
+    /**
+     * Schedules start and end alarms for a trip.
+     * Cancels any previously scheduled alarms for the same trip.
+     *
+     * @param tripId The unique identifier of the trip.
+     * @param startTime Timestamp (ms) when the trip should start.
+     * @param endTime Timestamp (ms) when the trip should finish.
+     */
     fun scheduleTrip(tripId: Long, startTime: Long, endTime: Long) {
-        // Cancella eventuali alarm esistenti per questo trip
         cancelTripAlarms(listOf(tripId))
 
         val currentTime = System.currentTimeMillis()
 
-        // Schedula inizio se non è già passato
         if (startTime > currentTime) {
             scheduleStatusUpdate(tripId, startTime, TripStatus.STARTED)
         }
 
-        // Schedula fine se non è già passata
         if (endTime > currentTime) {
             scheduleStatusUpdate(tripId, endTime, TripStatus.FINISHED)
         }
     }
 
+    /**
+     * Cancels all scheduled alarms (start and end) for the provided trip IDs.
+     *
+     * @param tripIds List of trip identifiers whose alarms should be canceled.
+     */
     fun cancelTripAlarms(tripIds: List<Long>) {
         if (tripIds.isEmpty()) return
 
         val pendingIntentsToCancel = mutableListOf<PendingIntent>()
 
-        // Prepara tutti i PendingIntent
         tripIds.forEach { tripId ->
-            // PendingIntent per inizio
             val startIntent = createStatusUpdateIntent(tripId, TripStatus.STARTED)
             val startPendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -70,7 +69,6 @@ class TripScheduler @Inject constructor(
             )
             pendingIntentsToCancel.add(startPendingIntent)
 
-            // PendingIntent per fine
             val endIntent = createStatusUpdateIntent(tripId, TripStatus.FINISHED)
             val endPendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -81,14 +79,20 @@ class TripScheduler @Inject constructor(
             pendingIntentsToCancel.add(endPendingIntent)
         }
 
-        // Cancella tutti gli allarmi
         pendingIntentsToCancel.forEach { pendingIntent ->
             alarmManager.cancel(pendingIntent)
         }
     }
 
+    /**
+     * Schedules a single alarm for updating the trip status at a specified time.
+     *
+     * @param tripId The unique identifier of the trip.
+     * @param triggerTime Timestamp (ms) when the status update should occur.
+     * @param status The TripStatus to be set at the trigger time.
+     */
     @SuppressLint("MissingPermission")
-    private  fun scheduleStatusUpdate(tripId: Long, triggerTime: Long, status: TripStatus) {
+    private fun scheduleStatusUpdate(tripId: Long, triggerTime: Long, status: TripStatus) {
         val intent = createStatusUpdateIntent(tripId, status)
         val requestCode = when (status) {
             TripStatus.STARTED -> "start_$tripId".hashCode()
@@ -110,6 +114,13 @@ class TripScheduler @Inject constructor(
         )
     }
 
+    /**
+     * Creates an Intent to broadcast a trip status update.
+     *
+     * @param tripId The unique identifier of the trip.
+     * @param status The TripStatus to broadcast.
+     * @return Configured Intent for the TripStatusReceiver.
+     */
     private fun createStatusUpdateIntent(tripId: Long, status: TripStatus): Intent {
         return Intent(context, TripStatusReceiver::class.java).apply {
             action = ACTION_UPDATE_TRIP_STATUS
@@ -118,7 +129,13 @@ class TripScheduler @Inject constructor(
         }
     }
 
-    // Metodo per rischedulare tutti i trip attivi - ora prende i dati come parametro
+    /**
+     * Reschedules all active trips, both planned and already started.
+     * Ensures that alarms are set for future start or end times.
+     *
+     * @param plannedTrips List of trips not yet started.
+     * @param startedTrips List of trips already started but not finished.
+     */
     fun rescheduleActiveTrips(plannedTrips: List<TripData>, startedTrips: List<TripData>) {
         val currentTime = System.currentTimeMillis()
 
@@ -135,6 +152,12 @@ class TripScheduler @Inject constructor(
         }
     }
 
-    // Data class semplice per evitare dipendenze
+    /**
+     * Simple data class representing trip timing information.
+     *
+     * @param id Unique trip identifier.
+     * @param startDate Start timestamp (ms) of the trip.
+     * @param endDate End timestamp (ms) of the trip.
+     */
     data class TripData(val id: Long, val startDate: Long, val endDate: Long)
 }

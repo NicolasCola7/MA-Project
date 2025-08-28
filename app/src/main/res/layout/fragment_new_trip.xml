@@ -73,9 +73,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Seleziona data e ora"
-                android:textColor="@color/black"
                 android:textSize="14dp"
-                android:backgroundTint="@color/gray_light"
                 android:gravity="start|center_vertical"
                 android:padding="16dp"
                 android:layout_marginBottom="16dp"
@@ -97,8 +95,6 @@
                 android:layout_height="wrap_content"
                 android:text="Seleziona data e ora"
                 android:textSize="14dp"
-                android:textColor="@color/black"
-                android:backgroundTint="@color/gray_light"
                 android:gravity="start|center_vertical"
                 android:padding="16dp"
                 android:layout_marginBottom="16dp"
@@ -117,7 +113,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:entries="@array/trip_types"
-                android:backgroundTint="?attr/colorControlNormal"
                 android:padding="12dp"
                 android:layout_marginBottom="12dp" />
 

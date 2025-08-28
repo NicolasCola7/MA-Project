@@ -36,7 +36,6 @@
             android:id="@+id/clInnerLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/md_blue_800"
             android:padding="16dp"
             app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
             app:layout_constraintEnd_toEndOf="parent"
@@ -47,9 +46,11 @@
                 android:id="@+id/cvTripInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
+                app:strokeWidth="0.5dp"
+                app:strokeColor="?attr/colorOnSecondary"
                 app:layout_constraintBottom_toTopOf="@+id/llButtons"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -85,8 +86,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Destinazione"
-                                android:textSize="12sp"
-                                android:textColor="?android:textColorSecondary" />
+                                android:textSize="12sp" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tvDestination"
@@ -131,8 +131,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Inizio"
-                                    android:textSize="12sp"
-                                    android:textColor="?android:textColorSecondary" />
+                                    android:textSize="12sp" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/tvStartDate"
@@ -154,8 +153,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Fine"
-                                    android:textSize="12sp"
-                                    android:textColor="?android:textColorSecondary" />
+                                    android:textSize="12sp" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/tvEndDate"
@@ -195,17 +193,14 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Tempo trascorso tracciando"
-                                android:textSize="12sp"
-                                android:textColor="?android:textColorSecondary" />
+                                android:textSize="12sp" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tvTimer"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:fontFamily="monospace"
-                                android:textColor="?android:textColorSecondary" />
+                                android:textSize="14sp"
+                                android:fontFamily="monospace" />
 
                         </LinearLayout>
 
@@ -242,8 +237,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Distanza tracciata"
-                                    android:textSize="11sp"
-                                    android:textColor="?android:textColorSecondary" />
+                                    android:textSize="11sp" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/tvDistance"
@@ -251,7 +245,6 @@
                                     android:layout_height="wrap_content"
                                     android:text=""
                                     android:textSize="14sp"
-                                    android:textStyle="bold"
                                     tools:text="1,250 km" />
 
                             </LinearLayout>
@@ -282,8 +275,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Stato"
-                                    android:textSize="11sp"
-                                    android:textColor="?android:textColorSecondary" />
+                                    android:textSize="11sp" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/tvStatus"
@@ -291,7 +283,6 @@
                                     android:layout_height="wrap_content"
                                     android:text=""
                                     android:textSize="14sp"
-                                    android:textStyle="bold"
                                     tools:text="In corso" />
 
                             </LinearLayout>
@@ -336,8 +327,6 @@
             android:id="@+id/bottomNavigationView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:itemIconTint="@drawable/bottom_nav_selector"
-            app:itemTextColor="@drawable/bottom_nav_selector"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

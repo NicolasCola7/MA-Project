@@ -31,6 +31,14 @@ class TripStatusReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Trip Status"
     }
 
+    /**
+     * Receives broadcast intents related to trip status updates.
+     * Updates the trip status in the repository and triggers a notification
+     * if the trip has started.
+     *
+     * @param context The Context in which the receiver is running.
+     * @param intent The received Intent containing trip update information.
+     */
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == TripScheduler.ACTION_UPDATE_TRIP_STATUS) {
             val tripId = intent.getLongExtra(TripScheduler.EXTRA_TRIP_ID, -1)
@@ -39,7 +47,6 @@ class TripStatusReceiver : BroadcastReceiver() {
             if (tripId != -1L && statusName != null) {
                 val status = TripStatus.valueOf(statusName)
 
-                // Usa goAsync() per operazioni asincrone
                 val pendingResult = goAsync()
 
                 CoroutineScope(Dispatchers.IO).launch {
@@ -57,6 +64,13 @@ class TripStatusReceiver : BroadcastReceiver() {
         }
     }
 
+    /**
+     * Sends a notification to inform the user that a trip has started.
+     * The notification launches the MainActivity and includes the trip ID.
+     *
+     * @param context The Context used to access system services.
+     * @param tripId The unique identifier of the trip that has started.
+     */
     private fun sendNotification(context: Context, tripId: Long) {
         if (!hasNotificationPermissions(context)) {
             return

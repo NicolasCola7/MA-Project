@@ -24,12 +24,12 @@ class HomeViewModel @Inject constructor(
 
     private val _currentDate = MutableLiveData<String>()
 
-    // LiveData del viaggio in corso
+    // LiveData for the currently active trip
     private val currentTrip: LiveData<TripEntity?> =
         tripRepository.getTripsByStatus(TripStatus.STARTED)
             .map { trips -> trips.firstOrNull() }
 
-    // LiveData del prossimo viaggio programmato
+    // LiveData for the next scheduled trip
     private val nextTrip: LiveData<TripEntity?> =
         tripRepository.getTripsByStatus(TripStatus.PLANNED)
             .map { trips ->
@@ -37,7 +37,7 @@ class HomeViewModel @Inject constructor(
                     .minByOrNull { it.startDate }
             }
 
-    // LiveData che la UI osserva
+    // LiveData observed by the UI
     val tripToShow = MediatorLiveData<TripEntity?>().apply {
         addSource(currentTrip) { current ->
             value = current ?: nextTrip.value
@@ -49,7 +49,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // StateFlow per suggerimenti
+    // StateFlow for trip suggestions
     private val _suggestions = MutableStateFlow<List<TripSuggestion>>(emptyList())
     val suggestions: StateFlow<List<TripSuggestion>> = _suggestions.asStateFlow()
 
@@ -67,28 +67,36 @@ class HomeViewModel @Inject constructor(
         observeTripChanges()
     }
 
+    /**
+     * Sets up the current date in a human-readable format.
+     */
     private fun setupCurrentDate() {
         val dateFormat = SimpleDateFormat("EEEE d MMMM yyyy", Locale.getDefault())
         _currentDate.value = dateFormat.format(Date())
     }
 
+    /**
+     * Loads trip suggestions for the home screen.
+     * Limits the number of suggestions to MAX_HOME_SUGGESTIONS.
+     */
     private fun loadSuggestions() {
         viewModelScope.launch {
             try {
-                // Carica suggerimenti limitati per la home
                 val allSuggestions = predictionRepository.getTravelSuggestions()
                 val homeSuggestions = allSuggestions.take(MAX_HOME_SUGGESTIONS)
 
                 _suggestions.value = homeSuggestions
                 _showSuggestions.value = homeSuggestions.isNotEmpty()
             } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Errore nel caricamento suggerimenti")
+                Timber.tag(TAG).e(e, "Error loading suggestions")
             }
         }
     }
 
+    /**
+     * Observes changes in trips and reloads suggestions when the tripToShow changes.
+     */
     private fun observeTripChanges() {
-        // Ricarica suggerimenti quando cambia lo stato dei viaggi
         tripToShow.observeForever {
             viewModelScope.launch {
                 loadSuggestions()

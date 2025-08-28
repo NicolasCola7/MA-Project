@@ -16,9 +16,11 @@ class PredictionViewModel @Inject constructor(
     private val predictionRepository: PredictionRepository
 ) : ViewModel() {
 
+    // Holds the current travel prediction
     private val _prediction = MutableStateFlow<TripPrediction?>(null)
     val prediction: StateFlow<TripPrediction?> = _prediction.asStateFlow()
 
+    // Holds the list of travel suggestions
     private val _suggestions = MutableStateFlow<List<TripSuggestion>>(emptyList())
 
     companion object {
@@ -30,28 +32,34 @@ class PredictionViewModel @Inject constructor(
         observePredictionChanges()
     }
 
+    /**
+     * Loads travel predictions and suggestions from the repository.
+     */
     fun loadPredictions() {
         viewModelScope.launch {
             try {
-                // Carica previsioni
+                // Load travel prediction
                 val prediction = predictionRepository.calculateTravelPrediction()
 
-                // Carica suggerimenti
+                // Load travel suggestions
                 val suggestions = predictionRepository.getTravelSuggestions()
 
                 _prediction.value = prediction
                 _suggestions.value = suggestions
             } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Errore nel caricamento predizioni")
+                Timber.tag(TAG).e(e, "Error loading predictions")
             }
         }
     }
 
+    /**
+     * Observes changes to the prediction flow from the repository.
+     */
     private fun observePredictionChanges() {
         viewModelScope.launch {
             predictionRepository.getPredictionFlow()
                 .catch { e ->
-                    Timber.tag(TAG).e(e, "Errore nel flow predizioni")
+                    Timber.tag(TAG).e(e, "Error in prediction flow")
                 }
                 .collect { prediction ->
                     _prediction.value = prediction

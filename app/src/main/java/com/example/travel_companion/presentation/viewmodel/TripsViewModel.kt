@@ -19,8 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TripsViewModel @Inject constructor(
-    private val tripRepository: TripRepository,      // Per query e controlli
-    private val tripScheduler: TripScheduler  // Per operazioni con scheduling
+    private val tripRepository: TripRepository,
+    private val tripScheduler: TripScheduler
 ) : ViewModel() {
 
     val trips: LiveData<List<TripEntity>> = tripRepository.getAllTrips()
@@ -28,29 +28,41 @@ class TripsViewModel @Inject constructor(
     var selectedPlaceImageData: ByteArray? = null
     private val converters = Converters()
 
-    // Eventi UI
+    // UI events
     private val _uiEvent = MutableLiveData<Event>()
     val uiEvent: LiveData<Event> get() = _uiEvent
 
-    fun onCreateTripClicked(destination: String, startDateStr: String, endDateStr: String, type: String, lat: Double, long: Double) {
-        // Validazioni di base
-        if (destination.isBlank() || startDateStr.isBlank() || (type == "Viaggio di più giorni" && endDateStr.isBlank())) {
-            _uiEvent.value = Event.ShowMessage("Compila i campi obbligatori")
+    /**
+     * Handles the creation of a new trip
+     */
+    fun onCreateTripClicked(
+        destination: String,
+        startDateStr: String,
+        endDateStr: String,
+        type: String,
+        lat: Double,
+        long: Double
+    ) {
+        // Basic validation
+        if (destination.isBlank() || startDateStr.isBlank() ||
+            (type == "Viaggio di più giorni" && endDateStr == "Seleziona data e ora")
+        ) {
+            _uiEvent.value = Event.ShowMessage("Please fill in all required fields")
             return
         }
 
         val startDate = Utils.dateTimeFormat.parse(startDateStr)
         val endDate = if (type == "Viaggio di più giorni") Utils.dateTimeFormat.parse(endDateStr) else null
 
-        //controllo su date di avvio
+        // Validate date formats
         if (startDate == null || (type == "Viaggio di più giorni" && endDate == null)) {
-            _uiEvent.value = Event.ShowMessage("Formato data non valido")
+            _uiEvent.value = Event.ShowMessage("Invalid date format")
             return
         }
 
         val now = System.currentTimeMillis()
         if (startDate.time <= now) {
-            _uiEvent.value = Event.ShowMessage("La data di inizio deve essere futura")
+            _uiEvent.value = Event.ShowMessage("Start date must be in the future")
             return
         }
 
@@ -62,39 +74,39 @@ class TripsViewModel @Inject constructor(
                     startCal.get(Calendar.DAY_OF_YEAR) == endCal.get(Calendar.DAY_OF_YEAR)
 
             if (sameDay) {
-                _uiEvent.value = Event.ShowMessage("La data di fine deve essere in un giorno successivo")
+                _uiEvent.value = Event.ShowMessage("End date must be on a later day")
                 return
             }
 
             if (endDate!!.time <= startDate.time) {
-                _uiEvent.value = Event.ShowMessage("La data di fine deve essere dopo la data di inizio")
+                _uiEvent.value = Event.ShowMessage("End date must be after start date")
                 return
             }
         }
 
-        val calendar = Calendar.getInstance()
-        calendar.time = startDate
+        val calendar = Calendar.getInstance().apply { time = startDate }
 
-        //controllo su data di fine
+        // Determine the final end time for different trip types
         val finalEndDate: Long = when (type) {
             "Viaggio di più giorni" -> endDate!!.time
-
             "Gita Giornaliera", "Viaggio Locale" -> {
                 if (endDateStr.isBlank()) {
+                    // Set end of day if no specific time is provided
                     calendar.set(Calendar.HOUR_OF_DAY, 23)
                     calendar.set(Calendar.MINUTE, 59)
                     calendar.set(Calendar.SECOND, 59)
                     calendar.timeInMillis
                 } else {
+                    Timber.d(endDateStr)
                     val timeParts = endDateStr.split(":")
                     if (timeParts.size != 2) {
-                        _uiEvent.value = Event.ShowMessage("Inserisci l'ora di fine nel formato HH:mm")
+                        _uiEvent.value = Event.ShowMessage("Enter end time in HH:mm format")
                         return
                     }
                     val hour = timeParts[0].toIntOrNull()
                     val minute = timeParts[1].toIntOrNull()
                     if (hour == null || minute == null) {
-                        _uiEvent.value = Event.ShowMessage("Orario non valido")
+                        _uiEvent.value = Event.ShowMessage("Invalid time")
                         return
                     }
                     calendar.set(Calendar.HOUR_OF_DAY, hour)
@@ -103,13 +115,12 @@ class TripsViewModel @Inject constructor(
 
                     val endMillis = calendar.timeInMillis
                     if (endMillis <= startDate.time) {
-                        _uiEvent.value = Event.ShowMessage("L'ora di fine deve essere successiva a quella di inizio")
+                        _uiEvent.value = Event.ShowMessage("End time must be after start time")
                         return
                     }
                     endMillis
                 }
             }
-
             else -> {
                 calendar.set(Calendar.HOUR_OF_DAY, 23)
                 calendar.set(Calendar.MINUTE, 59)
@@ -121,6 +132,9 @@ class TripsViewModel @Inject constructor(
         insertTrip(destination, startDate.time, finalEndDate, type, lat, long)
     }
 
+    /**
+     * Inserts a new trip into the database, checking for conflicts
+     */
     private fun insertTrip(destination: String, start: Long, end: Long, type: String, lat: Double, long: Double) {
         val newTrip = TripEntity(
             destination = destination,
@@ -132,7 +146,7 @@ class TripsViewModel @Inject constructor(
             destinationLongitude = long
         )
 
-        //provo ad inserire un nuovo viaggio sul db, se il db mi dice che non ci sono conflitti lo inserisco
+        // Attempt to insert trip if no conflicts exist
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val hasConflict = tripRepository.isTripOverlapping(start, end)
@@ -141,15 +155,18 @@ class TripsViewModel @Inject constructor(
                     tripScheduler.scheduleTrip(id, newTrip.startDate, newTrip.endDate)
                     _uiEvent.postValue(Event.Success)
                 } else {
-                    _uiEvent.postValue(Event.ShowMessage("Esiste già un viaggio in questo intervallo di tempo"))
+                    _uiEvent.postValue(Event.ShowMessage("A trip already exists in this time range"))
                 }
             } catch (e: Exception) {
-                _uiEvent.postValue(Event.ShowMessage("Errore durante la creazione del viaggio"))
+                _uiEvent.postValue(Event.ShowMessage("Error creating the trip"))
                 Timber.d(e.stackTraceToString())
             }
         }
     }
 
+    /**
+     * Deletes trips and cancels their alarms
+     */
     fun deleteTrips(tripIds: List<Long>) {
         viewModelScope.launch {
             tripRepository.deleteTrips(tripIds)
@@ -157,20 +174,25 @@ class TripsViewModel @Inject constructor(
         }
     }
 
-    // Funzione per salvare l'immagine del luogo selezionato
+    /**
+     * Saves the selected place image
+     */
     fun setPlaceImage(bitmap: Bitmap) {
-        // Ridimensiona l'immagine per ottimizzare lo spazio su database
+        // Resize the image to optimize database space
         val resizedBitmap = Utils.resizeBitmap(bitmap, 400, 300)
-        // Usa il converter per convertire bitmap a ByteArray
+        // Convert bitmap to ByteArray for storage
         selectedPlaceImageData = converters.fromBitmap(resizedBitmap)
     }
 
-    // Reset dei dati quando si esce dal fragment
+    /**
+     * Resets selected data when leaving the fragment
+     */
     fun resetData() {
         selectedDestinationName = ""
         selectedPlaceImageData = null
     }
 
+    // UI event types
     sealed class Event {
         data class ShowMessage(val message: String) : Event()
         object Success : Event()

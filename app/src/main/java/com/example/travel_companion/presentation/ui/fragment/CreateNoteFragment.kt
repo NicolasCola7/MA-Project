@@ -14,20 +14,32 @@ import com.example.travel_companion.databinding.FragmentCreateNoteBinding
 import com.example.travel_companion.presentation.viewmodel.NotesViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Fragment for creating a new note associated with a trip.
+ * Handles UI binding, input validation, and saving the note through NotesViewModel.
+ */
 @AndroidEntryPoint
-class CreateNoteFragment: Fragment() {
+class CreateNoteFragment : Fragment() {
+
     private val viewModel: NotesViewModel by viewModels()
     private val args: CreateNoteFragmentArgs by navArgs()
 
     private var _binding: FragmentCreateNoteBinding? = null
     private val binding get() = _binding!!
 
+    /**
+     * Inflates the layout and sets up data binding.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views.
+     * @param container The parent view that the fragment's UI should attach to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The root view of the fragment's layout.
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         _binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_create_note, container, false
         )
@@ -38,6 +50,13 @@ class CreateNoteFragment: Fragment() {
         return binding.root
     }
 
+    /**
+     * Called immediately after onCreateView().
+     * Sets up UI interactions such as the save button click listener.
+     *
+     * @param view The view returned by onCreateView().
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -46,6 +65,7 @@ class CreateNoteFragment: Fragment() {
             val content = binding.etContent.text.toString().trim()
 
             if (title.isNotEmpty() && content.isNotEmpty()) {
+                // Save the note via ViewModel
                 viewModel.insertNote(args.tripId, title, content)
                 Toast.makeText(requireContext(), "Nota salvata", Toast.LENGTH_SHORT).show()
                 requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -59,5 +79,4 @@ class CreateNoteFragment: Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
 }

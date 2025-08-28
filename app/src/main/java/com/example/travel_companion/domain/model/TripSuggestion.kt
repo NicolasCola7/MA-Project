@@ -7,7 +7,7 @@ data class TripSuggestion(
     val destination: String,
     val type: String,
     val priority: SuggestionPriority,
-    val reason: String, // Motivo del suggerimento
+    val reason: String,
 )
 
 enum class SuggestionPriority {

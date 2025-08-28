@@ -30,6 +30,14 @@ class NotesListFragment : Fragment() {
 
     private lateinit var adapter: NotesListAdapter
 
+    /**
+     * Inflates the layout and initializes data binding.
+     *
+     * @param inflater LayoutInflater used to inflate views
+     * @param container Optional parent view group
+     * @param savedInstanceState Previously saved state
+     * @return The root view of the fragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -48,6 +56,13 @@ class NotesListFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called when the view is created.
+     * Sets up UI interactions and observers.
+     *
+     * @param view The created view
+     * @param savedInstanceState Previously saved state
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -61,12 +76,18 @@ class NotesListFragment : Fragment() {
         observeData()
     }
 
+    /**
+     * Sets up RecyclerView, adapter, and delete button.
+     */
     private fun setupViews() {
         setupAdapter()
         setupRecyclerView()
         setupDeleteButton()
     }
 
+    /**
+     * Configures the adapter with item click and selection handling.
+     */
     private fun setupAdapter() {
         adapter = NotesListAdapter(
             onItemClick = { note ->
@@ -80,18 +101,26 @@ class NotesListFragment : Fragment() {
         )
     }
 
-
+    /**
+     * Initializes the RecyclerView with layout manager and adapter.
+     */
     private fun setupRecyclerView() {
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
     }
 
+    /**
+     * Sets up click listener for the delete button.
+     */
     private fun setupDeleteButton() {
         binding.deleteSelectedNotes.setOnClickListener {
             handleMultipleDelete()
         }
     }
 
+    /**
+     * Observes notes data from the ViewModel and updates the UI.
+     */
     private fun observeData() {
         viewModel.loadNotes(args.tripId)
 
@@ -100,7 +129,7 @@ class NotesListFragment : Fragment() {
                 adapter.updateSelectionAfterListChange()
             }
 
-            // Gestisci empty state
+            // Handle empty state visibility
             val shouldShowEmptyState = noteList.isEmpty()
             if (shouldShowEmptyState) {
                 EmptyStateHelper.showNotesEmptyState(
@@ -114,7 +143,11 @@ class NotesListFragment : Fragment() {
         }
     }
 
+    /**
+     * Configures the bottom navigation and its item selection handling.
+     */
     private fun setupBottomNavigation() {
+        binding.bottomNavigationView.selectedItemId =  R.id.goToNotes
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeFragment -> {
@@ -135,11 +168,19 @@ class NotesListFragment : Fragment() {
                     )
                     true
                 }
+                R.id.goToNotes -> {
+                    true
+                }
                 else -> false
             }
         }
     }
 
+    /**
+     * Updates the delete button text and state based on selected items.
+     *
+     * @param selectedCount Number of selected notes
+     */
     private fun updateDeleteButton(selectedCount: Int) {
         SelectionHelper.updateDeleteButton(
             button = binding.deleteSelectedNotes,
@@ -148,6 +189,9 @@ class NotesListFragment : Fragment() {
         )
     }
 
+    /**
+     * Handles deletion of multiple selected notes with confirmation dialog.
+     */
     private fun handleMultipleDelete() {
         val selectedNotes = adapter.getSelectedNotes()
 
@@ -161,11 +205,19 @@ class NotesListFragment : Fragment() {
         )
     }
 
+    /**
+     * Deletes the given list of notes from the database.
+     *
+     * @param notes List of notes to delete
+     */
     private fun deleteSelectedNotes(notes: List<NoteEntity>) {
         val noteIds = notes.map { it.id }
         viewModel.deleteNotes(noteIds)
     }
 
+    /**
+     * Cleans up binding when the view is destroyed.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

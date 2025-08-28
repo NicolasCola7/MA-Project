@@ -39,7 +39,6 @@ typealias Polylines = MutableList<Polyline>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
-    @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private lateinit var geofencingClient: GeofencingClient
@@ -55,6 +54,9 @@ class TrackingService : LifecycleService() {
         const val NOTIFICATION_ID = 1000
     }
 
+    /**
+     * Initializes the service, sets up location clients, and configures observers for tracking state changes.
+     */
     override fun onCreate() {
         super.onCreate()
 
@@ -78,13 +80,20 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    /**
+     * Terminates the service by stopping tracking, removing foreground notification, and stopping geofencing.
+     */
     private fun killService() {
         isTracking.postValue(false)
+        pathPoints.postValue(mutableListOf())
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopGeofencing()
         stopSelf()
     }
 
+    /**
+     * Handles incoming service commands to start, pause, or stop the tracking service.
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
@@ -111,6 +120,9 @@ class TrackingService : LifecycleService() {
     private var timeRun = trackingTimeInMillis.value ?: 0L
     private var timeStarted = 0L
 
+    /**
+     * Starts the tracking timer and updates the elapsed time at regular intervals.
+     */
     private fun startTimer() {
         addEmptyPolyline()
         isTracking.postValue(true)
@@ -122,16 +134,22 @@ class TrackingService : LifecycleService() {
                 // post the new lapTime
                 trackingTimeInMillis.postValue(timeRun + lapTime)
 
-                delay(50L) // delay the coroutine by 50 seconds to prevent too frequent updates in the live data
+                delay(50L)
             }
             timeRun += lapTime
         }
     }
 
+    /**
+     * Pauses the tracking service by setting the tracking state to false.
+     */
     private fun pauseService() {
         isTracking.postValue(false)
     }
 
+    /**
+     * Enables or disables location tracking and geofencing based on the tracking state.
+     */
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
         if (isTracking) {
@@ -166,6 +184,9 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    /**
+     * Adds a new location point to the current polyline if it differs from the previous point.
+     */
     private fun addPathPoint(location: Location?) {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
@@ -180,12 +201,17 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    /**
+     * Creates a new empty polyline in the path points collection.
+     */
     private fun addEmptyPolyline() = pathPoints.value?.apply {
         add(mutableListOf())
         pathPoints.postValue(this)
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
 
-
+    /**
+     * Determines if two coordinates are within a specified distance threshold.
+     */
     private fun areCoordinatesSame(
         pos1: LatLng,
         pos2: LatLng,
@@ -202,6 +228,9 @@ class TrackingService : LifecycleService() {
         return result[0] <= thresholdMeters
     }
 
+    /**
+     * Starts the service in foreground mode with a persistent notification.
+     */
     private fun startForegroundService() {
         isTracking.postValue(true)
         startTimer()
@@ -212,6 +241,9 @@ class TrackingService : LifecycleService() {
         startForeground(NOTIFICATION_ID, getBaseNotification().build())
     }
 
+    /**
+     * Creates the base notification builder with common notification properties.
+     */
     private fun getBaseNotification() = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
         .setAutoCancel(false)
         .setOngoing(true)
@@ -220,6 +252,9 @@ class TrackingService : LifecycleService() {
         .setContentText("Tracciando la tua posizione")
         .setDeleteIntent(null)
 
+    /**
+     * Updates the notification text based on the current tracking state.
+     */
     private fun updateNotificationTrackingState(isTracking: Boolean) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -233,6 +268,9 @@ class TrackingService : LifecycleService() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
+    /**
+     * Constructs a geofencing request from the current list of geofences.
+     */
     private fun getGeofencingRequest(): GeofencingRequest? {
         val geofences = geofenceList.value
         if (geofences.isNullOrEmpty()) return null
@@ -252,6 +290,9 @@ class TrackingService : LifecycleService() {
         )
     }
 
+    /**
+     * Activates geofencing monitoring using the configured geofences.
+     */
     @SuppressLint("MissingPermission")
     private fun startGeofencing() {
         val request = getGeofencingRequest() ?: return
@@ -262,6 +303,9 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    /**
+     * Deactivates geofencing monitoring and removes all registered geofences.
+     */
     private fun stopGeofencing() {
         geofencingClient.removeGeofences(geofencePendingIntent).run {
             addOnSuccessListener {
@@ -273,22 +317,12 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    /**
+     * Cleans up resources and cancels the notification when the service is destroyed.
+     */
     override fun onDestroy() {
         super.onDestroy()
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

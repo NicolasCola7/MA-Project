@@ -16,11 +16,13 @@ import timber.log.Timber
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
     companion object {
-        private const val NOTIFICATION_ID = 1004
         private const val CHANNEL_ID = "geofence_channel"
         private const val CHANNEL_NAME = "Geofence"
     }
 
+    /**
+     * Processes geofence transition events and triggers appropriate notifications.
+     */
     override fun onReceive(context: Context, intent: Intent) {
         Timber.d("GEO - Intent received: ${intent.action}")
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
@@ -54,13 +56,15 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
+    /**
+     * Creates and displays a notification for geofence entry or exit events.
+     */
     private fun sendNotification(context: Context, geofenceTransition: Int, geofence: Geofence) {
         if (!hasNotificationPermissions(context)) {
             return
         }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
         createNotificationChannel(notificationManager, CHANNEL_ID, CHANNEL_NAME)
 
         val transition = if (geofenceTransition == 1) "entrando in" else "uscendo da"
@@ -74,6 +78,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        val notificationId = geofence.requestId.hashCode()
+        notificationManager.notify(notificationId, notification)
     }
 }

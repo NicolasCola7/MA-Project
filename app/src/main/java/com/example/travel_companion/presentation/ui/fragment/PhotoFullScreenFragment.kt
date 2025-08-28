@@ -20,6 +20,14 @@ class PhotoFullScreenFragment : Fragment() {
     private val binding get() = _binding!!
     private val args: PhotoFullScreenFragmentArgs by navArgs()
 
+    /**
+     * Inflates the layout and initializes data binding.
+     *
+     * @param inflater LayoutInflater used to inflate the layout
+     * @param container Optional parent view group
+     * @param savedInstanceState Previously saved state
+     * @return The root view of the fragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -31,6 +39,13 @@ class PhotoFullScreenFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called when the view is created.
+     * Sets up UI interactions and loads the photo.
+     *
+     * @param view The created view
+     * @param savedInstanceState Previously saved state
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -38,13 +53,19 @@ class PhotoFullScreenFragment : Fragment() {
         loadPhoto()
     }
 
+    /**
+     * Configures UI interactions, such as toggling controls visibility
+     * when the photo is tapped.
+     */
     private fun setupUI() {
-        // Click sull'immagine per nascondere/mostrare i controlli
         binding.photoImageView.setOnClickListener {
             toggleControlsVisibility()
         }
     }
 
+    /**
+     * Loads the photo passed via arguments into the ImageView using Glide.
+     */
     private fun loadPhoto() {
         Glide.with(this)
             .load(args.photoUri)
@@ -53,12 +74,17 @@ class PhotoFullScreenFragment : Fragment() {
             .into(binding.photoImageView)
     }
 
+    /**
+     * Toggles the visibility of the toolbar when the image is tapped.
+     */
     private fun toggleControlsVisibility() {
         val newVisibility = if (isVisible) View.GONE else View.VISIBLE
-
         binding.toolbar.visibility = newVisibility
     }
 
+    /**
+     * Cleans up binding when the view is destroyed.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

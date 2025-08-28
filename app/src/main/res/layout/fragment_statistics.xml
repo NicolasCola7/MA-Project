@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/card_background">
+    android:layout_height="match_parent">
 
     <!-- Top Selection Bar - 2 pulsanti -->
     <androidx.cardview.widget.CardView
@@ -34,7 +33,6 @@
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:background="@drawable/toggle_button_selected"
-                android:textColor="@android:color/white"
                 android:drawablePadding="8dp"
                 android:gravity="center" />
 
@@ -48,7 +46,6 @@
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:background="@drawable/toggle_button_unselected"
-                android:textColor="@color/text_secondary"
                 android:drawablePadding="8dp"
                 android:gravity="center" />
 
@@ -295,8 +292,7 @@
                     android:layout_weight="1"
                     android:text="Viaggi Mensili"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
+                    android:textStyle="bold"/>
 
             </LinearLayout>
 
@@ -309,11 +305,11 @@
 
             <!-- Istruzioni compatte -->
             <TextView
+                android:id="@+id/instructions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tocca per dettagli"
                 android:textSize="10sp"
-                android:textColor="@color/text_secondary"
                 android:layout_gravity="center"
                 android:layout_marginBottom="8dp" />
 

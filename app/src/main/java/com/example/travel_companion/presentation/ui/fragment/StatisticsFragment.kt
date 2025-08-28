@@ -1,5 +1,4 @@
 package com.example.travel_companion.presentation.ui.fragment
-
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
@@ -61,6 +60,11 @@ class StatisticsFragment : Fragment() {
 
     enum class ViewType { MAP, STATS }
 
+    /**
+     * Inflates the layout for the fragment and initializes the binding.
+     *
+     * @return the root view of the fragment
+     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -71,6 +75,9 @@ class StatisticsFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Called when the view is created. Sets up map, buttons, observers, and chart.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -86,6 +93,9 @@ class StatisticsFragment : Fragment() {
         predictionViewModel.loadPredictions()
     }
 
+    /**
+     * Configures toggle buttons for switching between map and stats views.
+     */
     private fun setupToggleButtons() {
         binding.btnMap.setOnClickListener {
             if (currentView != ViewType.MAP) {
@@ -100,6 +110,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Shows the selected view and updates button styles.
+     *
+     * @param viewType selected view type
+     */
     private fun showView(viewType: ViewType) {
         currentView = viewType
 
@@ -120,6 +135,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Updates button styles highlighting the selected one.
+     *
+     * @param selectedIndex index of selected button
+     */
     private fun updateButtonStyles(selectedIndex: Int) {
         val buttons = listOf(binding.btnMap, binding.btnStats)
 
@@ -134,6 +154,9 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Initializes the map and reapplies cached heatmap data if available.
+     */
     private fun setupMapView() {
         binding.mapView.getMapAsync { map ->
             googleMap = map
@@ -152,6 +175,9 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Resumes the map view and reloads data.
+     */
     override fun onResume() {
         super.onResume()
         _binding?.mapView?.onResume()
@@ -160,21 +186,33 @@ class StatisticsFragment : Fragment() {
         predictionViewModel.loadPredictions()
     }
 
+    /**
+     * Pauses the map view.
+     */
     override fun onPause() {
         super.onPause()
         _binding?.mapView?.onPause()
     }
 
+    /**
+     * Starts the map view.
+     */
     override fun onStart() {
         super.onStart()
         _binding?.mapView?.onStart()
     }
 
+    /**
+     * Stops the map view.
+     */
     override fun onStop() {
         super.onStop()
         _binding?.mapView?.onStop()
     }
 
+    /**
+     * Sets up observers for statistics and prediction data.
+     */
     private fun setupObservers() {
         // Osserva StateFlow dal ViewModel per statistiche esistenti
         viewLifecycleOwner.lifecycleScope.launch {
@@ -202,7 +240,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    // Mantieni tutti i metodi esistenti per heatmap
+    /**
+     * Updates the heatmap and markers on the map for given trips.
+     *
+     * @param trips list of completed trips
+     */
     private fun updateHeatmap(trips: List<TripEntity>) {
         googleMap?.let { map ->
             // Rimuovi tutti i marker esistenti e la heatmap
@@ -261,7 +303,12 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    // Metodo helper per centrare la mappa
+    /**
+     * Centers the map on given coordinates.
+     *
+     * @param map GoogleMap instance
+     * @param coordinates list of LatLng
+     */
     private fun centerMapOnCoordinates(map: GoogleMap, coordinates: List<LatLng>) {
         if (coordinates.isNotEmpty()) {
             val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
@@ -280,7 +327,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    // Crea un gradiente personalizzato per la heatmap
+    /**
+     * Creates and returns a custom gradient for heatmap visualization.
+     *
+     * @return custom Gradient
+     */
     private fun createCustomGradient(): Gradient {
         val colors = intArrayOf(
             Color.rgb(102, 225, 0), // Verde
@@ -293,6 +344,9 @@ class StatisticsFragment : Fragment() {
         return Gradient(colors, startPoints)
     }
 
+    /**
+     * Sets up bar chart configuration and listeners.
+     */
     private fun setupBarChart() {
         binding.monthlyChart.apply {
             description.isEnabled = false
@@ -323,6 +377,7 @@ class StatisticsFragment : Fragment() {
             })
 
             xAxis.apply {
+                textColor = binding.instructions.currentTextColor
                 position = XAxis.XAxisPosition.BOTTOM
                 setDrawGridLines(false)
                 granularity = 1f
@@ -330,6 +385,7 @@ class StatisticsFragment : Fragment() {
             }
 
             axisLeft.apply {
+                textColor = binding.instructions.currentTextColor
                 setDrawGridLines(true)
                 axisMinimum = 0f
                 // Formatter per mostrare solo valori interi sull'asse Y
@@ -350,6 +406,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Updates monthly chart with provided data.
+     *
+     * @param monthlyData array of monthly trip counts
+     */
     private fun updateMonthlyChart(monthlyData: IntArray) {
         val entries = monthlyData.mapIndexed { index, count ->
             BarEntry(index.toFloat(), count.toFloat())
@@ -366,10 +427,12 @@ class StatisticsFragment : Fragment() {
                     Color.parseColor("#2196F3")
                 }
             }
-            valueTextColor = Color.BLACK
+
+            valueTextColor = binding.instructions.currentTextColor
             valueTextSize = 12f
             // Formatter personalizzato per mostrare solo valori > 0 sulle barre
             valueFormatter = object : ValueFormatter() {
+
                 override fun getBarLabel(barEntry: BarEntry?): String {
                     return if (barEntry != null && barEntry.y > 0f) {
                         barEntry.y.toInt().toString()
@@ -404,6 +467,12 @@ class StatisticsFragment : Fragment() {
         resetPredictionCards()
     }
 
+
+    /**
+     * Updates prediction/statistics cards for a given month index.
+     *
+     * @param monthIndex 0–11 = months, 12 = prediction
+     */
     @SuppressLint("SetTextI18n", "DefaultLocale")
     private fun updatePredictionCardsForMonth(monthIndex: Int) {
         if (monthIndex == 12) {
@@ -468,12 +537,21 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Resets prediction/statistics cards to general view.
+     */
     private fun resetPredictionCards() {
         // Mostra le statistiche generali
         val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
         updatePredictionCardsForMonth(currentMonth)
     }
 
+    /**
+     * Gets trips corresponding to a specific month index.
+     *
+     * @param monthIndex index of the month
+     * @return list of trips for that month
+     */
     private fun getTripsForMonth(monthIndex: Int): List<TripEntity> {
         val calendar = Calendar.getInstance()
         return cachedTrips.filter { trip ->
@@ -482,6 +560,11 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Updates statistics cards with completed trip data.
+     *
+     * @param trips list of completed trips
+     */
     @SuppressLint("SetTextI18n", "DefaultLocale")
     private fun updateStatisticsCards(trips: List<TripEntity>) {
         val completedTrips = trips.filter { it.status == TripStatus.FINISHED }
@@ -507,6 +590,12 @@ class StatisticsFragment : Fragment() {
         }
     }
 
+    /**
+     * Calculates monthly trip counts from trip data.
+     *
+     * @param trips list of completed trips
+     * @return array of monthly trip counts
+     */
     private fun calculateMonthlyTrips(trips: List<TripEntity>): IntArray {
         val monthlyCount = IntArray(13) // 12 mesi + 1 per la predizione
         val calendar = Calendar.getInstance()
@@ -520,6 +609,11 @@ class StatisticsFragment : Fragment() {
         return monthlyCount
     }
 
+    /**
+     * Returns month labels including a label for prediction.
+     *
+     * @return array of month labels
+     */
     private fun getMonthLabelsWithPrediction(): Array<String> {
         val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
         val nextMonth = (currentMonth + 1) % 12
@@ -535,6 +629,12 @@ class StatisticsFragment : Fragment() {
         )
     }
 
+    /**
+     * Formats a timestamp into a readable date string.
+     *
+     * @param timestamp time in milliseconds
+     * @return formatted date string
+     */
     private fun formatDate(timestamp: Long): String {
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))

@@ -61,17 +61,4 @@ object AppModule {
         return TripSuggestionsEngine()
     }
 
-    @Provides
-    @Singleton
-    fun providePredictionRepository(
-        tripDao: TripDao,
-        predictionAlgorithm: TripPredictionAlgorithm,
-        suggestionsEngine: TripSuggestionsEngine
-    ): PredictionRepository {
-        return PredictionRepository(
-            tripDao = tripDao,
-            predictionAlgorithm = predictionAlgorithm,
-            suggestionsEngine = suggestionsEngine
-        )
-    }
 }

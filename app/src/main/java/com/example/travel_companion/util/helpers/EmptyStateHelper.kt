@@ -8,9 +8,18 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.travel_companion.R
 
 /**
- * Helper class per gestire gli empty states in modo uniforme nell'applicazione
+ * Helper object for managing empty states consistently across the application.
+ * Provides utility methods to show or hide empty state views with specific icons and messages.
  */
 object EmptyStateHelper {
+
+    /**
+     * Configures the empty state view with the provided icon and text.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     * @param iconRes Resource ID of the icon to display
+     * @param text The text message to display
+     */
     private fun setupEmptyState(
         emptyStateView: ConstraintLayout,
         @DrawableRes iconRes: Int,
@@ -23,14 +32,31 @@ object EmptyStateHelper {
         textView?.text = text
     }
 
+    /**
+     * Makes the empty state view visible.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     */
     private fun showEmptyState(emptyStateView: ConstraintLayout) {
         emptyStateView.visibility = View.VISIBLE
     }
 
+    /**
+     * Hides the empty state view.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     */
     fun hideEmptyState(emptyStateView: ConstraintLayout) {
         emptyStateView.visibility = View.GONE
     }
 
+    /**
+     * Shows the empty state for trips.
+     * Displays different messages depending on whether filters are applied.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     * @param hasFilters True if filters are applied, false otherwise
+     */
     fun showTripsEmptyState(
         emptyStateView: ConstraintLayout,
         hasFilters: Boolean = false
@@ -44,6 +70,11 @@ object EmptyStateHelper {
         showEmptyState(emptyStateView)
     }
 
+    /**
+     * Shows the empty state for notes.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     */
     fun showNotesEmptyState(emptyStateView: ConstraintLayout) {
         setupEmptyState(
             emptyStateView,
@@ -53,6 +84,11 @@ object EmptyStateHelper {
         showEmptyState(emptyStateView)
     }
 
+    /**
+     * Shows the empty state for photos.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     */
     fun showPhotosEmptyState(emptyStateView: ConstraintLayout) {
         setupEmptyState(
             emptyStateView,
@@ -62,6 +98,12 @@ object EmptyStateHelper {
         showEmptyState(emptyStateView)
     }
 
+    /**
+     * Shows a home-specific empty state with a clickable button.
+     *
+     * @param emptyStateView The ConstraintLayout representing the empty state
+     * @param onButtonClick Lambda executed when the empty state button is clicked
+     */
     fun showHomeEmptyState(
         emptyStateView: ConstraintLayout,
         onButtonClick: () -> Unit

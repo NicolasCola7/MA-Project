@@ -12,8 +12,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
-        android:background="@color/card_background">
+        android:padding="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -57,7 +56,6 @@
                         android:id="@+id/viewImagePlaceholder"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@color/gray_light"
                         android:visibility="gone" />
 
                     <!-- Freccia in alto a destra -->
@@ -70,7 +68,7 @@
                         android:src="@drawable/ic_arrow_forward"
                         android:background="@drawable/icon_background"
                         android:padding="10dp"
-                        app:tint="@android:color/white" />
+                        />
 
                     <!-- Contenuto testuale sovrapposto -->
                     <LinearLayout
@@ -87,7 +85,6 @@
                             android:layout_height="wrap_content"
                             android:textSize="24sp"
                             android:textStyle="bold"
-                            android:textColor="@android:color/white"
                             android:maxLines="2"
                             android:ellipsize="end"
                             android:shadowColor="#80000000"
@@ -111,7 +108,6 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:textSize="14sp"
-                                android:textColor="@android:color/white"
                                 android:shadowColor="#80000000"
                                 android:shadowDx="1"
                                 android:shadowDy="1"
@@ -168,7 +164,6 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Suggeriti per te"
-                        android:textColor="@color/text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
