@@ -32,7 +32,7 @@ class BaseApplication : Application() {
         Timber.plant(Timber.DebugTree())
 
         if (!Places.isInitialized()) {
-            Places.initialize(applicationContext, "AIzaSyDEVW0HX64ZlwkoVMAZVr7OqgKO4IAuWno")
+            Places.initialize(applicationContext, "YOUR API KEY HERE")
         }
 
         placesClient = Places.createClient(this)
