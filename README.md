@@ -1,2 +1,2 @@
 # MA-Project
-Final project for the Mobile Application course.
+Per dettagli vedi [report.pdf](https://github.com/NicolasCola7/MA-Project/report.pdf)
